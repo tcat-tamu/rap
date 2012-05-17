@@ -68,7 +68,7 @@ public final class WorkbenchFileSettingStoreFactory
   //////////////////
   // helping methods
 
-  private File getWorkDir() {
+  public static File getWorkDir() {
     File result = getWorkDirFromEnvironment();
     if( result == null ) {
       Bundle bundle = Platform.getBundle( PlatformUI.PLUGIN_ID );
@@ -82,7 +82,7 @@ public final class WorkbenchFileSettingStoreFactory
     return result;
   }
 
-  private File getWorkDirFromEnvironment() {
+  private static File getWorkDirFromEnvironment() {
     String path = System.getProperty( FileSettingStore.FILE_SETTING_STORE_DIR );
     return ( path != null ) ? new File( path ) : null;
   }

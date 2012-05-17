@@ -30,7 +30,7 @@ import org.eclipse.swt.widgets.Widget;
  * (e.g., AbstractTreeViewer and AbstractTableViewer). Concrete subclasses of
  * {@link ColumnViewer} should implement a matching concrete subclass of {@link
  * ViewerColumn}.
- *
+ * 
  * <strong> This class is not intended to be subclassed outside of the JFace
  * viewers framework.</strong>
  *
@@ -72,7 +72,7 @@ public abstract class ColumnViewer extends StructuredViewer {
 
 	/**
 	 * Hook up the editing support. Subclasses may override.
-	 *
+	 * 
 	 * @param control
 	 * 		the control you want to hook on
 	 */
@@ -84,7 +84,7 @@ public abstract class ColumnViewer extends StructuredViewer {
 		if (viewerEditor != null) {
 			control.addMouseListener(new MouseAdapter() {
 				public void mouseDown(MouseEvent e) {
-// RAP [rh] MouseEvent#count not implemented
+// RAP [rh] MouseEvent#count not implemented				  
 //					// Workaround for bug 185817
 //					if (e.count != 2) {
 						handleMouseDown(e);
@@ -102,7 +102,7 @@ public abstract class ColumnViewer extends StructuredViewer {
 	/**
 	 * Creates the viewer editor used for editing cell contents. To be
 	 * implemented by subclasses.
-	 *
+	 * 
 	 * @return the editor, or <code>null</code> if this viewer does not support
 	 * 	editing cell contents.
 	 */
@@ -111,12 +111,12 @@ public abstract class ColumnViewer extends StructuredViewer {
 	/**
 	 * Returns the viewer cell at the given widget-relative coordinates, or
 	 * <code>null</code> if there is no cell at that location
-	 *
+	 * 
 	 * @param point
 	 * 		the widget-relative coordinates
 	 * @return the cell or <code>null</code> if no cell is found at the given
 	 *         point
-	 *
+	 *         
 	 * @since 1.1
 	 */
 	public ViewerCell getCell(Point point) {
@@ -369,7 +369,7 @@ public abstract class ColumnViewer extends StructuredViewer {
 			((CellLabelProvider) labelProvider).initialize(this, null);
 		}
 	}
-
+	
 	void internalDisposeLabelProvider(IBaseLabelProvider oldProvider) {
     	if (oldProvider instanceof CellLabelProvider) {
     		((CellLabelProvider) oldProvider).dispose(this, null);
@@ -408,7 +408,7 @@ public abstract class ColumnViewer extends StructuredViewer {
 	 *
 	 * @since 1.2
 	 */
-	protected void applyEditorValue() {
+	public void applyEditorValue() {
 		if (viewerEditor != null) {
 			viewerEditor.applyEditorValue();
 		}
@@ -457,7 +457,7 @@ public abstract class ColumnViewer extends StructuredViewer {
 	 * of editing values in a column viewer.
 	 * </p>
 	 *
-	 *
+	 * 
 	 * @return CellEditor[]
 	 * @see ViewerColumn#setEditingSupport(EditingSupport)
 	 * @see EditingSupport
@@ -705,7 +705,7 @@ public abstract class ColumnViewer extends StructuredViewer {
 	void clearLegacyEditingSetup() {
 		if (!getControl().isDisposed() && getCellEditors() != null) {
 			int count = doGetColumnCount();
-
+			
 			for( int i = 0; i < count || i == 0; i++ ) {
 				Widget owner = getColumnViewerOwner(i);
 				if( owner != null && ! owner.isDisposed() ) {
@@ -735,13 +735,13 @@ public abstract class ColumnViewer extends StructuredViewer {
 	 * if the viewer is busy. It is recommended that this method be used by
 	 * subclasses to determine whether the viewer is busy to return early from
 	 * state-changing methods.
-	 *
+	 * 
 	 * <p>
 	 * This method is not intended to be overridden by subclasses.
 	 * </p>
-	 *
+	 * 
 	 * @return <code>true</code> if the viewer is busy.
-	 *
+	 * 
 	 * @since 1.1
 	 */
 	protected boolean checkBusy() {
@@ -762,12 +762,12 @@ public abstract class ColumnViewer extends StructuredViewer {
 		}
 		return false;
 	}
-
+	
 	/**
 	 * Sets the busy state of this viewer. Subclasses MUST use <code>try</code>
 	 * ...<code>finally</code> as follows to ensure that the busy flag is reset
 	 * to its original value:
-	 *
+	 * 
 	 * <pre>
 	 * boolean oldBusy = isBusy();
 	 * setBusy(true);
@@ -777,14 +777,14 @@ public abstract class ColumnViewer extends StructuredViewer {
 	 * 	 setBusy(oldBusy);
 	 * }
 	 * </pre>
-	 *
+	 * 
 	 * <p>
 	 * This method is not intended to be overridden by subclasses.
 	 * </p>
-	 *
+	 * 
 	 * @param busy
 	 *            the new value of the busy flag
-	 *
+	 * 
 	 * @since 1.1
 	 */
 	protected void setBusy(boolean busy) {
@@ -800,13 +800,13 @@ public abstract class ColumnViewer extends StructuredViewer {
 	 * method if they can ensure by other means that they will not make
 	 * reentrant calls to methods like the ones listed above. See bug 184991 for
 	 * background discussion.
-	 *
+	 * 
 	 * <p>
 	 * This method is not intended to be overridden by subclasses.
 	 * </p>
-	 *
+	 * 
 	 * @return Returns whether this viewer is busy.
-	 *
+	 * 
 	 * @since 1.1
 	 */
 	public boolean isBusy() {

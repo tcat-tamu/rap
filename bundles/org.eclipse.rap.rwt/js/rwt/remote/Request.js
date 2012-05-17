@@ -24,6 +24,10 @@ rwt.remote.Request = function( url, method, responseType ) {
   this._data = null;
   this._responseType = responseType;
   this._request = rwt.remote.Request.createXHR();
+  //[ariddle] - added for inactive/timeout support
+  this._timeoutInterval = 0;
+  this._startTime = 0;
+  this._inactiveTimer = null;
 };
 
 rwt.remote.Request.createXHR = function() {
@@ -87,6 +91,10 @@ rwt.remote.Request.prototype = {
       return this._data;
     },
 
+    setTimeoutInterval : function( content ) {
+      this._timeoutInterval = content * 1000;
+    },
+
     _configRequest : function() {
       if( !( Client.isWebkit() || Client.isBlink() ) ) {
         this._request.setRequestHeader( "Referer", window.location.href );
@@ -95,6 +103,29 @@ rwt.remote.Request.prototype = {
       this._request.setRequestHeader( "Content-Type", contentType );
       if( this._shouldUseStateListener() ) {
         this._request.onreadystatechange = rwt.util.Functions.bind( this._onReadyStateChange, this );
+      }
+      this._handleInactiveTimer();
+    },
+    
+    //[ariddle] - added for inactive/timeout support
+    _handleInactiveTimer : function () {
+      if ( this._inactiveTimer == null ) {
+      if ( this._timeoutInterval > 0 ) {
+        this._inactiveTimer = new qx.client.Timer( this._timeoutInterval );
+        this._inactiveTimer.addEventListener( "interval",
+          function () {
+            rwt.runtime.ErrorHandler.showTimeout( this._timeoutPage );
+          },
+          this
+        );
+        this._inactiveTimer.start();
+        }
+      }
+      else {
+        this._inactiveTimer.stop();
+        if ( this._timeoutInterval > 0 ) {
+          this._inactiveTimer.startWith( this._timeoutInterval );
+        }
       }
     },
 

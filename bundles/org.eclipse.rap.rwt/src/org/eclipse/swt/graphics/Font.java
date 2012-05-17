@@ -6,8 +6,8 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *    Innoopract Informationssysteme GmbH - initial API and implementation
- *    EclipseSource - ongoing development
+ *     Innoopract Informationssysteme GmbH - initial API and implementation
+ *     EclipseSource - ongoing development
  ******************************************************************************/
 package org.eclipse.swt.graphics;
 
@@ -151,9 +151,10 @@ public class Font extends Resource {
    * </ul>
    */
   public FontData[] getFontData() {
-    if( isDisposed() ) {
-      SWT.error( SWT.ERROR_GRAPHIC_DISPOSED );
-    }
+     //[ariddle] - removed for single sourcing 
+//    if( isDisposed() ) {
+//      SWT.error( SWT.ERROR_GRAPHIC_DISPOSED );
+//    }
     FontData fontData = new FontData( internalFontData.getName(),
                                       internalFontData.getHeight(),
                                       internalFontData.getStyle() );

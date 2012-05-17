@@ -98,7 +98,14 @@ public class TextSizeUtil {
     if( result == null ) {
       result = estimate( font, string, normalizedWrapWidth, mode );
       if( !isTemporaryResize() ) {
-        addItemToMeasure( font, string, normalizedWrapWidth, mode );
+        //[ariddle] - added exception handling for browser address bar refresh case where
+        //exception is thrown
+        try {
+          addItemToMeasure( font, string, normalizedWrapWidth, mode );
+        }
+        catch (UnsupportedOperationException uoe) {
+          //ignore because it could be thrown due to bad request
+        }
       }
     }
 

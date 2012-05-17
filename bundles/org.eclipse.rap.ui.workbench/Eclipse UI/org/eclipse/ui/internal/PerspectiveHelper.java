@@ -88,7 +88,7 @@ public class PerspectiveHelper {
      */
     private Map boundsMap = new HashMap();
 
-    private boolean detachable = true;
+    private boolean detachable = false;
 
     protected boolean active = false;
 

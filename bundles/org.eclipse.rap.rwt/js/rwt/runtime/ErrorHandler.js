@@ -67,6 +67,9 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
       if( errorType !== "connection error" ) {
         this._unloadAllIframes();
       }
+      //Assume it is a url;
+      if ( content.indexOf( "<html" ) > -1 ) {
+      
       this._overlay = this._createOverlay();
       this._box = this._createErrorBoxArea( 450, 150 );
       this._box.style.padding = "0px";
@@ -85,6 +88,12 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
       if( hyperlink ) {
         this._styleHyperlinkAsButton( hyperlink );
         hyperlink.focus();
+      }
+      }
+      else {
+        //[ariddle] - HACK for IE: clear exit confirmation
+        rwt.widgets.Display.getCurrent().setExitConfirmation(null);
+        window.location.href = content;
       }
     },
 

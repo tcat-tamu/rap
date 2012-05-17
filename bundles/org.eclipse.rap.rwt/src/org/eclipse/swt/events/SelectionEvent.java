@@ -113,7 +113,7 @@ public class SelectionEvent extends TypedEvent {
    * </ul></p>
    */
   public int detail;
-
+  
   //[ariddle] - added for single sourcing
   public int time;
 

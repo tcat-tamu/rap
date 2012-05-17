@@ -21,6 +21,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Display", {
     "exitConfirmation",
     "mnemonicActivator",
     "focusControl",
+    "timeoutInterval",
     "enableUiTests",
     "activeKeys",
     "cancelKeys",

@@ -21,10 +21,12 @@ import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.handleOperation
 import static org.eclipse.rap.rwt.internal.protocol.RemoteObjectFactory.getRemoteObject;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.List;
 
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
+import org.eclipse.rap.rwt.internal.RWTMessages;
 import org.eclipse.rap.rwt.internal.lifecycle.DisposedWidgets;
 import org.eclipse.rap.rwt.internal.lifecycle.UITestUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.RemoteAdapter;
@@ -53,6 +55,8 @@ public class DisplayLCA {
   static final String PROP_GENERATE_METRICS = "generateMetrics";
   static final String PROP_FOCUS_CONTROL = "focusControl";
   static final String PROP_EXIT_CONFIRMATION = "exitConfirmation";
+  static final String PROP_TIMEOUT_PAGE = "timeoutPage";
+  static final String PROP_TIMEOUT_INTERVAL = "timeoutInterval";
   private static final String METHOD_BEEP = "beep";
   private static final String PROP_RESIZE_LISTENER = "listener_Resize";
 
@@ -68,6 +72,9 @@ public class DisplayLCA {
   public void preserveValues( Display display ) {
     RemoteAdapter adapter = getAdapter( display );
     adapter.preserve( PROP_FOCUS_CONTROL, display.getFocusControl() );
+    adapter.preserve( PROP_TIMEOUT_PAGE, getTimeoutPage( display ) );
+    int maxInactiveInterval = RWT.getRequest().getSession().getMaxInactiveInterval();
+    adapter.preserve( PROP_TIMEOUT_INTERVAL, Integer.valueOf( maxInactiveInterval ) );
     adapter.preserve( PROP_EXIT_CONFIRMATION, getExitConfirmation() );
     adapter.preserve( PROP_RESIZE_LISTENER, Boolean.valueOf( hasResizeListener( display ) ) );
     ActiveKeysUtil.preserveActiveKeys( display );
@@ -89,6 +96,8 @@ public class DisplayLCA {
   public void render( Display display ) throws IOException {
     //[ariddle] - added to support metrics gathering
     renderMetricsEnablement( display );
+    //[ariddle] - added to support metrics gathering
+    renderMetricsEnablement( display );
     renderExitConfirmation( display );
     renderEnableUiTests( display );
     renderShells( display );
@@ -106,6 +115,17 @@ public class DisplayLCA {
     markInitialized( display );
   }
 
+  //[ariddle] - added to support metrics gathering
+  private static void renderMetricsEnablement( Display display ) {
+//    Boolean metricsEnabled = Boolean.valueOf( RWTRequestVersionControl.getInstance().isGenerateMetrics() );
+//    IWidgetAdapter adapter = DisplayUtil.getAdapter( display );
+//    Object oldMetricsEnabled = adapter.getPreserved( PROP_GENERATE_METRICS );
+//    if( !metricsEnabled.equals( oldMetricsEnabled ) ) {
+//      IClientObject clientObject = ClientObjectFactory.getClientObject( display );
+//      clientObject.set( PROP_GENERATE_METRICS, metricsEnabled );
+//    }
+  }
+  
   //[ariddle] - added to support metrics gathering
   private static void renderMetricsEnablement( Display display ) {
 //    Boolean metricsEnabled = Boolean.valueOf( RWTRequestVersionControl.getInstance().isGenerateMetrics() );
@@ -160,6 +180,26 @@ public class DisplayLCA {
       WidgetTreeVisitor.accept( shell, visitor );
       visitor.reThrowProblem();
     }
+  }
+
+  private static String getTimeoutPage(Display display) {
+    String timeoutPage = (String) display.getData( "org.eclipse.rap.rwt."+PROP_TIMEOUT_PAGE );
+    if ( timeoutPage == null ) {
+      String timeoutTitle = RWTMessages.getMessage( "RWT_SessionTimeoutPageTitle" );
+      String timeoutHeadline = RWTMessages.getMessage( "RWT_SessionTimeoutPageHeadline" );
+      String pattern = RWTMessages.getMessage( "RWT_SessionTimeoutPageMessage" );
+      Object[] arguments = new Object[]{ "<a {HREF_URL}>", "</a>" };
+      String timeoutMessage = MessageFormat.format( pattern, arguments );
+      // TODO Escape umlauts etc
+      timeoutPage = "<html><head><title>"
+          + timeoutTitle
+          + "</title></head><body><p>"
+          + timeoutHeadline
+          + "</p><p>"
+          + timeoutMessage
+          + "</p></body></html>";
+    }
+    return timeoutPage;
   }
 
   private static void renderExitConfirmation( Display display ) {

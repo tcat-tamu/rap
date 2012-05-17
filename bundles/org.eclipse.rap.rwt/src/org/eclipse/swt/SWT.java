@@ -4136,5 +4136,4 @@ public class SWT {
   * @see org.eclipse.swt.widgets.Event
   */
   public static final int MeasureItem = 41;
-
 }

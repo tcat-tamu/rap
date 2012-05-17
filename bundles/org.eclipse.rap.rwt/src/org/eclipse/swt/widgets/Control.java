@@ -1328,7 +1328,6 @@ public abstract class Control extends Widget implements Drawable {
    */
   public void setLayoutData( Object layoutData ) {
     checkWidget();
-    //this.layoutData = layoutData;
     //[ariddle] - added to notify of incorrect layout assumptions
     try {
       if (parent != null) {

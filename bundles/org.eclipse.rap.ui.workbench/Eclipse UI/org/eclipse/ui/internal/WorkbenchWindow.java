@@ -942,9 +942,8 @@ public class WorkbenchWindow extends ApplicationWindow implements
 		super.configureShell(shell);
 
 		//[ariddle] - added for view dragging
-//        detachedWindowShells = new ShellPool(shell, SWT.TOOL | SWT.TITLE
-//              | SWT.MAX | SWT.RESIZE | getDefaultOrientation());
-        detachedWindowShells = new ShellPool(shell, SWT.NO_TRIM | getDefaultOrientation());
+        detachedWindowShells = new ShellPool(shell, SWT.TOOL | SWT.TITLE
+              | SWT.MAX | SWT.RESIZE | getDefaultOrientation());
 
 		String title = getWindowConfigurer().basicGetTitle();
 		if (title != null) {

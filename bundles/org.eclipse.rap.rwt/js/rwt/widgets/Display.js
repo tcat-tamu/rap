@@ -95,6 +95,10 @@ rwt.widgets.Display.prototype = {
     rwt.widgets.util.MnemonicHandler.getInstance().setActivator( value );
   },
 
+  setTimeoutInterval : function( content ) {
+    rwt.remote.Request.getInstance().setTimeoutInterval( content );
+  },
+
   setEnableUiTests : function( value ) {
     rwt.widgets.base.Widget._renderHtmlIds = value;
   },

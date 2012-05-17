@@ -38,8 +38,9 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRowContainer", {
     this._hoverItem = null;
     this._hoverTargetType = [];
     this._config = rwt.widgets.base.GridRowContainer.createRenderConfig();
-    this.addEventListener( "elementOver", this._onElementOver, this );
-    this.addEventListener( "elementOut", this._onElementOut, this );
+    //[ariddle] - removed tree hover
+    //this.addEventListener( "elementOver", this._onElementOver, this );
+    //this.addEventListener( "elementOut", this._onElementOut, this );
   },
 
   destruct : function() {
