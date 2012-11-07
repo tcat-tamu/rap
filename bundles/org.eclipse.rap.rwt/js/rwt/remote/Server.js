@@ -31,7 +31,13 @@ qx.Class.define( "rwt.remote.Server", {
     this._writer = null;
     this._event = null;
     this._requestCounter = null;
-    this._sendTimer = new Timer( 60 );
+    //[ariddle] - added to support metrics gathering
+    this._generateMetrics = false;
+    this._parseDuration = -1;
+    this._processDuration = -1;
+    //[ariddle] - changed for performance increase
+    //this._sendTimer = new Timer( 60 );
+    this._sendTimer = new Timer( 0 );
     this._sendTimer.addEventListener( "interval", function() {
       this.sendImmediate( true );
      }, this );
@@ -75,6 +81,32 @@ qx.Class.define( "rwt.remote.Server", {
       return this._requestCounter;
     },
 
+    //[ariddle] - BEGIN added to support metrics gathering
+    setGenerateMetrics : function( generateMetrics ) {
+      this._generateMetrics = generateMetrics;
+    },
+
+    getGenerateMetrics : function() {
+      return this._generateMetrics;
+    },
+
+    setParseDuration : function( parseDuration ) {
+      this._parseDuration = parseDuration;
+    },
+
+    getParseDuration : function() {
+      return this._parseDuration;
+    },
+
+    setProcessDuration : function( processDuration ) {
+      this._processDuration = processDuration;
+    },
+
+    getProcessDuration : function() {
+      return this._processDuration;
+    },
+    //[ariddle] - END added to support metrics gathering
+    
     /**
      * Adds a request parameter to the next request with the given name and value
      */
@@ -144,6 +176,11 @@ qx.Class.define( "rwt.remote.Server", {
         if( this._requestCounter != null ) {
           this.getMessageWriter().appendHead( "requestCounter", this._requestCounter );
         }
+        //[ariddle] - TODO: needs to be reimplemented for 2.0 architecture
+        //if ( this._generateMetrics ) {
+        //  this._parameters[ "parseDuration" ] = this._parseDuration;
+        //  this._parameters[ "processDuration" ] = this._processDuration;
+        //}
         this._requestCounter = -1;
         var request = this._createRequest();
         request.setAsynchronous( async );
@@ -217,8 +254,23 @@ qx.Class.define( "rwt.remote.Server", {
       try {
         var messageObject = JSON.parse( event.responseText );
         org.eclipse.swt.EventUtil.setSuspended( true );
+        //[ariddle] - added to support metrics gathering
+        if ( this._generateMetrics ) {
+          this._parseDuration = new Date().getTime();
+        }
+        //[ariddle] - added to support metrics gathering
+        if ( this._generateMetrics ) {
+          this._parseDuration = new Date().getTime()-this._parseDuration;
+          this._processDuration = new Date().getTime();
+        }
+        
         Processor.processMessage( messageObject );
         Widget.flushGlobalQueues();
+        //[ariddle] - added to support metrics gathering
+        if ( this._generateMetrics ) {
+          if ( this._processDuration > 0 )
+            this._processDuration = new Date().getTime()-this._processDuration;
+        }
         EventUtil.setSuspended( false );
         UICallBack.getInstance().sendUICallBackRequest();
         this.dispatchSimpleEvent( "received" );
