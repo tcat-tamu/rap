@@ -140,8 +140,13 @@ rwt.qx.Class.define( "rwt.widgets.ScrolledComposite", {
     },
 
     _onChangeFocusedChild : function( evt ) {
-      var focusedChild = evt.getValue();
-      this.setBlockScrolling( !this._showFocusedControl && focusedChild !== this );
+      //[ariddle] - added parent check because _hasParent may not be set by now. - for RAP Help implementation
+      if ( this.getParent() != null ) {
+        var focusedChild = evt.getValue();
+        this.setBlockScrolling( !this._showFocusedControl && focusedChild !== this );
+      }
+      //var focusedChild = evt.getValue();
+      //this.setBlockScrolling( !this._showFocusedControl && focusedChild !== this );
     }
 
   }
