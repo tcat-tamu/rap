@@ -42,6 +42,10 @@ public class Decorations extends Canvas {
   Decorations( Composite parent ) {
     // prevent instantiation from outside this package
     super( parent );
+    //[ariddle] - added for context issue fix
+    if (this.display == null) {
+      this.display = Display.getCurrent();
+    }
     images = new Image[0];
     text = "";
   }
