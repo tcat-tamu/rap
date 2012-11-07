@@ -109,6 +109,9 @@ public class SelectionEvent extends TypedEvent {
    */
   public int detail;
 
+  //[ariddle] - added for single sourcing
+  public int time;
+
   /**
    * Constructs a new instance of this class based on the
    * information in the given untyped event.

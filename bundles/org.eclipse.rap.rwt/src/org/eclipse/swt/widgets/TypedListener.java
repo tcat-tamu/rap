@@ -15,9 +15,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.internal.SWTEventListener;
 
-/**	 
+/**
  * Instances of this class are <em>internal SWT implementation</em>
- * objects which provide a mapping between the typed and untyped 
+ * objects which provide a mapping between the typed and untyped
  * listener mechanisms that SWT supports.
  * <p>
  * <b>IMPORTANT:</b> This class is <em>not</em> part of the SWT
@@ -96,7 +96,7 @@ public void handleEvent (Event e) {
 			if (eventListener instanceof TreeListener) {
 				((TreeListener) eventListener).treeCollapsed(new TreeEvent(e));
 			} else {
-				((ExpandListener) eventListener).itemCollapsed(new ExpandEvent(e));	
+				((ExpandListener) eventListener).itemCollapsed(new ExpandEvent(e));
 			}
 			break;
 		}
@@ -124,7 +124,7 @@ public void handleEvent (Event e) {
 			if (eventListener instanceof TreeListener) {
 				((TreeListener) eventListener).treeExpanded(new TreeEvent(e));
 			} else {
-				((ExpandListener) eventListener).itemExpanded(new ExpandEvent(e));	
+				((ExpandListener) eventListener).itemExpanded(new ExpandEvent(e));
 			}
 			break;
 		}
@@ -198,10 +198,11 @@ public void handleEvent (Event e) {
 //			((MouseMoveListener) eventListener).mouseMove(new MouseEvent(e));
 //			return;
 //		}
-//		case SWT.MouseWheel: {
-//			((MouseWheelListener) eventListener).mouseScrolled(new MouseEvent(e));
-//			return;
-//		}
+		// [ariddle] - add mouse wheel support
+		case SWT.MouseWheel: {
+			((MouseWheelListener) eventListener).mouseScrolled(new MouseEvent(e));
+			return;
+		}
 		case SWT.MouseUp: {
 			((MouseListener) eventListener).mouseUp(new MouseEvent(e));
 			break;
@@ -224,7 +225,7 @@ public void handleEvent (Event e) {
 		case SWT.Selection: {
 			/* Fields set by Sash */
 			SelectionEvent event = new SelectionEvent (e);
-			((SelectionListener) eventListener).widgetSelected (event);			
+			((SelectionListener) eventListener).widgetSelected (event);
 			e.x = event.x;
 			e.y = event.y;
 			e.doit = event.doit;

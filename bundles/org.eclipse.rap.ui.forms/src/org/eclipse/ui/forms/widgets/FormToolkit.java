@@ -788,13 +788,14 @@ public class FormToolkit {
 //	 *            the parent that owns the children for which the border needs
 //	 *            to be painted.
 //	 */
-//	public void paintBordersFor(Composite parent) {
+	//[ariddle] - added for single sourcing
+	public void paintBordersFor(Composite parent) {
 //		// if (borderStyle == SWT.BORDER)
 //		// return;
 //		if (borderPainter == null)
 //			borderPainter = new BorderPainter();
 //		parent.addPaintListener(borderPainter);
-//	}
+	}
 
 	/**
 	 * Returns the colors used by this toolkit.

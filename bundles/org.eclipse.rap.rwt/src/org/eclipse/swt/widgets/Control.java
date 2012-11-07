@@ -11,6 +11,9 @@
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.rap.rwt.theme.IControlThemeAdapter;
 import org.eclipse.swt.SWT;
@@ -26,6 +29,9 @@ import org.eclipse.swt.events.HelpListener;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseMoveListener;
+import org.eclipse.swt.events.MouseTrackListener;
+import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.TouchListener;
 import org.eclipse.swt.events.TraverseListener;
@@ -33,12 +39,15 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.widgets.ControlHolder;
 import org.eclipse.swt.internal.widgets.IControlAdapter;
 import org.eclipse.swt.internal.widgets.IDisplayAdapter;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
 
 
 /**
@@ -129,6 +138,9 @@ public abstract class Control extends Widget implements Drawable {
   private Font font;
   private Cursor cursor;
   private Rectangle bufferedPadding;
+  //[ariddle] - added for single sourcing
+  private transient java.util.List paintListeners;
+  
   private transient Accessible accessible;
   private boolean packed;
 
@@ -1274,7 +1286,21 @@ public abstract class Control extends Widget implements Drawable {
    */
   public void setLayoutData( Object layoutData ) {
     checkWidget();
-    this.layoutData = layoutData;
+    //this.layoutData = layoutData;
+    //[ariddle] - added to notify of bad layout assumptions
+    try {
+      if (parent != null) {
+        Layout layout = parent.getLayout();
+        if (!(this instanceof Shell) && layoutData instanceof GridData && layout instanceof FillLayout) {
+          throw new IllegalArgumentException("Setting a GridData for a FillLayout is not allowed: Control Type="+this.getName());
+        }
+      }
+      this.layoutData = layoutData;
+    }
+    catch (IllegalArgumentException iae) {
+      System.err.println(iae.getMessage());
+      iae.printStackTrace();
+    }
   }
 
   void markLayout( boolean changed, boolean all ) {
@@ -2414,11 +2440,36 @@ public abstract class Control extends Widget implements Drawable {
     if( !oldSize.equals( getSize() ) ) {
       notifyListeners( SWT.Resize, new Event() );
     }
+    //[ariddle] - added to emulate behavior of paint listener
+    notifyPaintListeners();
   }
 
   void notifyMove( Point oldLocation ) {
     if( !oldLocation.equals( getLocation() ) ) {
       notifyListeners( SWT.Move, new Event() );
+    }
+    //[ariddle] - added to emulate behavior of paint listener
+    notifyPaintListeners();
+  }
+  
+  //[ariddle] - added to emulate behavior of paint listener
+  private void notifyPaintListeners () {
+    if (paintListeners != null) {
+      Event e = new Event();
+      e.widget = this;
+      e.gc = new GC(this);
+      e.height = this.getSize().y;
+      e.width = this.getSize().x;
+      e.x = this.getLocation().x;
+      e.y = this.getLocation().y;
+      e.data = this.getData();
+      for (int i = 0; i < paintListeners.size(); i++) {
+        try {
+          ( ( PaintListener )paintListeners.get( i ) ).paintControl( new PaintEvent( e ) );
+        } catch( Exception ex ) {
+          ex.printStackTrace();
+        }
+      }
     }
   }
 
@@ -2526,5 +2577,33 @@ public abstract class Control extends Widget implements Drawable {
     if( menu != null ) {
       menu.removeDisposeListener( menuDisposeListener );
     }
+  }
+  
+  //[ariddle] - added for single sourcing
+  public void addPaintListener( PaintListener paintListener ) {
+    if (paintListeners == null) {
+      paintListeners = Collections.synchronizedList(new ArrayList());
+    }
+    if (!paintListeners.contains( paintListener )) {
+      paintListeners.add(paintListener);
+    }
+  }
+  
+  public void removePaintListener( PaintListener paintListener ) {
+    if (paintListeners != null) {
+      paintListeners.remove( paintListener );
+    }
+  }
+  
+  public void addMouseTrackListener( MouseTrackListener listener ) {
+  }
+  
+  public void addMouseMoveListener( MouseMoveListener listener) {
+  }
+  
+  public void removeMouseTrackListener( MouseTrackListener listener ) {
+  }
+  
+  public void removeMouseMoveListener( MouseMoveListener listener) {
   }
 }

@@ -50,7 +50,7 @@ public final class Font extends Resource {
    * 
    * <p><strong>Note</strong>, this constructor is provided for convenience when
    * single-sourcing code with SWT. For RWT, the recommended way to create fonts
-   * is to use one of the <code>getFont</code> methods in class 
+   * is to use one of the <code>getFont</code> methods in class
    * <code>Graphics</code>.
    * </p>
    *
@@ -85,7 +85,7 @@ public final class Font extends Resource {
    *
    * <p><strong>Note</strong>, this constructor is provided for convenience when
    * single-sourcing code with SWT. For RWT, the recommended way to create fonts
-   * is to use one of the <code>getFont</code> methods in class 
+   * is to use one of the <code>getFont</code> methods in class
    * <code>Graphics</code>.
    * </p>
    *
@@ -169,9 +169,10 @@ public final class Font extends Resource {
    * </ul>
    */
   public FontData[] getFontData() {
-    if( isDisposed() ) {
-      SWT.error( SWT.ERROR_GRAPHIC_DISPOSED );
-    }
+    //[ariddle] - removed for single sourcing
+//    if( isDisposed() ) {
+//      SWT.error( SWT.ERROR_GRAPHIC_DISPOSED );
+//    }
     FontData fontData = new FontData( internalFontData.getName(),
                                       internalFontData.getHeight(),
                                       internalFontData.getStyle() );
