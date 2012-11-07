@@ -65,13 +65,16 @@ public final class StylesUtil {
 
   private static List<String> findContainedStyles( int styles, String... allowedStyles ) {
     List<String> containedStyles = new ArrayList<>();
-    for( String allowedStyle : allowedStyles ) {
-      Integer object = availableStyles.get( allowedStyle );
-      if( object == null ) {
-        throw new IllegalArgumentException( allowedStyle + " is not an existing SWT style" );
-      }
-      if( ( styles & object.intValue() ) != 0 ) {
-        containedStyles.add( allowedStyle );
+    //[ariddle] - check related to protocol migration
+    if (allowedStyles != null) {
+      for( String allowedStyle : allowedStyles ) {
+        Integer object = availableStyles.get( allowedStyle );
+        if( object == null ) {
+          throw new IllegalArgumentException( allowedStyle + " is not an existing SWT style" );
+        }
+        if( ( styles & object.intValue() ) != 0 ) {
+          containedStyles.add( allowedStyle );
+        }
       }
     }
     return containedStyles;
