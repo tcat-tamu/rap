@@ -15,6 +15,8 @@ import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicatio
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.eclipse.rap.rwt.internal.lifecycle.ProcessActionRunner;
 import org.eclipse.rap.rwt.internal.lifecycle.SimpleLifeCycle;
@@ -60,6 +62,7 @@ import org.eclipse.swt.widgets.TypedListener;
  */
 // TODO [rh] implement refresh method
 // TODO [rh] bring focus events to work
+// [tcat] - Change browser to prevent hangs due to concurrent/stacked-up requests
 public class Browser extends Composite {
 
   private static final String FUNCTIONS_TO_CREATE
@@ -72,11 +75,12 @@ public class Browser extends Composite {
   private String url;
   private String html;
   private boolean urlChanged;
-  private String executeScript;
-  private Boolean executeResult;
-  private boolean executePending;
-  private Object evaluateResult;
-  private BrowserCallback browserCallback;
+  private final Queue<BrowserScript> executeQueue;
+//  private String executeScript;
+//  private Boolean executeResult;
+//  private boolean executePending;
+//  private Object evaluateResult;
+//  private BrowserCallback browserCallback;
   private transient IBrowserAdapter browserAdapter;
   private final List<BrowserFunction> functions;
 
@@ -115,6 +119,7 @@ public class Browser extends Composite {
     }
     html = "";
     url = "";
+    executeQueue = new ConcurrentLinkedQueue<BrowserScript>();
     functions = new ArrayList<>();
     addDisposeListener( new BrowserDisposeListener() );
   }
@@ -209,6 +214,25 @@ public class Browser extends Composite {
     return result;
   }
 
+  protected BrowserScript internalExecute( String script, BrowserCallback callback ) {
+    checkWidget();
+    if( script == null ) {
+      SWT.error( SWT.ERROR_NULL_ARGUMENT );
+    }
+    BrowserScript browserScript = new BrowserScript( prepareScript( script ), callback );
+    executeQueue.add( browserScript );
+    if( callback == null ) {
+      while( browserScript.executeResult == null ) {
+        Display display = getDisplay();
+        if( !display.readAndDispatch() ) {
+          System.out.println( "Sleeping in Browser#execute()" );
+          display.sleep();
+        }
+      }
+    }
+    return browserScript;
+  }
+  
   /**
    * Execute the specified script.
    *
@@ -257,20 +281,22 @@ public class Browser extends Composite {
     if( script == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
-    if( executeScript != null ) {
-      throw new IllegalStateException( "Another script is already pending" );
-    }
-    executeScript = script;
-    executeResult = null;
-    while( executeResult == null ) {
-      Display display = getDisplay();
-      if( !display.readAndDispatch() )  {
-        display.sleep();
-      }
-    }
-    executeScript = null;
-    executePending = false;
-    return executeResult.booleanValue();
+    //if( executeScript != null ) {
+    //  throw new IllegalStateException( "Another script is already pending" );
+    //}
+    //executeScript = script;
+    //executeResult = null;
+    //while( executeResult == null ) {
+    //  Display display = getDisplay();
+    //  if( !display.readAndDispatch() )  {
+    //    display.sleep();
+    //  }
+    //}
+    //executeScript = null;
+    //executePending = false;
+    //return executeResult.booleanValue();
+    BrowserScript browserScript = internalExecute( script, null );
+    return browserScript.executeResult.booleanValue();
   }
 
   /**
@@ -340,11 +366,34 @@ public class Browser extends Composite {
     if( script == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
-    boolean success = execute( prepareScript( script ) );
-    if( !success ) {
+    //boolean success = execute( prepareScript( script ) );
+    //if( !success ) {
+    //  throw createException();
+    //}
+    //return evaluateResult;
+    BrowserScript browserScript = internalExecute( script, null );
+    if (!browserScript.executeResult.booleanValue() ) {
       throw createException();
     }
-    return evaluateResult;
+    return browserScript.evaluateResult;
+  }
+  
+  /**
+   * Returns the type of native browser being used by this instance.
+   * Examples: "ie", "mozilla", "voyager", "webkit"
+   *
+   * @return the type of the native browser
+   * 
+   * @since 3.5
+   */
+  // [pb] added to support single-sourcing
+  public String getBrowserType () {
+      checkWidget();
+      if ((getStyle() & SWT.WEBKIT) != 0)
+        return "webkit";
+      if ((getStyle() & SWT.MOZILLA) != 0)
+        return "mozilla";
+      throw new IllegalStateException("Unknown browser type");
   }
 
   /**
@@ -539,10 +588,16 @@ public class Browser extends Composite {
   }
 
   private void onDispose() {
-    executeResult = Boolean.FALSE;
-    evaluateResult = null;
-    executeScript = null;
-    executePending = false;
+    //executeResult = Boolean.FALSE;
+    //evaluateResult = null;
+    //executeScript = null;
+    //executePending = false;
+    BrowserScript browserScript = executeQueue.peek();
+    if( browserScript != null ) {
+      IBrowserAdapter adapter = getAdapter( IBrowserAdapter.class );
+      adapter.setExecuteResult( false, null );
+    }
+    executeQueue.clear();
   }
 
   //////////////////
@@ -573,34 +628,35 @@ public class Browser extends Composite {
     return buffer.toString();
   }
 
-  private void setExecuteResult( final boolean success, final Object result ) {
-    ProcessActionRunner.add( new Runnable() {
-      @Override
-      public void run() {
-        executeResult = Boolean.valueOf( success );
-        evaluateResult = result;
-        if( browserCallback != null ) {
-          if( success ) {
-            browserCallback.evaluationSucceeded( result );
-          } else {
-            browserCallback.evaluationFailed( createException() );
-          }
-          browserCallback = null;
-          executeScript = null;
-          executePending = false;
-        }
-      }
-    } );
-  }
+//  private void setExecuteResult( final boolean success, final Object result ) {
+//    ProcessActionRunner.add( new Runnable() {
+//      @Override
+//      public void run() {
+//        executeResult = Boolean.valueOf( success );
+//        evaluateResult = result;
+//        if( browserCallback != null ) {
+//          if( success ) {
+//            browserCallback.evaluationSucceeded( result );
+//          } else {
+//            browserCallback.evaluationFailed( createException() );
+//          }
+//          browserCallback = null;
+//          executeScript = null;
+//          executePending = false;
+//        }
+//      }
+//    } );
+//  }
 
   private void evaluateNonBlocking( String script, BrowserCallback browserCallback ) {
     checkWidget();
-    if( executeScript != null ) {
-      throw new IllegalStateException( "Another script is already pending" );
+    //if( executeScript != null ) {
+    //  throw new IllegalStateException( "Another script is already pending" );
+    //}
+    //this.browserCallback = browserCallback;
+    //executeScript = prepareScript( script );
+    internalExecute( script, browserCallback );
     }
-    this.browserCallback = browserCallback;
-    executeScript = prepareScript( script );
-  }
 
   private static SWTException createException() {
     // TODO: Get the error message from the client
@@ -626,24 +682,38 @@ public class Browser extends Composite {
     }
 
     @Override
-    public String getExecuteScript() {
-      return executeScript;
+    //public String getExecuteScript() {
+    //  return executeScript;
+    //}
+    public IBrowserAdapter.IBrowserScript getExecuteScript() {
+      return executeQueue.peek();
     }
 
     @Override
     public void setExecuteResult( boolean success, Object result ) {
-      Browser.this.setExecuteResult( success, result );
+      BrowserScript script = executeQueue.poll();
+      // check to make sure script exists in case the Browser was disposed
+      if( script != null ) {
+        script.executeResult = Boolean.valueOf( success );
+        script.evaluateResult = result;
+        script.executePending = false;
+        if( script.callback != null ) {
+          if ( success ) {
+            script.callback.evaluationSucceeded( result );
+          } else {
+            script.callback.evaluationFailed( createException() );
+          }
     }
 
-    @Override
-    public void setExecutePending( boolean executePending ) {
-      Browser.this.executePending = executePending;
-    }
+//    @Override
+//    public void setExecutePending( boolean executePending ) {
+//      Browser.this.executePending = executePending;
+//    }
 
-    @Override
-    public boolean getExecutePending() {
-      return executePending;
-    }
+//    @Override
+//    public boolean getExecutePending() {
+//      return executePending;
+//    }
 
     @Override
     public BrowserFunction[] getBrowserFunctions() {
@@ -705,4 +775,29 @@ public class Browser extends Composite {
     }
   }
 
+  private static final class BrowserScript implements IBrowserAdapter.IBrowserScript {
+
+    boolean executePending;
+    String executeScript;
+    Boolean executeResult;
+    Object evaluateResult;
+    BrowserCallback callback;
+
+    public BrowserScript( String script, BrowserCallback callback ) {
+      executeScript = script;
+      this.callback = callback;
+    }
+
+    public String getScript() {
+      return executeScript;
+    }
+
+    public void setExecutePending( boolean pending ) {
+      executePending = pending;
+    }
+
+    public boolean getExecutePending() {
+      return executePending;
+    }
+  }
 }

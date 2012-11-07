@@ -138,12 +138,23 @@ public final class BrowserLCA extends WidgetLCA<Browser> {
 
   private static void renderEvaluate( Browser browser ) {
     IBrowserAdapter adapter = browser.getAdapter( IBrowserAdapter.class );
-    final String executeScript = adapter.getExecuteScript();
-    boolean executePending = adapter.getExecutePending();
-    if( executeScript != null && !executePending ) {
-      JsonObject parameters = new JsonObject().add( PARAM_SCRIPT, executeScript );
-      getRemoteObject( browser ).call( METHOD_EVALUATE, parameters );
-      adapter.setExecutePending( true );
+    //final String executeScript = adapter.getExecuteScript();
+    //boolean executePending = adapter.getExecutePending();
+    //if( executeScript != null && !executePending ) {
+    //  JsonObject parameters = new JsonObject().add( PARAM_SCRIPT, executeScript );
+    //  getRemoteObject( browser ).call( METHOD_EVALUATE, parameters );
+    //  adapter.setExecutePending( true );
+    //}
+    
+    //[ariddle] - Change browser to prevent hangs due to concurrent/stacked-up requests
+    final IBrowserAdapter.IBrowserScript browserScript = adapter.getExecuteScript();
+    if( browserScript != null ) {
+      boolean executePending = browserScript.getExecutePending();
+      if( !executePending ) {
+        JsonObject parameters = new JsonObject().add( PARAM_SCRIPT, browserScript.getScript() );
+        getRemoteObject( browser ).call( METHOD_EVALUATE, parameters );
+        browserScript.setExecutePending( true );
+      }
     }
   }
 
