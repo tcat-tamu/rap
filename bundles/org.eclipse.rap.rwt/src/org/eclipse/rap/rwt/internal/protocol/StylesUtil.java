@@ -39,7 +39,7 @@ public final class StylesUtil {
     String styleName = constant.getName();
     try {
       constant.setAccessible( true );
-      Integer value = new Integer( constant.getInt( null ) ); // use null because we access statics 
+      Integer value = new Integer( constant.getInt( null ) ); // use null because we access statics
       availableStyles.put( styleName, value );
     } catch( Exception e ) {
       String causeMessage = "Could not initialize SWT styles map with constant " + styleName;
@@ -58,13 +58,16 @@ public final class StylesUtil {
 
   private static List<String> findContainedStyles( Widget widget, String... allowedStyles ) {
     List<String> containedStyles = new ArrayList<String>();
-    for( String allowedStyle : allowedStyles ) {
-      Integer object = availableStyles.get( allowedStyle );
-      if( object == null ) {
-        throw new IllegalArgumentException( allowedStyle + " is not an existing SWT style" );
-      }
-      if( ( widget.getStyle() & object.intValue() ) != 0 ) {
-        containedStyles.add( allowedStyle );
+    //[ariddle] - check related to protocol migration
+    if (allowedStyles != null) {
+      for( String allowedStyle : allowedStyles ) {
+        Integer object = availableStyles.get( allowedStyle );
+        if( object == null ) {
+          throw new IllegalArgumentException( allowedStyle + " is not an existing SWT style" );
+        }
+        if( ( widget.getStyle() & object.intValue() ) != 0 ) {
+          containedStyles.add( allowedStyle );
+        }
       }
     }
     return containedStyles;
