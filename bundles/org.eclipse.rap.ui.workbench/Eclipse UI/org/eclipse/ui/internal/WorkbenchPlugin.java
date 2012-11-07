@@ -385,7 +385,8 @@ public class WorkbenchPlugin extends AbstractUIPlugin {
         	operationSupport = null;
         }
         // RAP [rh] DnD not supported
-//		DragCursors.dispose();
+      //[ariddle] - added for view dragging
+		DragCursors.dispose();
 
         DEBUG = false;
          

@@ -36,6 +36,7 @@ import org.eclipse.ui.IWorkbenchPreferenceConstants;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.presentations.IPresentablePart;
 import org.eclipse.ui.presentations.IStackPresentationSite;
+import org.eclipse.ui.presentations.PresentationUtil;
 import org.eclipse.ui.presentations.StackDropResult;
 import org.eclipse.ui.presentations.StackPresentation;
 
@@ -51,7 +52,8 @@ public class NativeStackPresentation extends StackPresentation {
 	private TabFolder tabFolder;
 
     // RAP [bm]: 
-//    private Listener dragListener;
+	//[ariddle] - added for view dragging
+    private Listener dragListener;
 
 	private IPresentablePart current;
 
@@ -162,27 +164,28 @@ public class NativeStackPresentation extends StackPresentation {
 		tabFolder.addListener(SWT.MenuDetect, menuListener);
 
 		// RAP [bm] DnD
-//		dragListener = new Listener() {
-//			public void handleEvent(Event event) {
-//				// FIXME: this method needs work
-//				
-//				// Point localPos = new Point(event.x, event.y);
-//				// TabItem tabUnderPointer = tabFolder.getItem(localPos);
-//				// TabItem tabUnderPointer = null;
-//				//
-//				// if (tabUnderPointer == null) {
-//				// return;
-//				// }
-//				//
-//				// IPresentablePart part = getPartForTab(tabUnderPointer);
-//				//
-//				// if (getSite().isPartMoveable(part)) {
-//				// getSite().dragStart(part, tabFolder.toDisplay(localPos),
-//				// false);
-//				// }
-//			}
-//		};
-//		PresentationUtil.addDragListener(tabFolder, dragListener);
+		//[ariddle] - added for view dragging
+		dragListener = new Listener() {
+			public void handleEvent(Event event) {
+				// FIXME: this method needs work
+				
+				 Point localPos = new Point(event.x, event.y);
+				 TabItem tabUnderPointer = tabFolder.getItem(localPos);
+//				 TabItem tabUnderPointer = null;
+				
+//				 if (tabUnderPointer == null) {
+//				 return;
+//				 }
+				
+				 IPresentablePart part = getPartForTab(tabUnderPointer);
+				
+				 if (getSite().isPartMoveable(part)) {
+				 getSite().dragStart(part, tabFolder.toDisplay(localPos),
+				 false);
+				 }
+			}
+		};
+		PresentationUtil.addDragListener(tabFolder, dragListener);
 
 	}
 
@@ -293,8 +296,9 @@ public class NativeStackPresentation extends StackPresentation {
         if (isDisposed()) {
             return;
         }
-        // RAP [bm]: 
-//        PresentationUtil.removeDragListener(tabFolder, dragListener);
+        // RAP [bm]:
+      //[ariddle] - added for view dragging
+        PresentationUtil.removeDragListener(tabFolder, dragListener);
 
 		// systemMenuManager.dispose();
 

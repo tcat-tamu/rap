@@ -37,6 +37,7 @@ import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
@@ -62,6 +63,10 @@ import org.eclipse.ui.PerspectiveAdapter;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.internal.StartupThreading.StartupRunnable;
+import org.eclipse.ui.internal.dnd.AbstractDropTarget;
+import org.eclipse.ui.internal.dnd.DragUtil;
+import org.eclipse.ui.internal.dnd.IDragOverListener;
+import org.eclipse.ui.internal.dnd.IDropTarget;
 import org.eclipse.ui.internal.layout.CacheWrapper;
 import org.eclipse.ui.internal.layout.CellLayout;
 import org.eclipse.ui.internal.layout.ITrimManager;
@@ -69,6 +74,7 @@ import org.eclipse.ui.internal.layout.IWindowTrim;
 import org.eclipse.ui.internal.layout.LayoutUtil;
 import org.eclipse.ui.internal.layout.Row;
 import org.eclipse.ui.internal.util.PrefUtil;
+import org.eclipse.ui.presentations.PresentationUtil;
 
 /**
  * A utility class to manage the perspective switcher.  At some point, it might be nice to
@@ -190,12 +196,14 @@ public class PerspectiveSwitcher implements IWindowTrim {
 	private Listener dragListener;
 
 	// RAP [bm]: DnD
-//	private IDragOverListener dragTarget;
+	//[ariddle] - added for view dragging
+	private IDragOverListener dragTarget;
 
 	private DisposeListener toolBarListener;
 
-	// RAP [bm]: 
-//	private IReorderListener reorderListener;
+	// RAP [bm]:
+	//[ariddle] - added for view dragging
+	private IReorderListener reorderListener;
 
 	/**
      * Creates an instance of the perspective switcher.
@@ -357,7 +365,11 @@ public class PerspectiveSwitcher implements IWindowTrim {
 			topBar.setBottom(null);
 			topBar.setRight(null);
 			LayoutUtil.resize(topBar);
-			getTrimManager().addTrim(SWT.LEFT, this);
+			//[ariddle] - added for view dragging
+         ITrimManager trimManager = getTrimManager();
+         if (trimManager != null) {
+			   trimManager.addTrim(SWT.LEFT, this);
+			}
 			break;
 		default:
 			return;
@@ -532,7 +544,11 @@ public class PerspectiveSwitcher implements IWindowTrim {
 		// otherwise dispose the current controls and make new ones
 		
 		// First, make sure that the existing verion is removed from the trim layout
-		getTrimManager().removeTrim(this);
+		//[ariddle] - added for view dragging
+		ITrimManager trimManager = getTrimManager();
+		if (trimManager != null) {
+		   trimManager.removeTrim(this);
+		}
 
 		disposeChildControls();
 		if (newLocation == LEFT) {
@@ -558,9 +574,10 @@ public class PerspectiveSwitcher implements IWindowTrim {
 			return;
 		}
 		// RAP [bm]: 
-//		PresentationUtil.removeDragListener(bar, dragListener);
-//		DragUtil.removeDragTarget(perspectiveBar.getControl(), dragTarget);
-//		dragTarget = null;
+		//[ariddle] - added for view dragging
+		PresentationUtil.removeDragListener(bar, dragListener);
+		DragUtil.removeDragTarget(perspectiveBar.getControl(), dragTarget);
+		dragTarget = null;
 		// RAPEND: [bm] 
 
 		dragListener = null;
@@ -572,156 +589,157 @@ public class PerspectiveSwitcher implements IWindowTrim {
 	 */
 	 private void hookDragSupport() {
 		 // RAP [bm]: Dnd
-//        dragListener = new Listener() {
-//        	/* (non-Javadoc)
-//			 * @see org.eclipse.swt.widgets.Listener#handleEvent(org.eclipse.swt.widgets.Event)
-//			 */
-//			public void handleEvent(Event event) {
-//				ToolBar toolbar = perspectiveBar.getControl();
-//                ToolItem item = toolbar.getItem(new Point(event.x, event.y));
-//                
-//                if (item != null) {
-//                	//ignore the first item, which remains in position Zero
-//                    if (item.getData() instanceof PerspectiveBarNewContributionItem) {
-//						return;
-//					}
-//                    
-//                	Rectangle bounds = item.getBounds();
-//                	Rectangle parentBounds = toolbar.getBounds();
-//                	bounds.x += parentBounds.x;
-//                	bounds.y += parentBounds.y;
-//                	startDragging(item.getData(), toolbar.getDisplay().map(toolbar, null, bounds));
-//                } else { 
-//                    //startDragging(toolbar, toolbar.getDisplay().map(toolbar, null, toolbar.getBounds()));
-//                }
-//            }
-//			
-//			private void startDragging(Object widget, Rectangle bounds) {
-//				if(!DragUtil.performDrag(widget, bounds, new Point(bounds.x, bounds.y), true)) {
-//				       //currently do nothing on a failed drag 
-//                }
-//		    }
-//        };
-//
-//		dragTarget = new IDragOverListener() {
-//			protected PerspectiveDropTarget perspectiveDropTarget;
-//
-//			class PerspectiveDropTarget extends AbstractDropTarget {
-//
-//				private PerspectiveBarContributionItem perspective;
-//
-//				private Point location;
-//
-//                /**
-//				 * @param location
-//				 * @param draggedObject
-//				 */
-//				public PerspectiveDropTarget(Object draggedObject,
-//						Point location) {
-//					update(draggedObject, location);
-//				}
-//
-//				/**
-//				 * 
-//				 * @param draggedObject
-//				 * @param location
-//				 */
-//				private void update(Object draggedObject, Point location) {
-//					this.location = location;
-//					this.perspective = (PerspectiveBarContributionItem) draggedObject;
-//				}
-//
-//				/*
-//				 * (non-Javadoc)
-//				 * 
-//				 * @see org.eclipse.ui.internal.dnd.IDropTarget#drop()
-//				 */
-//				public void drop() {
-//					ToolBar toolBar = perspectiveBar.getControl();
-//					ToolItem item = toolBar.getItem(toolBar.getDisplay().map(
-//							null, toolBar, location));
-//					if (toolBar.getItem(0) == item) {
-//						return;
-//					}
-//					ToolItem[] items = toolBar.getItems();
-//					ToolItem droppedItem = null;
-//					int dropIndex = -1;
-//					for (int i = 0; i < items.length; i++) {
-//						if (item == items[i]) {
-//							dropIndex = i;
-//						}
-//						if (items[i].getData() == perspective) {
-//							droppedItem = items[i];
-//						}
-//					}
-//					if (dropIndex != -1 && droppedItem != null && (droppedItem != item)) {
-//						PerspectiveBarContributionItem barItem = (PerspectiveBarContributionItem) droppedItem.getData();
-//						// policy is to insert at the beginning so mirror the value when indicating a 
-//						// new position for the perspective
-//						if (reorderListener != null) {
-//							reorderListener.reorder(barItem.getPerspective(), Math.abs(dropIndex - (items.length - 1)));
-//						}
-//
-//						perspectiveBar.relocate(barItem, dropIndex);
-//					}
-//				}
-//
-//				/*
-//				 * (non-Javadoc)
-//				 * 
-//				 * @see org.eclipse.ui.internal.dnd.IDropTarget#getCursor()
-//				 */
-//				public Cursor getCursor() {
-//					return DragCursors.getCursor(DragCursors.CENTER);
-//				}
-//
-//				boolean sameShell() {
-//					return perspective.getToolItem().getParent().getShell().equals(perspectiveBar.getControl().getShell());
-//				}
-//				
-//				public Rectangle getSnapRectangle() {
-//					ToolBar toolBar = perspectiveBar.getControl();
-//					ToolItem item = toolBar.getItem(toolBar.getDisplay().map(
-//							null, toolBar, location));
-//					Rectangle bounds;
-//					if (item != null && item != toolBar.getItem(0)) {
-//						bounds = item.getBounds();
-//					} else {
-//						// it should not be possible to start a drag with item 0
-//						return null;
-//					}
-//					return toolBar.getDisplay().map(toolBar, null, bounds);
-//				}
-//			}
-//
-//			public IDropTarget drag(Control currentControl,
-//					Object draggedObject, Point position,
-//					Rectangle dragRectangle) {
-//				if (draggedObject instanceof PerspectiveBarContributionItem) {
-//					if (perspectiveDropTarget == null) {
-//						perspectiveDropTarget = new PerspectiveDropTarget(
-//								draggedObject, position);
-//					} else {
-//						perspectiveDropTarget.update(draggedObject, position);
-//					}
-//					// do not support drag to perspective bars between shells.
-//					if (!perspectiveDropTarget.sameShell()) {
-//						return null;
-//					}
-//					
-//					return perspectiveDropTarget;
-//				}// else if (draggedObject instanceof IPerspectiveBar) {
-//				//	return new PerspectiveBarDropTarget();
-//				//}
-//
-//				return null;
-//			}
-//
-//		};
-//
-//		PresentationUtil.addDragListener(perspectiveBar.getControl(),
-//				dragListener);
-//		DragUtil.addDragTarget(perspectiveBar.getControl(), dragTarget);
+	  //[ariddle] - added for view dragging
+        dragListener = new Listener() {
+        	/* (non-Javadoc)
+			 * @see org.eclipse.swt.widgets.Listener#handleEvent(org.eclipse.swt.widgets.Event)
+			 */
+			public void handleEvent(Event event) {
+				ToolBar toolbar = perspectiveBar.getControl();
+                ToolItem item = toolbar.getItem(new Point(event.x, event.y));
+                
+                if (item != null) {
+                	//ignore the first item, which remains in position Zero
+                    if (item.getData() instanceof PerspectiveBarNewContributionItem) {
+						return;
+					}
+                    
+                	Rectangle bounds = item.getBounds();
+                	Rectangle parentBounds = toolbar.getBounds();
+                	bounds.x += parentBounds.x;
+                	bounds.y += parentBounds.y;
+                	startDragging(item.getData(), toolbar.getDisplay().map(toolbar, null, bounds));
+                } else { 
+                    startDragging(toolbar, toolbar.getDisplay().map(toolbar, null, toolbar.getBounds()));
+                }
+            }
+			
+			private void startDragging(Object widget, Rectangle bounds) {
+				if(!DragUtil.performDrag(widget, bounds, new Point(bounds.x, bounds.y), true)) {
+				       //currently do nothing on a failed drag 
+                }
+		    }
+        };
+      //[ariddle] - added for view dragging
+		dragTarget = new IDragOverListener() {
+			protected PerspectiveDropTarget perspectiveDropTarget;
+
+			class PerspectiveDropTarget extends AbstractDropTarget {
+
+				private PerspectiveBarContributionItem perspective;
+
+				private Point location;
+
+                /**
+				 * @param location
+				 * @param draggedObject
+				 */
+				public PerspectiveDropTarget(Object draggedObject,
+						Point location) {
+					update(draggedObject, location);
+				}
+
+				/**
+				 * 
+				 * @param draggedObject
+				 * @param location
+				 */
+				private void update(Object draggedObject, Point location) {
+					this.location = location;
+					this.perspective = (PerspectiveBarContributionItem) draggedObject;
+				}
+
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see org.eclipse.ui.internal.dnd.IDropTarget#drop()
+				 */
+				public void drop() {
+					ToolBar toolBar = perspectiveBar.getControl();
+					ToolItem item = toolBar.getItem(toolBar.getDisplay().map(
+							null, toolBar, location));
+					if (toolBar.getItem(0) == item) {
+						return;
+					}
+					ToolItem[] items = toolBar.getItems();
+					ToolItem droppedItem = null;
+					int dropIndex = -1;
+					for (int i = 0; i < items.length; i++) {
+						if (item == items[i]) {
+							dropIndex = i;
+						}
+						if (items[i].getData() == perspective) {
+							droppedItem = items[i];
+						}
+					}
+					if (dropIndex != -1 && droppedItem != null && (droppedItem != item)) {
+						PerspectiveBarContributionItem barItem = (PerspectiveBarContributionItem) droppedItem.getData();
+						// policy is to insert at the beginning so mirror the value when indicating a 
+						// new position for the perspective
+						if (reorderListener != null) {
+							reorderListener.reorder(barItem.getPerspective(), Math.abs(dropIndex - (items.length - 1)));
+						}
+
+						perspectiveBar.relocate(barItem, dropIndex);
+					}
+				}
+
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see org.eclipse.ui.internal.dnd.IDropTarget#getCursor()
+				 */
+				public Cursor getCursor() {
+					return DragCursors.getCursor(DragCursors.CENTER);
+				}
+
+				boolean sameShell() {
+					return perspective.getToolItem().getParent().getShell().equals(perspectiveBar.getControl().getShell());
+				}
+				
+				public Rectangle getSnapRectangle() {
+					ToolBar toolBar = perspectiveBar.getControl();
+					ToolItem item = toolBar.getItem(toolBar.getDisplay().map(
+							null, toolBar, location));
+					Rectangle bounds;
+					if (item != null && item != toolBar.getItem(0)) {
+						bounds = item.getBounds();
+					} else {
+						// it should not be possible to start a drag with item 0
+						return null;
+					}
+					return toolBar.getDisplay().map(toolBar, null, bounds);
+				}
+			}
+
+			public IDropTarget drag(Control currentControl,
+					Object draggedObject, Point position,
+					Rectangle dragRectangle) {
+				if (draggedObject instanceof PerspectiveBarContributionItem) {
+					if (perspectiveDropTarget == null) {
+						perspectiveDropTarget = new PerspectiveDropTarget(
+								draggedObject, position);
+					} else {
+						perspectiveDropTarget.update(draggedObject, position);
+					}
+					// do not support drag to perspective bars between shells.
+					if (!perspectiveDropTarget.sameShell()) {
+						return null;
+					}
+					
+					return perspectiveDropTarget;
+				}// else if (draggedObject instanceof IPerspectiveBar) {
+				//	return new PerspectiveBarDropTarget();
+				//}
+
+				return null;
+			}
+
+		};
+		//[ariddle] - added for view dragging
+		PresentationUtil.addDragListener(perspectiveBar.getControl(),
+				dragListener);
+		DragUtil.addDragTarget(perspectiveBar.getControl(), dragTarget);
 		 // RAPEND: [bm] 
 	}
 
@@ -1289,7 +1307,8 @@ public class PerspectiveSwitcher implements IWindowTrim {
 	 */
 	public void addReorderListener(IReorderListener listener) {
 		// RAP [bm]: DnD
-//		reorderListener = listener;	
+	 //[ariddle] - added for view dragging
+		reorderListener = listener;	
 	}
 
 	/* (non-Javadoc)

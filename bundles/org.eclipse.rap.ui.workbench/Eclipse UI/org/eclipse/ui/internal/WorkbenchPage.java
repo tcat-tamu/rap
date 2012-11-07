@@ -1070,7 +1070,11 @@ public class WorkbenchPage extends CompatibleWorkbenchPage implements
         }
 
         // Show the view.
-        view = persp.showView(viewID, secondaryID);
+        if (mode == VIEW_CREATE_DETACHED) {
+           view = persp.showDetachedView(viewID, secondaryID);
+        } else {
+           view = persp.showView(viewID, secondaryID);
+        }
         if (view != null) {
             busyShowView(view, mode);
             
@@ -1740,8 +1744,8 @@ public class WorkbenchPage extends CompatibleWorkbenchPage implements
 		}
 		
 // RAP [rh] PerspectiveHelper#detachPart not implemented		
-//		PerspectiveHelper presentation = persp.getPresentation();		
-//		presentation.detachPart(ref);
+		PerspectiveHelper presentation = persp.getPresentation();		
+		presentation.detachPart(ref);
 	}
 	
 	/**
@@ -3836,6 +3840,7 @@ public class WorkbenchPage extends CompatibleWorkbenchPage implements
         case VIEW_ACTIVATE:
         case VIEW_VISIBLE:
         case VIEW_CREATE:
+        case VIEW_CREATE_DETACHED:
             return true;
         default:
             return false;

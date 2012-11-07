@@ -737,6 +737,7 @@ public final class WorkbenchMenuService extends InternalMenuService {
 			IServiceLocator serviceLocatorToUse, Set restriction,
 			ContributionManager mgr, String uri, boolean recurse,
 			List factories) {
+	   if (mgr == null) return;
 		MenuLocationURI contributionLocation = new MenuLocationURI(uri);
 
 		List retryList = new ArrayList();
