@@ -193,22 +193,26 @@ public class DisplayLCA implements IDisplayLifeCycleAdapter {
 
   private static void disposeWidgets() throws IOException {
     Widget[] disposedWidgets = DisposedWidgets.getAll();
+    // [ariddle] - Reverted loop to prevent client side crash on perspective/view close in some constellations.
     // TODO [rh] get rid of dependency on DragSource/DropTarget
     // Must dispose of DragSources and DropTargets first
-    for( int i = disposedWidgets.length - 1; i >= 0; i-- ) {
+    //for( int i = disposedWidgets.length - 1; i >= 0; i-- ) {
+    for( int i = 0; i < disposedWidgets.length; i++ ) {
       Widget toDispose = disposedWidgets[ i ];
       if( toDispose instanceof DragSource || toDispose instanceof DropTarget ) {
         AbstractWidgetLCA lca = WidgetUtil.getLCA( toDispose );
         lca.renderDispose( toDispose );
       }
     }
+    // [ariddle] - Reverted loop to prevent client side crash on perspective/view close in some constellations.
     // TODO [rst] since widget pooling is removed, the loop should be reverted
     //            again
     // [fappel]: client side disposal order is crucial for the widget
     //           caching mechanism - we need to dispose of children first. This
     //           is reverse to the server side mechanism (which is analog to
     //           SWT).
-    for( int i = disposedWidgets.length - 1; i >= 0; i-- ) {
+    //for( int i = disposedWidgets.length - 1; i >= 0; i-- ) {
+    for( int i = 0; i < disposedWidgets.length; i++ ) {
       Widget toDispose = disposedWidgets[ i ];
       if(    !( toDispose instanceof DragSource )
           && !( toDispose instanceof DropTarget ) )
