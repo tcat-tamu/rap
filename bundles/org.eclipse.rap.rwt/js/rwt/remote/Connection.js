@@ -41,6 +41,12 @@ rwt.qx.Class.define( "rwt.remote.Connection", {
     this._requestCounter = 0;
     this._requestPending = false;
     this._connectionId = null;
+    //[ariddle] - added to support metrics gathering
+    this._generateMetrics = false;
+    this._parseDuration = -1;
+    this._processDuration = -1;
+    //[ariddle] - changed for performance increase
+    //this._sendTimer = new Timer( 0 );
     this._sendTimer = new Timer( 60 );
     this._sendTimer.addEventListener( "interval", function() {
       this.sendImmediate( true );
@@ -81,6 +87,32 @@ rwt.qx.Class.define( "rwt.remote.Connection", {
       this._connectionId = connectionId;
     },
 
+    //[ariddle] - BEGIN added to support metrics gathering
+    setGenerateMetrics : function( generateMetrics ) {
+      this._generateMetrics = generateMetrics;
+    },
+
+    getGenerateMetrics : function() {
+      return this._generateMetrics;
+    },
+
+    setParseDuration : function( parseDuration ) {
+      this._parseDuration = parseDuration;
+    },
+
+    getParseDuration : function() {
+      return this._parseDuration;
+    },
+
+    setProcessDuration : function( processDuration ) {
+      this._processDuration = processDuration;
+    },
+
+    getProcessDuration : function() {
+      return this._processDuration;
+    },
+    //[ariddle] - END added to support metrics gathering
+    
     getConnectionId : function() {
       return this._connectionId;
     },
@@ -122,6 +154,11 @@ rwt.qx.Class.define( "rwt.remote.Connection", {
         this._flushEvent();
         this._sendTimer.stop();
         this.getMessageWriter().appendHead( "requestCounter", this._requestCounter++ );
+        //[ariddle] - TODO: needs to be reimplemented for 3.0 architecture
+        //if ( this._generateMetrics ) {
+        //  this._parameters[ "parseDuration" ] = this._parseDuration;
+        //  this._parameters[ "processDuration" ] = this._processDuration;
+        //}
         this._requestPending = true;
         this._startWaitHintTimer();
         var request = this._createRequest();
@@ -208,10 +245,24 @@ rwt.qx.Class.define( "rwt.remote.Connection", {
       try {
         var messageObject = JSON.parse( event.responseText );
         rwt.remote.EventUtil.setSuspended( true );
+        //[ariddle] - added to support metrics gathering
+        if ( this._generateMetrics ) {
+          this._parseDuration = new Date().getTime();
+        }
+        //[ariddle] - added to support metrics gathering
+        if ( this._generateMetrics ) {
+          this._parseDuration = new Date().getTime()-this._parseDuration;
+          this._processDuration = new Date().getTime();
+        }
         var that = this;
         Processor.processMessage( messageObject, function() {
           that._requestPending = false;
           Widget.flushGlobalQueues();
+          //[ariddle] - added to support metrics gathering
+          if ( this._generateMetrics ) {
+            if ( this._processDuration > 0 )
+              this._processDuration = new Date().getTime()-this._processDuration;
+          }
           rap._.notify( "render" );
           EventUtil.setSuspended( false );
           ServerPush.getInstance().sendServerPushRequest();

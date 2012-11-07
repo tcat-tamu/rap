@@ -49,12 +49,16 @@ import org.eclipse.swt.widgets.Widget;
 
 public class DisplayLCA {
 
+  //[ariddle] - added to support metrics gathering
+  static final String PROP_GENERATE_METRICS = "generateMetrics";
   static final String PROP_FOCUS_CONTROL = "focusControl";
   static final String PROP_EXIT_CONFIRMATION = "exitConfirmation";
   private static final String METHOD_BEEP = "beep";
   private static final String PROP_RESIZE_LISTENER = "listener_Resize";
 
   public void readData( Display display ) {
+    //[ariddle] - added to support metrics gathering
+    readMetrics( display );
     handleOperations( display );
     visitWidgets( display );
     DNDSupport.handleOperations();
@@ -83,6 +87,8 @@ public class DisplayLCA {
   }
 
   public void render( Display display ) throws IOException {
+    //[ariddle] - added to support metrics gathering
+    renderMetricsEnablement( display );
     renderExitConfirmation( display );
     renderEnableUiTests( display );
     renderShells( display );
@@ -100,6 +106,17 @@ public class DisplayLCA {
     markInitialized( display );
   }
 
+  //[ariddle] - added to support metrics gathering
+  private static void renderMetricsEnablement( Display display ) {
+//    Boolean metricsEnabled = Boolean.valueOf( RWTRequestVersionControl.getInstance().isGenerateMetrics() );
+//    IWidgetAdapter adapter = DisplayUtil.getAdapter( display );
+//    Object oldMetricsEnabled = adapter.getPreserved( PROP_GENERATE_METRICS );
+//    if( !metricsEnabled.equals( oldMetricsEnabled ) ) {
+//      IClientObject clientObject = ClientObjectFactory.getClientObject( display );
+//      clientObject.set( PROP_GENERATE_METRICS, metricsEnabled );
+//    }
+  }
+  
   public void clearPreserved( Display display ) {
     ( ( WidgetRemoteAdapter )getAdapter( display ) ).clearPreserved();
     for( Shell shell : getShells( display ) ) {
@@ -228,6 +245,63 @@ public class DisplayLCA {
 
   private static void markInitialized( Display display ) {
     ( ( WidgetRemoteAdapter )getAdapter( display ) ).setInitialized( true );
+  }
+  
+  //[ariddle] - added to support metrics gathering
+  static void readMetrics( Display display ) {
+//    boolean metricsEnabled = RWTRequestVersionControl.getInstance().isGenerateMetrics();
+//    if (metricsEnabled) {
+//      HttpServletRequest request = ContextProvider.getRequest();
+//      String id = request.getSession().getId();
+//      StringBuilder mesg = new StringBuilder();
+//      String parseDuration = request.getParameter( "parseDuration" );
+//      String processDuration = request.getParameter( "processDuration" );
+//
+//      String cursorLocationX = readPropertyValue( display, "cursorLocation.x" );
+//      String cursorLocationY = readPropertyValue( display, "cursorLocation.y" );
+//      if (cursorLocationX != null && cursorLocationY != null)
+//        mesg.append("cursorLocation : ").append( cursorLocationX ).append( "," ).append( cursorLocationY ).append( "\n" );
+//
+//      String focusControl = readPropertyValue( display, "focusControl" );
+//      if (focusControl != null)
+//        mesg.append("focusControl : ").append( focusControl ).append( "\n" );
+//
+//      String mouseDown = request.getParameter( "org.eclipse.swt.events.mouseDown" );
+//      String mouseDownBtn = request.getParameter( "org.eclipse.swt.events.mouseDown.button" );
+//      if (mouseDown != null && mouseDownBtn != null)
+//        mesg.append("mouseDown : ").append( mouseDown ).append(", button: ").append(mouseDownBtn).append( "\n" );
+//      String mouseUp = request.getParameter( "org.eclipse.swt.events.mouseUp" );
+//      String mouseUpBtn = request.getParameter( "org.eclipse.swt.events.mouseUp.button" );
+//      if (mouseUp != null && mouseUpBtn != null)
+//        mesg.append("mouseUp : ").append( mouseUp ).append(", button: ").append(mouseUpBtn).append( "\n" );
+//
+//      RWTMetricsCollector collector = RWTRequestVersionControl.getInstance().getMetricsCollector();
+//      collector.mapDisplay(id,display);
+//      String clientCapture = readPropertyValue( display, "clientCapture" );
+//      if (clientCapture != null) {
+//        collector.logClientCapture( id, clientCapture );
+//      }
+//      int requestCounter = NumberFormatUtil.parseInt( request.getParameter( PROP_REQUEST_COUNTER ) );
+//      if (parseDuration != null) {
+//        long parseTime = NumberFormatUtil.parseLong( parseDuration );
+//        long processTime = NumberFormatUtil.parseLong( processDuration );
+//        //if first metric then log agent info
+//        if (parseTime == -1 && processTime == -1) {
+//          StringBuilder sessionInfo = new StringBuilder();
+//          Enumeration<String> headerNames = request.getHeaderNames();
+//          while (headerNames.hasMoreElements()) {
+//            String headerName = headerNames.nextElement();
+//            sessionInfo.append(headerName).append( " : " ).append( request.getHeader( headerName ) ).append( "\n" );
+//          }
+//          collector.logConnectionInfo(id,sessionInfo.toString());
+//        }
+//
+//        collector.logMetrics(id,requestCounter,parseTime,processTime,mesg.toString());
+//      }
+//      else {
+//        collector.logMetrics(id,requestCounter,-1,-1,"Metrics gathering is enabled but there is nothing coming from the client.\n");
+//      }
+//    }
   }
 
   private static boolean hasResizeListener( Display display ) {

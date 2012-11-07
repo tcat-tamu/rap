@@ -23,13 +23,15 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Display", {
     "focusControl",
     "enableUiTests",
     "activeKeys",
-    "cancelKeys"
+    "cancelKeys",
+    "generateMetrics"
   ],
 
   methods : [
     "allowEvent",
     "cancelEvent",
-    "beep"
+    "beep",
+    "captureClient"
   ],
 
   propertyHandler : {
