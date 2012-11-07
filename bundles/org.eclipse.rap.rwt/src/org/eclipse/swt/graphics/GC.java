@@ -862,7 +862,8 @@ public class GC extends Resource {
    *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
    * </ul>
    */
-  public void drawLine( int x1, int y1, int x2, int y2 ) {
+  public void drawLine( int x1, int y1, int x2, int y2 )
+  {
     checkDisposed();
     delegate.drawLine( x1, y1, x2, y2 );
   }
@@ -905,7 +906,8 @@ public class GC extends Resource {
    *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
    * </ul>
    */
-  public void drawRectangle( int x, int y, int width, int height ) {
+  public void drawRectangle( int x, int y, int width, int height )
+  {
     checkDisposed();
     drawRectangle( x, y, width, height, 0, 0, false );
   }
@@ -927,7 +929,8 @@ public class GC extends Resource {
    *
    * @see #drawRectangle(int, int, int, int)
    */
-  public void drawFocus( int x, int y, int width, int height ) {
+  public void drawFocus( int x, int y, int width, int height )
+  {
     drawRectangle( x, y, width, height );
   }
 
@@ -993,7 +996,8 @@ public class GC extends Resource {
    *
    * @see #drawRectangle(int, int, int, int)
    */
-  public void fillGradientRectangle( int x, int y, int width, int height, boolean vertical ) {
+  public void fillGradientRectangle( int x, int y, int width, int height, boolean vertical )
+  {
     checkDisposed();
     if( width != 0 && height != 0 ) {
       if( delegate.getBackground().equals( delegate.getForeground() ) ) {
@@ -1413,7 +1417,8 @@ public class GC extends Resource {
    *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
    * </ul>
    */
-  public void drawString( String string, int x, int y, boolean isTransparent ) {
+  public void drawString( String string, int x, int y, boolean isTransparent )
+  {
     int flags = isTransparent ? SWT.DRAW_TRANSPARENT : SWT.NONE;
     drawText( string, x, y, flags );
   }
@@ -1687,5 +1692,9 @@ public class GC extends Resource {
   void writeObject( ObjectOutputStream stream ) throws IOException {
     throw new NotSerializableException( getClass().getName() );
   }
-
+  
+  //[ariddle] - added for single sourcing
+  public Point textExtent( String text, int style ) {
+    return textExtent( text );
+  }
 }

@@ -86,4 +86,17 @@ public final class FontMetrics {
   public int hashCode() {
     return font.hashCode();
   }
+  
+  //[ariddle] - added for single sourcing
+  public int getAscent() {
+    return getHeight();
+  }
+  
+  public int getLeading() {
+    return 0;
+  }
+  
+  public int getDescent() {
+    return 0;
+  }
 }

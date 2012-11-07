@@ -12,9 +12,9 @@ package org.eclipse.ui;
 
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.ISelectionProvider;
-//import org.eclipse.ui.contexts.IContextService;
-//import org.eclipse.ui.handlers.IHandlerService;
-//import org.eclipse.ui.services.IServiceLocator;
+import org.eclipse.ui.contexts.IContextService;
+import org.eclipse.ui.handlers.IHandlerService;
+import org.eclipse.ui.services.IServiceLocator;
 
 /**
  * The primary interface between a workbench part and the workbench.
@@ -111,19 +111,20 @@ public interface IWorkbenchPartSite extends IWorkbenchSite {
             ISelectionProvider selectionProvider);
 
 // RAP [rh] IKeyBindingService not implemented
-//    /**
-//	 * Returns the key binding service in use.
-//	 * <p>
-//	 * The part will access this service to register all of its actions, to set
-//	 * the active scope.
-//	 * </p>
-//	 * 
-//	 * @return the key binding service in use
-//	 * @deprecated Use {@link IServiceLocator#getService(Class)} instead.
-//	 * @see IContextService
-//	 * @see IHandlerService
-//	 */
-//    public IKeyBindingService getKeyBindingService();
+    //[ariddle] - added for single sourcing 
+    /**
+	 * Returns the key binding service in use.
+	 * <p>
+	 * The part will access this service to register all of its actions, to set
+	 * the active scope.
+	 * </p>
+	 * 
+	 * @return the key binding service in use
+	 * @deprecated Use {@link IServiceLocator#getService(Class)} instead.
+	 * @see IContextService
+	 * @see IHandlerService
+	 */
+    public IKeyBindingService getKeyBindingService();
     
     /**
      * Returns the part associated with this site 

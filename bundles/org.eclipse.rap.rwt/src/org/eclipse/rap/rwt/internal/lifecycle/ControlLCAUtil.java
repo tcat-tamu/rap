@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.util.ActiveKeysUtil;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Font;
@@ -39,8 +40,10 @@ import org.eclipse.swt.internal.widgets.ControlUtil;
 import org.eclipse.swt.internal.widgets.IControlAdapter;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.Scrollable;
 import org.eclipse.swt.widgets.Shell;
 
 
@@ -402,6 +405,27 @@ public class ControlLCAUtil {
 
   private static void renderListenMenuDetect( Control control ) {
     renderListener( control, SWT.MenuDetect, PROP_MENU_DETECT_LISTENER );
+  }
+
+  private static void checkAndProcessMouseEvent( Event event ) {
+    boolean pass = false;
+    Control control = ( Control )event.widget;
+    //[ariddle] - view drag implementation
+    if ( control instanceof CTabFolder ) {
+      CTabFolder tabFolder = ( CTabFolder )control;
+      Rectangle clientArea = tabFolder.getBounds();
+      pass = clientArea.contains( tabFolder.toDisplay( event.x, event.y ) );
+    } else if ( control instanceof Scrollable ) {
+    //if( control instanceof Scrollable ) {
+      Scrollable scrollable = ( Scrollable )control;
+      Rectangle clientArea = scrollable.getClientArea();
+      pass = clientArea.contains( event.x, event.y );
+    } else {
+      pass = event.x >= 0 && event.y >= 0;
+    }
+    if( pass ) {
+      event.widget.notifyListeners( event.type, event );
+    }
   }
 
   private static void renderListenHelp( Control control ) {

@@ -825,46 +825,48 @@ public class ControlDecoration implements Serializable {
 //		}
 //	}
 //
-//	/**
-//	 * Show the specified text using the same hover dialog as is used to show
-//	 * decorator descriptions. When {@link #setShowHover(boolean)} has been set
-//	 * to <code>true</code>, a decoration's description text will be shown in
-//	 * an info hover over the field's control whenever the mouse hovers over the
-//	 * decoration. This method can be used to show a decoration's description
-//	 * text at other times (such as when the control receives focus), or to show
-//	 * other text associated with the field. The hover will not be shown if the
-//	 * decoration is hidden.
-//	 *
-//	 * @param text
-//	 *            the text to be shown in the info hover, or <code>null</code>
-//	 *            if no text should be shown.
-//	 */
-//	public void showHoverText(String text) {
+	//[ariddle] - added for single sourcing
+	/**
+	 * Show the specified text using the same hover dialog as is used to show
+	 * decorator descriptions. When {@link #setShowHover(boolean)} has been set
+	 * to <code>true</code>, a decoration's description text will be shown in
+	 * an info hover over the field's control whenever the mouse hovers over the
+	 * decoration. This method can be used to show a decoration's description
+	 * text at other times (such as when the control receives focus), or to show
+	 * other text associated with the field. The hover will not be shown if the
+	 * decoration is hidden.
+	 * 
+	 * @param text
+	 *            the text to be shown in the info hover, or <code>null</code>
+	 *            if no text should be shown.
+	 */
+	public void showHoverText(String text) {
 //		if (control == null) {
 //			return;
 //		}
 //		showHoverText(text, control);
-//	}
-//
-//	/**
-//	 * Hide any hover popups that are currently showing on the control. When
-//	 * {@link #setShowHover(boolean)} has been set to <code>true</code>, a
-//	 * decoration's description text will be shown in an info hover over the
-//	 * field's control as long as the mouse hovers over the decoration, and will
-//	 * be hidden when the mouse exits the decoration. This method can be used to
-//	 * hide a hover, whether it was shown explicitly using
-//	 * {@link #showHoverText(String)}, or was showing because the user was
-//	 * hovering in the decoration.
-//	 * <p>
-//	 * This message has no effect if there is no current hover.
-//	 *
-//	 */
-//	public void hideHover() {
+	}
+
+	//[ariddle] - added for single sourcing
+	/**
+	 * Hide any hover popups that are currently showing on the control. When
+	 * {@link #setShowHover(boolean)} has been set to <code>true</code>, a
+	 * decoration's description text will be shown in an info hover over the
+	 * field's control as long as the mouse hovers over the decoration, and will
+	 * be hidden when the mouse exits the decoration. This method can be used to
+	 * hide a hover, whether it was shown explicitly using
+	 * {@link #showHoverText(String)}, or was showing because the user was
+	 * hovering in the decoration.
+	 * <p>
+	 * This message has no effect if there is no current hover.
+	 * 
+	 */
+	public void hideHover() {
 //		if (hover != null) {
 //			hover.setVisible(false);
 //		}
-//	}
-//
+	}
+
 	/**
 	 * Show the control decoration. This message has no effect if the decoration
 	 * is already showing. If {@link #setShowOnlyOnFocus(boolean)} is set to
