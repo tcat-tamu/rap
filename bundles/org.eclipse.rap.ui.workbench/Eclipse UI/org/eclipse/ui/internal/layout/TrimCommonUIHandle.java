@@ -17,7 +17,9 @@ import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.CoolBar;
@@ -32,7 +34,8 @@ import org.eclipse.ui.internal.IntModel;
 import org.eclipse.ui.internal.RadioMenu;
 import org.eclipse.ui.internal.WindowTrimProxy;
 import org.eclipse.ui.internal.WorkbenchMessages;
-import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.ui.internal.dnd.DragUtil;
+import org.eclipse.ui.presentations.PresentationUtil;
 
 /**
  * This control provides common UI functionality for trim elements. Its
@@ -95,15 +98,16 @@ public class TrimCommonUIHandle extends Composite {
      * the Drag and Drop manager tells it to
      */
     // RAP [bm]: DnD
-//    private Listener dragListener = new Listener() {
-//        public void handleEvent(Event event) {
-//        	// Only allow 'left mouse' drags...
-//        	if (event.button != 3) {
-//	            Point position = DragUtil.getEventLoc(event);
-//	            startDraggingTrim(position);
-//        	}
-//        }
-//    };
+	//[ariddle] - added for view dragging
+    private Listener dragListener = new Listener() {
+        public void handleEvent(Event event) {
+        	// Only allow 'left mouse' drags...
+        	if (event.button != 3) {
+	            Point position = DragUtil.getEventLoc(event);
+	            startDraggingTrim(position);
+        	}
+        }
+    };
 
     /**
      * This listener brings up the context menu
@@ -181,7 +185,8 @@ public class TrimCommonUIHandle extends Composite {
 
         // Set up the dragging behaviour
     	// RAP [bm]:
-//        PresentationUtil.addDragListener(cb, dragListener);
+    //[ariddle] - added for view dragging
+        PresentationUtil.addDragListener(cb, dragListener);
 
     	// Create the docking context menu
     	dockMenuManager = new MenuManager();
@@ -301,7 +306,8 @@ public class TrimCommonUIHandle extends Composite {
 		if (cb != null) {
 			ci.dispose();
 			// RAP [bm]:
-//	        PresentationUtil.removeDragListener(cb, dragListener);
+			//[ariddle] - added for view dragging
+	        PresentationUtil.removeDragListener(cb, dragListener);
 			cb.dispose();
 		}
 
@@ -487,15 +493,16 @@ public class TrimCommonUIHandle extends Composite {
     }
 
     // RAP [bm]:
-//    /**
-//     * Begins dragging the trim
-//     *
-//     * @param position initial mouse position
-//     */
-//    protected void startDraggingTrim(Point position) {
-//    	Rectangle fakeBounds = new Rectangle(100000, 0,0,0);
-//        DragUtil.performDrag(trim, fakeBounds, position, true);
-//    }
+  //[ariddle] - added for view dragging
+    /**
+     * Begins dragging the trim
+     *
+     * @param position initial mouse position
+     */
+    protected void startDraggingTrim(Point position) {
+    	Rectangle fakeBounds = new Rectangle(100000, 0,0,0);
+        DragUtil.performDrag(trim, fakeBounds, position, true);
+    }
 
     /**
      * Shows the popup menu for an item in the fast view bar.

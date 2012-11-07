@@ -14,12 +14,33 @@ package org.eclipse.ui.views.properties;
 
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.help.IContext;
-import org.eclipse.jface.action.*;
-import org.eclipse.jface.viewers.*;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IStatusLineManager;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSource;
+import org.eclipse.swt.dnd.DragSourceAdapter;
+import org.eclipse.swt.dnd.DragSourceEvent;
+import org.eclipse.swt.dnd.DragSourceListener;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.HelpEvent;
 import org.eclipse.swt.events.HelpListener;
-import org.eclipse.swt.widgets.*;
-import org.eclipse.ui.*;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IPartListener;
+import org.eclipse.ui.ISaveablePart;
+import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.help.IContextComputer;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 import org.eclipse.ui.internal.views.ViewsPlugin;
@@ -315,21 +336,22 @@ public class PropertySheetPage extends Page implements IPropertySheetPage, IAdap
      */
     protected void initDragAndDrop() {
 // RAP [fappel]: DnD not supported
-//        int operations = DND.DROP_COPY;
-//        Transfer[] transferTypes = new Transfer[] { TextTransfer.getInstance() };
-//        DragSourceListener listener = new DragSourceAdapter() {
-//            public void dragSetData(DragSourceEvent event) {
-//                performDragSetData(event);
-//            }
-//
-//            public void dragFinished(DragSourceEvent event) {
-//                //Nothing to do here
-//            }
-//        };
-//        DragSource dragSource = new DragSource(
-//                viewer.getControl(), operations);
-//        dragSource.setTransfer(transferTypes);
-//        dragSource.addDragListener(listener);
+       //[ariddle] - added DND for propertysheet page
+        int operations = DND.DROP_COPY;
+        Transfer[] transferTypes = new Transfer[] { TextTransfer.getInstance() };
+        DragSourceListener listener = new DragSourceAdapter() {
+            public void dragSetData(DragSourceEvent event) {
+                performDragSetData(event);
+            }
+
+            public void dragFinished(DragSourceEvent event) {
+                //Nothing to do here
+            }
+        };
+        DragSource dragSource = new DragSource(
+                viewer.getControl(), operations);
+        dragSource.setTransfer(transferTypes);
+        dragSource.addDragListener(listener);
     }
 
     /**
@@ -338,25 +360,26 @@ public class PropertySheetPage extends Page implements IPropertySheetPage, IAdap
      * @param event The event sent from the drag and drop support.
      */
 // RAP [fappel]: DnD not supported
-//    void performDragSetData(DragSourceEvent event) {
-//        // Get the selected property
-//        IStructuredSelection selection = (IStructuredSelection) viewer
-//                .getSelection();
-//        if (selection.isEmpty()) {
-//			return;
-//		}
-//        // Assume single selection
-//        IPropertySheetEntry entry = (IPropertySheetEntry) selection
-//                .getFirstElement();
-//
-//        // Place text as the data
-//        StringBuffer buffer = new StringBuffer();
-//        buffer.append(entry.getDisplayName());
-//        buffer.append("\t"); //$NON-NLS-1$
-//        buffer.append(entry.getValueAsString());
-//
-//        event.data = buffer.toString();
-//    }
+    //[ariddle] - added DND for propertysheet page
+    void performDragSetData(DragSourceEvent event) {
+        // Get the selected property
+        IStructuredSelection selection = (IStructuredSelection) viewer
+                .getSelection();
+        if (selection.isEmpty()) {
+			return;
+		}
+        // Assume single selection
+        IPropertySheetEntry entry = (IPropertySheetEntry) selection
+                .getFirstElement();
+
+        // Place text as the data
+        StringBuffer buffer = new StringBuffer();
+        buffer.append(entry.getDisplayName());
+        buffer.append("\t"); //$NON-NLS-1$
+        buffer.append(entry.getValueAsString());
+
+        event.data = buffer.toString();
+    }
 
     /**
      * Make action objects.

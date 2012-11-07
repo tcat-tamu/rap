@@ -182,6 +182,8 @@ public interface IWorkbenchPage extends IPartService, ISelectionService,
 	 * 
 	 */
 	public static final int VIEW_CREATE = 3;
+	
+	public static final int VIEW_CREATE_DETACHED = 4;
 
 	/**
 	 * Editor opening match mode specifying that no matching against existing

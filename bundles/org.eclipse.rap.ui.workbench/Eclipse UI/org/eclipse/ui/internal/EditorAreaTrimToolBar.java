@@ -93,7 +93,8 @@ public class EditorAreaTrimToolBar extends TrimToolBarBase {
 		// NOTE: the drop target is self-managing...it
 		// both hooks the new target and removes it on dispose
 		// RAP [bm]: 
-//		new FastViewDnDHandler(id, mgr, wbw);
+	   //[ariddle] - added for view dragging
+		new FastViewDnDHandler(id, mgr, wbw);
 		// RAPEND: [bm] 
 	}
 	

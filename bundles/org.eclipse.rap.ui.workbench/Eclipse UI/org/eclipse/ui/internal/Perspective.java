@@ -2357,6 +2357,41 @@ public class Perspective {
         
         return part;
     }
+    
+    public IViewPart showDetachedView(String viewId, String secondaryId) throws PartInitException {
+       ViewFactory factory = getViewFactory();
+       
+      try {
+         DetachedWindow window = presentation.createDetachedPartWindow();
+         factory.setClientComposite(window.getShell());
+         IViewReference ref = factory.createView(viewId, secondaryId);
+         IViewPart part = (IViewPart)ref.getPart(true);
+         if (part == null) {
+            throw new PartInitException(NLS.bind(WorkbenchMessages.get().ViewFactory_couldNotCreate, ref.getId()));
+         }
+         ViewSite site = (ViewSite)part.getSite();
+         ViewPane pane = (ViewPane)site.getPane();
+         // add part to detached window.
+         pane.createControl(window.getShell());
+         window.add(pane);
+         // Calculate detached window size.
+         Rectangle bounds = page.getWorkbenchWindow().getShell().getBounds();
+         bounds.x = bounds.x + (bounds.width - 300) / 2;
+         bounds.y = bounds.y + (bounds.height - 300) / 2;
+         // Open window.
+         window.getShell().setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+         window.open();
+         
+         // Ensure that the newly showing part is enabled
+         if (pane != null && pane.getControl() != null)
+                 pane.getControl().setEnabled(true);
+         
+         part.setFocus();
+         return part;
+      } finally {
+         factory.setClientComposite(null);
+      }
+    }
 
     /**
      * Toggles the visibility of a fast view.  If the view is active it

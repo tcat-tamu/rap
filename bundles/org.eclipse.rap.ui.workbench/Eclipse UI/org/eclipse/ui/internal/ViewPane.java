@@ -168,6 +168,7 @@ public class ViewPane extends PartPane {
         
         // ISV toolbar.
         //			// 1GD0ISU: ITPUI:ALL - Dbl click on view tool cause zoom
+        if (isvToolBarMgr == null) return;
         final Control isvToolBar = isvToolBarMgr.createControl2(parentControl.getParent());
         
         isvToolBarMgr.addPropertyChangeListener(new ISVPropListener(isvToolBar));
