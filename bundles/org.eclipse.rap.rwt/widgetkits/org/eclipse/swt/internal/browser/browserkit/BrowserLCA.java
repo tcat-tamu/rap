@@ -43,6 +43,7 @@ import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.internal.events.EventTypes;
 import org.eclipse.swt.internal.widgets.IBrowserAdapter;
+import org.eclipse.swt.internal.widgets.IBrowserAdapter.IBrowserScript;
 import org.eclipse.swt.widgets.Widget;
 
 
@@ -171,32 +172,65 @@ public final class BrowserLCA extends AbstractWidgetLCA {
 
   private static void renderEvaluate( final Browser browser ) {
     IBrowserAdapter adapter = browser.getAdapter( IBrowserAdapter.class );
-    final String executeScript = adapter.getExecuteScript();
-    boolean executePending = adapter.getExecutePending();
-    if( executeScript != null && !executePending ) {
-      // [if] Put the execution to the end of the rendered script. This is very
-      // important when Browser#execute is called from within a BrowserFunction,
-      // because then we have a synchronous requests.
-      RWTFactory.getLifeCycleFactory().getLifeCycle().addPhaseListener( new PhaseListener() {
-        public void beforePhase( PhaseEvent event ) {
-        }
-        public void afterPhase( PhaseEvent event ) {
-          if( browser.getDisplay() == LifeCycleUtil.getSessionDisplay() ) {
-            try {
-              IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
-              Map<String, Object> properties = new HashMap<String, Object>();
-              properties.put( PARAM_SCRIPT, executeScript );
-              clientObject.call( METHOD_EVALUATE, properties );
-            } finally {
-              RWTFactory.getLifeCycleFactory().getLifeCycle().removePhaseListener( this );
+//    final String executeScript = adapter.getExecuteScript();
+//    boolean executePending = adapter.getExecutePending();
+//    if( executeScript != null && !executePending ) {
+//      // [if] Put the execution to the end of the rendered script. This is very
+//      // important when Browser#execute is called from within a BrowserFunction,
+//      // because then we have a synchronous requests.
+//      RWTFactory.getLifeCycleFactory().getLifeCycle().addPhaseListener( new PhaseListener() {
+//        public void beforePhase( PhaseEvent event ) {
+//        }
+//        public void afterPhase( PhaseEvent event ) {
+//          if( browser.getDisplay() == LifeCycleUtil.getSessionDisplay() ) {
+//            try {
+//              IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
+//              Map<String, Object> properties = new HashMap<String, Object>();
+//              properties.put( PARAM_SCRIPT, executeScript );
+//              clientObject.call( METHOD_EVALUATE, properties );
+//            } finally {
+//              RWTFactory.getLifeCycleFactory().getLifeCycle().removePhaseListener( this );
+//            }
+//          }
+//        }
+//        public PhaseId getPhaseId() {
+//          return PhaseId.RENDER;
+//        }
+//      } );
+//      adapter.setExecutePending( true );
+//    }
+    
+    //[ariddle] - Change browser to prevent hangs due to concurrent/stacked-up requests
+    final IBrowserScript browserScript = adapter.getExecuteScript();
+    if( browserScript != null ) {
+      boolean executePending = browserScript.getExecutePending();
+      if( !executePending ) {
+        // [if] Put the execution to the end of the rendered script. This is very
+        // important when Browser#execute is called from within a BrowserFunction,
+        // because then we have a synchronous requests.
+        RWTFactory.getLifeCycleFactory().getLifeCycle().addPhaseListener( new PhaseListener() {
+
+          public void beforePhase( PhaseEvent event ) {
+          }
+
+          public void afterPhase( PhaseEvent event ) {
+            if( browser.getDisplay() == LifeCycleUtil.getSessionDisplay() ) {
+              try {
+                IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
+                Map<String, Object> properties = new HashMap<String, Object>();
+                properties.put( PARAM_SCRIPT, browserScript.getScript() );
+                clientObject.call( METHOD_EVALUATE, properties );
+              } finally {
+                RWTFactory.getLifeCycleFactory().getLifeCycle().removePhaseListener( this );
+              }
             }
           }
-        }
-        public PhaseId getPhaseId() {
-          return PhaseId.RENDER;
-        }
-      } );
-      adapter.setExecutePending( true );
+          public PhaseId getPhaseId() {
+            return PhaseId.RENDER;
+          }
+        } );
+        browserScript.setExecutePending( true );
+      }
     }
   }
 
