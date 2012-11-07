@@ -118,6 +118,7 @@ public class MarkupValidator {
     result.put( "span", new String[] { "style" } );
     result.put( "img", new String[] { "style", "src", "width", "height", "title", "alt" } );
     result.put( "a", new String[] { "style", "href", "target", "title" } );
+    result.put( "div", new String[] { "style" } );
     return result;
   }
 
