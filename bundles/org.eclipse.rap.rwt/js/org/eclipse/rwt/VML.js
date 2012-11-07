@@ -48,11 +48,25 @@ qx.Class.define( "org.eclipse.rwt.VML", {
     getCanvasNode : function( canvas ) {
       return canvas.node;
     },
+    
+    // [ariddle] - copy from qx.core.Object because this class does not extend Object
+    _log : function( msg ) {
+      if( window.console && typeof console.log === "function" ) {
+        console.log( msg );
+      }
+    },
 
     handleAppear : function( canvas ) {
       var children = canvas.children;
       for( var hash in children ) {
-       this._handleAppearShape( children[ hash ] );
+         //this._handleAppearShape( children[ hash ] );
+         // [ariddle] - log instead of throw to prevent crashing in IE8
+         try {
+            this._handleAppearShape( children[ hash ] );
+         } catch (err){
+            msg = "malformed child ["+hash+"] "+children[hash]+" " + err;
+            this._log(msg);
+         }
       }
     },
 
@@ -486,9 +500,15 @@ qx.Class.define( "org.eclipse.rwt.VML", {
     },
 
     _copyData : function( source, target ) {
-      if( !source || !target ) {
-        throw "VML._copyData: source or target missing.";
-      }
+      //[ariddle] - help with debugging crashes in IE8
+      //if( !source || !target ) {
+      //  throw "VML._copyData: source or target missing.";
+      //}
+      if (!source)
+        throw new Error("VML._copyData: source missing.");
+      if (!target)
+        throw new Error("VML._copyData: target missing.");
+      
       for( var key in source ) {
         var value = source[ key ];
         if( typeof value === "object" ) {
@@ -504,7 +524,13 @@ qx.Class.define( "org.eclipse.rwt.VML", {
     },
 
     _handleAppearShape : function( shape ) {
-      this._copyData( shape.restoreData, shape.node );
+      //[ariddle] - help with debugging crashes in IE8
+      //this._copyData( shape.restoreData, shape.node );
+      try {
+        this._copyData( shape.restoreData, shape.node );
+      } catch (err) {
+        throw new Error("unable to copy data rd:["+shape.restoreData+"] n:["+shape.node+"] nt:["+shape.node.type+"] ntag:["+shape.node.tagName+"]" + err);
+      }
     },
 
     _transitionColorPart : function( color1, color2, pos ) {
