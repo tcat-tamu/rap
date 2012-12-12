@@ -23,7 +23,7 @@ import org.eclipse.rap.rwt.internal.theme.ThemeManager;
 import org.eclipse.rap.rwt.internal.theme.ThemeUtil;
 import org.eclipse.rap.rwt.internal.theme.css.CssFileReader;
 import org.eclipse.rap.rwt.internal.theme.css.StyleSheet;
-import org.eclipse.rap.rwt.resources.ResourceLoader;
+import org.eclipse.rap.rwt.service.ResourceLoader;
 import org.eclipse.rap.rwt.testfixture.internal.engine.ThemeManagerHelper;
 
 
@@ -106,7 +106,7 @@ public class ThemesTestUtil {
     themeManager.initialize();
     themeManager.registerTheme( theme );
     themeManager.activate();
-    ThemeUtil.setCurrentThemeId( ContextProvider.getSessionStore(), themeId );
+    ThemeUtil.setCurrentThemeId( ContextProvider.getUISession(), themeId );
   }
 
   public static void cleanupThemes() {

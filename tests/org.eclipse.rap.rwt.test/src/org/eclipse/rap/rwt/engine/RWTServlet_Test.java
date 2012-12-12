@@ -18,17 +18,18 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.application.ApplicationConfiguration;
-import org.eclipse.rap.rwt.engine.RWTServlet;
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
-import org.eclipse.rap.rwt.service.IServiceHandler;
+import org.eclipse.rap.rwt.internal.service.ServiceManagerImpl;
 import org.eclipse.rap.rwt.service.IServiceStore;
+import org.eclipse.rap.rwt.service.ServiceHandler;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
 import org.eclipse.rap.rwt.testfixture.TestResponse;
 import org.eclipse.rap.rwt.testfixture.TestServletContext;
@@ -78,11 +79,11 @@ public class RWTServlet_Test extends TestCase {
 
   public void testServiceHandlerHasServiceStore() throws ServletException, IOException {
     final List<IServiceStore> log = new ArrayList<IServiceStore>();
-    ApplicationContext applicationContext = createApplicationContext();
+    ApplicationContextImpl applicationContext = createApplicationContext();
     TestRequest request = createTestRequest( applicationContext );
-    request.setParameter( IServiceHandler.REQUEST_PARAM, "foo" );
-    applicationContext.getServiceManager().registerServiceHandler( "foo", new IServiceHandler() {
-      public void service() throws IOException, ServletException {
+    request.setParameter( ServiceManagerImpl.REQUEST_PARAM, "foo" );
+    applicationContext.getServiceManager().registerServiceHandler( "foo", new ServiceHandler() {
+      public void service( HttpServletRequest request, HttpServletResponse response) {
         log.add( ContextProvider.getServiceStore() );
       }
     } );
@@ -93,16 +94,16 @@ public class RWTServlet_Test extends TestCase {
     assertNotNull( log.get( 0 ) );
   }
 
-  private static ApplicationContext createApplicationContext() {
+  private static ApplicationContextImpl createApplicationContext() {
     ServletContext servletContext = new TestServletContext();
     ApplicationConfiguration configuration = mock( ApplicationConfiguration.class );
-    ApplicationContext result = new ApplicationContext( configuration, servletContext );
+    ApplicationContextImpl result = new ApplicationContextImpl( configuration, servletContext );
     result.activate();
     ApplicationContextUtil.set( result.getServletContext(), result );
     return result;
   }
 
-  private static TestRequest createTestRequest( ApplicationContext applicationContext ) {
+  private static TestRequest createTestRequest( ApplicationContextImpl applicationContext ) {
     TestSession session = new TestSession();
     session.setServletContext( applicationContext.getServletContext() );
     TestRequest result = new TestRequest();

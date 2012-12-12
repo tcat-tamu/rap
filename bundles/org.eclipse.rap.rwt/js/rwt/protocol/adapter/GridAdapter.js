@@ -15,7 +15,6 @@ rwt.protocol.AdapterRegistry.add( "rwt.widgets.Grid", {
     var styleMap = rwt.protocol.AdapterUtil.createStyleMap( properties.style );
     var configMap = {
       appearance : properties.appearance,
-      virtual : styleMap.VIRTUAL,
       noScroll : styleMap.NO_SCROLL,
       multiSelection : styleMap.MULTI,
       check : styleMap.CHECK,
@@ -35,7 +34,18 @@ rwt.protocol.AdapterRegistry.add( "rwt.widgets.Grid", {
     return result;
   },
 
-  destructor : rwt.protocol.AdapterUtil.getControlDestructor(),
+  destructor : function( widget ) {
+    var destroyItems = widget.getRootItem().getUncachedChildren();
+    for( var i = 0; i < destroyItems.length; i++ ) {
+      destroyItems[ i ].dispose();
+    }
+    rwt.protocol.AdapterUtil.getControlDestructor()( widget );
+  },
+
+  getDestroyableChildren : function( widget ) {
+    var result = widget.getRootItem().getCachedChildren();
+    return result.concat( rwt.protocol.AdapterUtil.getDestroyableChildrenFinder()( widget ) );
+  },
 
   properties : rwt.protocol.AdapterUtil.extendControlProperties( [
     "itemCount",
@@ -56,7 +66,6 @@ rwt.protocol.AdapterRegistry.add( "rwt.widgets.Grid", {
     "focusItem",
     "sortDirection",
     "sortColumn",
-    "scrollBarsVisible",
     "alwaysHideSelection",
     "enableCellToolTip",
     "cellToolTipText"
@@ -106,7 +115,7 @@ rwt.protocol.AdapterRegistry.add( "rwt.widgets.Grid", {
     "DefaultSelection",
     "Expand",
     "Collapse",
-    "scrollBarsSelection"
+    "SetData"
   ] ),
 
   listenerHandler : rwt.protocol.AdapterUtil.extendControlListenerHandler( {

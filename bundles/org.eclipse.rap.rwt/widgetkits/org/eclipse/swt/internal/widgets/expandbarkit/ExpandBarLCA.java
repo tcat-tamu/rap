@@ -22,11 +22,18 @@ import java.io.IOException;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
-import org.eclipse.rap.rwt.lifecycle.*;
+import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
+import org.eclipse.rap.rwt.lifecycle.ControlLCAUtil;
+import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
+import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.widgets.IExpandBarAdapter;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.internal.widgets.ScrollBarLCAUtil;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.ExpandBar;
+import org.eclipse.swt.widgets.ExpandItem;
+import org.eclipse.swt.widgets.Widget;
 
 
 public final class ExpandBarLCA extends AbstractWidgetLCA {
@@ -35,7 +42,6 @@ public final class ExpandBarLCA extends AbstractWidgetLCA {
   private static final String[] ALLOWED_STYLES = new String[] { "NO_RADIO_GROUP", "BORDER" };
 
   private static final String PROP_BOTTOM_SPACING_BOUNDS = "bottomSpacingBounds";
-  private static final String PROP_VSCROLLBAR_VISIBLE = "vScrollBarVisible";
   private static final String PROP_VSCROLLBAR_MAX = "vScrollBarMax";
   private static final String PROP_EXPAND_LISTENER = "Expand";
   private static final String PROP_COLLAPSE_LISTENER = "Collapse";
@@ -46,10 +52,10 @@ public final class ExpandBarLCA extends AbstractWidgetLCA {
     ControlLCAUtil.preserveValues( expandBar );
     WidgetLCAUtil.preserveCustomVariant( expandBar );
     preserveProperty( expandBar, PROP_BOTTOM_SPACING_BOUNDS, getBottomSpacingBounds( expandBar ) );
-    preserveProperty( expandBar, PROP_VSCROLLBAR_VISIBLE, isVScrollBarVisible( expandBar ) );
     preserveProperty( expandBar, PROP_VSCROLLBAR_MAX, getVScrollBarMax( expandBar ) );
     preserveListener( expandBar, PROP_EXPAND_LISTENER, hasExpandListener( expandBar ) );
     preserveListener( expandBar, PROP_COLLAPSE_LISTENER, hasCollapseListener( expandBar ) );
+    ScrollBarLCAUtil.preserveValues( expandBar );
   }
 
   public void readData( Widget widget ) {
@@ -59,6 +65,7 @@ public final class ExpandBarLCA extends AbstractWidgetLCA {
     WidgetLCAUtil.processHelp( expandBar );
     processExpandEvent( expandBar, SWT.Expand, "Expand" );
     processExpandEvent( expandBar, SWT.Collapse, "Collapse" );
+    ScrollBarLCAUtil.processSelectionEvent( expandBar );
   }
 
   @Override
@@ -68,6 +75,7 @@ public final class ExpandBarLCA extends AbstractWidgetLCA {
     clientObject.create( TYPE );
     clientObject.set( "parent", WidgetUtil.getId( expandBar.getParent() ) );
     clientObject.set( "style", WidgetLCAUtil.getStyles( expandBar, ALLOWED_STYLES ) );
+    ScrollBarLCAUtil.renderInitialization( expandBar );
   }
 
   @Override
@@ -79,15 +87,10 @@ public final class ExpandBarLCA extends AbstractWidgetLCA {
                     PROP_BOTTOM_SPACING_BOUNDS,
                     getBottomSpacingBounds( expandBar ),
                     null );
-    renderProperty( expandBar, PROP_VSCROLLBAR_VISIBLE, isVScrollBarVisible( expandBar ), false );
     renderProperty( expandBar, PROP_VSCROLLBAR_MAX, getVScrollBarMax( expandBar ), 0 );
     renderListener( expandBar, PROP_EXPAND_LISTENER, hasExpandListener( expandBar ), false );
     renderListener( expandBar, PROP_COLLAPSE_LISTENER, hasCollapseListener( expandBar ), false );
-  }
-
-  @Override
-  public void renderDispose( Widget widget ) throws IOException {
-    ClientObjectFactory.getClientObject( widget ).destroy();
+    ScrollBarLCAUtil.renderChanges( expandBar );
   }
 
   //////////////////
@@ -95,10 +98,6 @@ public final class ExpandBarLCA extends AbstractWidgetLCA {
 
   private static Rectangle getBottomSpacingBounds( ExpandBar bar ) {
     return getExpandBarAdapter( bar ).getBottomSpacingBounds();
-  }
-
-  private static boolean isVScrollBarVisible( ExpandBar bar ) {
-    return getExpandBarAdapter( bar ).isVScrollbarVisible();
   }
 
   private static int getVScrollBarMax( ExpandBar bar ) {

@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.RWT;
+import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.client.WebClient;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
@@ -29,16 +30,15 @@ import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
-import org.eclipse.rap.rwt.lifecycle.ILifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
+import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.service.IServiceStore;
-import org.eclipse.rap.rwt.service.ISessionStore;
-import org.eclipse.rap.rwt.service.SessionStoreEvent;
-import org.eclipse.rap.rwt.service.SessionStoreListener;
+import org.eclipse.rap.rwt.service.UISession;
+import org.eclipse.rap.rwt.service.UISessionEvent;
+import org.eclipse.rap.rwt.service.UISessionListener;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
@@ -87,8 +87,8 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   public void testDefaultEntryPoint() throws IOException {
-    entryPointManager.register( EntryPointManager.DEFAULT_PATH, 
-                                TestEntryPointWithLog.class, 
+    entryPointManager.register( EntryPointManager.DEFAULT_PATH,
+                                TestEntryPointWithLog.class,
                                 null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
 
@@ -226,8 +226,8 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   public void testExceptionInPhaseListener() throws IOException {
-    entryPointManager.register( EntryPointManager.DEFAULT_PATH, 
-                                TestEntryPoint.class, 
+    entryPointManager.register( EntryPointManager.DEFAULT_PATH,
+                                TestEntryPoint.class,
                                 null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
     lifeCycle.addPhaseListener( new ExceptionListenerTest() );
@@ -604,7 +604,7 @@ public class RWTLifeCycle_Test extends TestCase {
       }
     };
     uiThread[ 0 ] = new UIThread( runnable );
-    LifeCycleUtil.setUIThread( ContextProvider.getSessionStore(), uiThread[ 0 ] );
+    LifeCycleUtil.setUIThread( ContextProvider.getUISession(), uiThread[ 0 ] );
 
     uiThread[ 0 ].setServiceContext( ContextProvider.getContext() );
     synchronized( uiThread[ 0 ].getLock() ) {
@@ -708,30 +708,30 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   public void testSessionInvalidateWithRunningEventLoop() throws Throwable {
-    final ISessionStore session = ContextProvider.getSessionStore();
+    final UISession uiSession = ContextProvider.getUISession();
     final String[] invalidateThreadName = { null };
     final boolean hasContext[] = new boolean[]{ false };
     final IServiceStore serviceStore[] =  { null };
-    session.addSessionStoreListener( new SessionStoreListener() {
-      public void beforeDestroy( SessionStoreEvent event ) {
+    uiSession.addUISessionListener( new UISessionListener() {
+      public void beforeDestroy( UISessionEvent event ) {
         invalidateThreadName[ 0 ] = Thread.currentThread().getName();
         hasContext[ 0 ] = ContextProvider.hasContext();
         serviceStore[ 0 ] = ContextProvider.getServiceStore();
       }
     } );
     // Register and 'run' entry point with readAndDispatch/sleep loop
-    Class<? extends IEntryPoint> entryPointClass = SessionInvalidateWithEventLoopEntryPoint.class;
+    Class<? extends EntryPoint> entryPointClass = SessionInvalidateWithEventLoopEntryPoint.class;
     entryPointManager.register( EntryPointManager.DEFAULT_PATH, entryPointClass, null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
     lifeCycle.execute();
     // Store some values for later comparison
-    IUIThreadHolder uiThreadHolder = LifeCycleUtil.getUIThread( session );
+    IUIThreadHolder uiThreadHolder = LifeCycleUtil.getUIThread( uiSession );
     String uiThreadName = uiThreadHolder.getThread().getName();
     // Invalidate session
-    invalidateSession( session );
+    invalidateSession( uiSession );
     //
     assertFalse( uiThreadHolder.getThread().isAlive() );
-    assertFalse( session.isBound() );
+    assertFalse( uiSession.isBound() );
     assertEquals( invalidateThreadName[ 0 ], uiThreadName );
     assertTrue( hasContext[ 0 ] );
     assertNotNull( serviceStore[ 0 ] );
@@ -740,8 +740,8 @@ public class RWTLifeCycle_Test extends TestCase {
 
   public void testExceptionInRender() throws Exception {
     fakeServletPath( EntryPointManager.DEFAULT_PATH );
-    entryPointManager.register( EntryPointManager.DEFAULT_PATH, 
-                                ExceptionInRenderEntryPoint.class, 
+    entryPointManager.register( EntryPointManager.DEFAULT_PATH,
+                                ExceptionInRenderEntryPoint.class,
                                 null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
     try {
@@ -753,20 +753,20 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   public void testSessionInvalidateWithoutRunningEventLoop() throws Throwable {
-    final ISessionStore session = ContextProvider.getSessionStore();
+    final UISession uiSession = ContextProvider.getUISession();
     final String[] uiThreadName = { "unknown-ui-thread" };
     final String[] invalidateThreadName = { "unkown-invalidate-thread" };
     final boolean hasContext[] = new boolean[]{ false };
     final IServiceStore serviceStore[] = { null };
-    session.addSessionStoreListener( new SessionStoreListener() {
-      public void beforeDestroy( SessionStoreEvent event ) {
+    uiSession.addUISessionListener( new UISessionListener() {
+      public void beforeDestroy( UISessionEvent event ) {
         invalidateThreadName[ 0 ] = Thread.currentThread().getName();
         hasContext[ 0 ] = ContextProvider.hasContext();
         serviceStore[ 0 ] = ContextProvider.getServiceStore();
       }
     } );
     // Register and 'run' entry point with readAndDispatch/sleep loop
-    Class<? extends IEntryPoint> entryPoint = SessionInvalidateWithoutEventLoopEntryPoint.class;
+    Class<? extends EntryPoint> entryPoint = SessionInvalidateWithoutEventLoopEntryPoint.class;
     entryPointManager.register( EntryPointManager.DEFAULT_PATH, entryPoint, null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
     lifeCycle.addPhaseListener( new PhaseListener() {
@@ -782,32 +782,32 @@ public class RWTLifeCycle_Test extends TestCase {
     } );
     lifeCycle.execute();
     // Invalidate session
-    invalidateSession( session );
+    invalidateSession( uiSession );
     //
-    assertFalse( session.isBound() );
+    assertFalse( uiSession.isBound() );
     assertEquals( uiThreadName[ 0 ], invalidateThreadName[ 0 ] );
     assertTrue( hasContext[ 0 ] );
     assertNotNull( serviceStore[ 0 ] );
   }
 
   public void testDisposeDisplayOnSessionTimeout() throws Throwable {
-    ISessionStore session = ContextProvider.getSessionStore();
+    UISession uiSession = ContextProvider.getUISession();
     ContextProvider.getContext().getApplicationContext();
-    Class<? extends IEntryPoint> clazz = DisposeDisplayOnSessionTimeoutEntryPoint.class;
+    Class<? extends EntryPoint> clazz = DisposeDisplayOnSessionTimeoutEntryPoint.class;
     entryPointManager.register( EntryPointManager.DEFAULT_PATH, clazz, null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
     lifeCycle.execute();
-    invalidateSession( session );
+    invalidateSession( uiSession );
     assertEquals( "display disposed", log.toString() );
   }
 
   public void testOrderOfDisplayDisposeAndSessionUnbound() throws Throwable {
-    ISessionStore session = ContextProvider.getSessionStore();
-    Class<? extends IEntryPoint> clazz = TestOrderOfDisplayDisposeAndSessionUnboundEntryPoint.class;
+    UISession uiSession = ContextProvider.getUISession();
+    Class<? extends EntryPoint> clazz = TestOrderOfDisplayDisposeAndSessionUnboundEntryPoint.class;
     entryPointManager.register( EntryPointManager.DEFAULT_PATH, clazz, null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
     lifeCycle.execute();
-    invalidateSession( session );
+    invalidateSession( uiSession );
     assertEquals( "disposeEvent, beforeDestroy", log.toString() );
   }
 
@@ -855,7 +855,7 @@ public class RWTLifeCycle_Test extends TestCase {
       }
       public void afterPhase( PhaseEvent event ) {
         currentThread[ 0 ] = Thread.currentThread();
-        uiThread[ 0 ] = LifeCycleUtil.getUIThread( ContextProvider.getSessionStore() ).getThread();
+        uiThread[ 0 ] = LifeCycleUtil.getUIThread( ContextProvider.getUISession() ).getThread();
       }
     } );
 
@@ -869,15 +869,15 @@ public class RWTLifeCycle_Test extends TestCase {
     RWTLifeCycle lifeCycle = new RWTLifeCycle( ApplicationContextUtil.getInstance() );
     lifeCycle.execute();
 
-    Thread uiThread = LifeCycleUtil.getUIThread( ContextProvider.getSessionStore() ).getThread();
+    Thread uiThread = LifeCycleUtil.getUIThread( ContextProvider.getUISession() ).getThread();
 
     assertNotNull( uiThread );
   }
 
-  private static void invalidateSession( final ISessionStore session ) throws Throwable {
+  private static void invalidateSession( final UISession uiSession ) throws Throwable {
     Runnable runnable = new Runnable() {
       public void run() {
-        session.getHttpSession().invalidate();
+        uiSession.getHttpSession().invalidate();
       }
     };
     Fixture.runInThread( runnable );
@@ -898,8 +898,8 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   private static UIThread getUIThread() {
-    ISessionStore session = ContextProvider.getSessionStore();
-    return ( UIThread )LifeCycleUtil.getUIThread( session );
+    UISession uiSession = ContextProvider.getUISession();
+    return ( UIThread )LifeCycleUtil.getUIThread( uiSession );
   }
 
   private static void fakeServletPath( String myEntryPoint ) {
@@ -920,14 +920,14 @@ public class RWTLifeCycle_Test extends TestCase {
     }
   }
 
-  public static final class MainStartup implements IEntryPoint {
+  public static final class MainStartup implements EntryPoint {
     public int createUI() {
       log.append( "createUI" );
       return 0;
     }
   }
 
-  public static final class ErrorStartup implements IEntryPoint {
+  public static final class ErrorStartup implements EntryPoint {
     public int createUI() {
       throw new RuntimeException( ERR_MSG );
     }
@@ -952,14 +952,14 @@ public class RWTLifeCycle_Test extends TestCase {
     }
   }
 
-  public static class TestEntryPoint implements IEntryPoint {
+  public static class TestEntryPoint implements EntryPoint {
     public int createUI() {
       new Display();
       return 0;
     }
   }
 
-  public static class TestPhasesEntryPoint implements IEntryPoint {
+  public static class TestPhasesEntryPoint implements EntryPoint {
     public int createUI() {
       Display display = new Display();
       while( !display.isDisposed() ) {
@@ -971,14 +971,14 @@ public class RWTLifeCycle_Test extends TestCase {
     }
   }
 
-  public static class TestErrorInLifeCycleEntryPoint implements IEntryPoint {
+  public static class TestErrorInLifeCycleEntryPoint implements EntryPoint {
     public int createUI() {
       String msg = TestErrorInLifeCycleEntryPoint.class.getName();
       throw new RuntimeException( msg );
     }
   }
 
-  public static class TestEntryPointWithLog implements IEntryPoint {
+  public static class TestEntryPointWithLog implements EntryPoint {
     public int createUI() {
       new Display();
       log.append( DISPLAY_CREATED );
@@ -986,7 +986,7 @@ public class RWTLifeCycle_Test extends TestCase {
     }
   }
 
-  public static class DisposeDisplayOnSessionTimeoutEntryPoint implements IEntryPoint
+  public static class DisposeDisplayOnSessionTimeoutEntryPoint implements EntryPoint
   {
     public int createUI() {
       Display display = new Display();
@@ -1000,7 +1000,7 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   public static class SessionInvalidateWithEventLoopEntryPoint
-    implements IEntryPoint
+    implements EntryPoint
   {
     public int createUI() {
       Display display = new Display();
@@ -1017,7 +1017,7 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   public static class SessionInvalidateWithoutEventLoopEntryPoint
-    implements IEntryPoint
+    implements EntryPoint
   {
     public int createUI() {
       new Display();
@@ -1025,7 +1025,7 @@ public class RWTLifeCycle_Test extends TestCase {
     }
   }
 
-  public static class ExceptionInRenderEntryPoint implements IEntryPoint {
+  public static class ExceptionInRenderEntryPoint implements EntryPoint {
     public static class BuggyShell extends Shell {
       private static final long serialVersionUID = 1L;
       public BuggyShell( Display display ) {
@@ -1035,7 +1035,7 @@ public class RWTLifeCycle_Test extends TestCase {
       @Override
       public <T> T getAdapter( Class<T> adapter ) {
         Object result;
-        if( adapter.equals( ILifeCycleAdapter.class ) ) {
+        if( adapter.equals( WidgetLifeCycleAdapter.class ) ) {
           result = new AbstractWidgetLCA() {
             @Override
             public void preserveValues( Widget widget ) {
@@ -1082,7 +1082,7 @@ public class RWTLifeCycle_Test extends TestCase {
   }
 
   public static final class TestOrderOfDisplayDisposeAndSessionUnboundEntryPoint
-    implements IEntryPoint
+    implements EntryPoint
   {
     public int createUI() {
       Display display = new Display();
@@ -1091,9 +1091,9 @@ public class RWTLifeCycle_Test extends TestCase {
           log.append( "disposeEvent, " );
         }
       } );
-      ISessionStore sessionStore = RWT.getSessionStore();
-      sessionStore.addSessionStoreListener( new SessionStoreListener() {
-        public void beforeDestroy( SessionStoreEvent event ) {
+      UISession uiSession = RWT.getUISession();
+      uiSession.addUISessionListener( new UISessionListener() {
+        public void beforeDestroy( UISessionEvent event ) {
           log.append( "beforeDestroy" );
         }
       } );

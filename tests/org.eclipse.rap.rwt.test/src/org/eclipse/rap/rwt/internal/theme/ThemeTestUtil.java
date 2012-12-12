@@ -19,7 +19,7 @@ import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.theme.css.CssFileReader;
 import org.eclipse.rap.rwt.internal.theme.css.StyleSheet;
-import org.eclipse.rap.rwt.resources.ResourceLoader;
+import org.eclipse.rap.rwt.service.ResourceLoader;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.internal.engine.ThemeManagerHelper;
 import org.w3c.css.sac.CSSException;
@@ -76,7 +76,7 @@ public final class ThemeTestUtil {
 
   public static void setCustomTheme( String css ) throws IOException {
     registerTheme( "customTestTheme", css, null );
-    ThemeUtil.setCurrentThemeId( ContextProvider.getSessionStore(), "customTestTheme" );
+    ThemeUtil.setCurrentThemeId( ContextProvider.getUISession(), "customTestTheme" );
   }
 
   public static void registerTheme( String themeId, String cssCode, ResourceLoader loader )
@@ -104,6 +104,6 @@ public final class ThemeTestUtil {
   }
 
   public static void setCurrentThemeId( String themeId ) {
-    ThemeUtil.setCurrentThemeId( ContextProvider.getSessionStore(), themeId );
+    ThemeUtil.setCurrentThemeId( ContextProvider.getUISession(), themeId );
   }
 }

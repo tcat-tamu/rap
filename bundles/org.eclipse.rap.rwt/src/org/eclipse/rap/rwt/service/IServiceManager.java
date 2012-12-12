@@ -13,35 +13,25 @@ package org.eclipse.rap.rwt.service;
 
 
 /**
- * An <code>IServiceManager</code> is responsible to manage existing
- * <code>IServiceHandler</code>s.
- *
- * @see IServiceHandler
- *
  * @since 2.0
- * @noimplement This interface is not intended to be implemented by clients.
+ * @deprecated Use {@link ServiceManager} instead
  */
+@Deprecated
 public interface IServiceManager {
 
   /**
-   * Registers a new service handler at the service manager. Service handlers
-   * have an <code>id</code> to identify the request which are handled by the
-   * registered service handler.
-   *
-   * @param id the identifier of this service handler used in the URL
-   * @param serviceHandler the <code>IServiceHandler</code> implementation
-   *
-   * @see IServiceHandler
-   * @see IServiceHandler#REQUEST_PARAM
+   * @deprecated Use {@link ServiceManager} instead of {@link IServiceManager}
    */
-  void registerServiceHandler( String id, IServiceHandler serviceHandler );
+  void registerServiceHandler( String id, ServiceHandler serviceHandler );
 
   /**
-   * Unregisters a service handler.
-   *
-   * @param id the identifier of this service handler
-   *
-   * @see IServiceHandler
+   * @deprecated Use {@link ServiceManager} instead of {@link IServiceManager}
    */
   void unregisterServiceHandler( String id );
+
+  /**
+   * @deprecated Use {@link ServiceManager} instead of {@link IServiceManager}
+   */
+  String getServiceHandlerUrl( String id );
+
 }

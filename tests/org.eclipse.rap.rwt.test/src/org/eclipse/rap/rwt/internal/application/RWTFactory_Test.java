@@ -12,7 +12,6 @@ package org.eclipse.rap.rwt.internal.application;
 
 import junit.framework.TestCase;
 
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 
 
@@ -76,9 +75,6 @@ public class RWTFactory_Test extends TestCase {
 
     assertNotNull( RWTFactory.getDisplaysHolder() );
     assertSame( RWTFactory.getDisplaysHolder(), RWTFactory.getDisplaysHolder() );
-
-    assertNotNull( RWTFactory.getJSLibraryConcatenator() );
-    assertSame( RWTFactory.getJSLibraryConcatenator(), RWTFactory.getJSLibraryConcatenator() );
 
     assertNotNull( RWTFactory.getTextSizeStorage() );
     assertSame( RWTFactory.getTextSizeStorage(), RWTFactory.getTextSizeStorage() );

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 EclipseSource and others.
+ * Copyright (c) 2011, 2012 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,24 +10,31 @@
  ******************************************************************************/
 package org.eclipse.swt.graphics;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectInputValidation;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
-import org.eclipse.rap.rwt.internal.engine.*;
+import org.eclipse.rap.rwt.internal.engine.PostDeserialization;
 import org.eclipse.rap.rwt.internal.resources.ResourceUtil;
 import org.eclipse.rap.rwt.internal.util.StreamUtil;
-import org.eclipse.rap.rwt.resources.IResourceManager;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISession;
+import org.eclipse.rap.rwt.service.ResourceManager;
 import org.eclipse.swt.internal.widgets.IDisplayAdapter;
 import org.eclipse.swt.widgets.Display;
 
 
 class ImageSerializer {
-  
+
   private static class SerializableBytes implements Serializable {
-    
+
     final byte[] data;
-    
+
     SerializableBytes( byte[] data ) {
       this.data = data;
     }
@@ -35,13 +42,13 @@ class ImageSerializer {
 
   private class PostDeserializationValidation implements ObjectInputValidation {
     private final SerializableBytes imageBytes;
-  
+
     PostDeserializationValidation( SerializableBytes imageBytes ) {
       this.imageBytes = imageBytes;
     }
-  
+
     public void validateObject() throws InvalidObjectException {
-      PostDeserialization.addProcessor( getSessionStore(), new Runnable() {
+      PostDeserialization.addProcessor( getUISession(), new Runnable() {
         public void run() {
           InputStream inputStream = new ByteArrayInputStream( imageBytes.data );
           getResourceManager().register( image.internalImage.getResourceName(), inputStream );
@@ -79,13 +86,13 @@ class ImageSerializer {
     }
   }
 
-  private ISessionStore getSessionStore() {
+  private UISession getUISession() {
     Display display = ( Display )image.getDevice();
     IDisplayAdapter adapter = display.getAdapter( IDisplayAdapter.class );
-    return adapter.getSessionStore();
+    return adapter.getUISession();
   }
 
-  private IResourceManager getResourceManager() {
-    return ApplicationContextUtil.get( getSessionStore() ).getResourceManager();
+  private ResourceManager getResourceManager() {
+    return ApplicationContextUtil.get( getUISession() ).getResourceManager();
   }
 }

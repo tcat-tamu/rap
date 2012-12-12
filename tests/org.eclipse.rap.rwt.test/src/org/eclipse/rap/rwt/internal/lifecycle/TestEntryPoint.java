@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.lifecycle;
 
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
+import org.eclipse.rap.rwt.application.EntryPoint;
 
 
-public class TestEntryPoint implements IEntryPoint {
+public class TestEntryPoint implements EntryPoint {
   public int createUI() {
     return 0;
   }

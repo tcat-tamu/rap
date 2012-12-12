@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2011 Innoopract Informationssysteme GmbH.
+ * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,12 +15,12 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
 import org.eclipse.rap.rwt.service.IServiceStore;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISession;
 
 
 /**
@@ -36,8 +36,8 @@ public final class ServiceContext {
   private HttpServletResponse response;
   private IServiceStore serviceStore;
   private boolean disposed;
-  private ISessionStore sessionStore;
-  private ApplicationContext applicationContext;
+  private UISession uiSession;
+  private ApplicationContextImpl applicationContext;
   private ProtocolMessageWriter protocolWriter;
 
   /**
@@ -62,16 +62,16 @@ public final class ServiceContext {
    *                be null.
    * @param response the corresponding response to the currently processed
    *                 request. Must not be null.
-   * @param sessionStore the <code>ISessionStore</code> that represents the
+   * @param uiSession the <code>UISession</code> that represents the
    *                     <code>HttpSession<code> instance to which the currently
    *                     processed request belongs to.
    */
   public ServiceContext( HttpServletRequest request,
                          HttpServletResponse response,
-                         ISessionStore sessionStore )
+                         UISession uiSession )
   {
     this( request, response );
-    this.sessionStore = sessionStore;
+    this.uiSession = uiSession;
   }
 
   /**
@@ -131,15 +131,15 @@ public final class ServiceContext {
     return disposed;
   }
 
-  public ISessionStore getSessionStore() {
-    if( sessionStore != null && !sessionStore.isBound() ) {
-      sessionStore = null;
+  public UISession getUISession() {
+    if( uiSession != null && !uiSession.isBound() ) {
+      uiSession = null;
     }
-    return sessionStore;
+    return uiSession;
   }
 
-  public void setSessionStore( ISessionStore sessionStore ) {
-    this.sessionStore = sessionStore;
+  public void setUISession( UISession uiSession ) {
+    this.uiSession = uiSession;
   }
 
   public void dispose() {
@@ -147,14 +147,14 @@ public final class ServiceContext {
     request = null;
     response = null;
     serviceStore = null;
-    sessionStore = null;
+    uiSession = null;
     applicationContext = null;
     disposed = true;
   }
 
-  public ApplicationContext getApplicationContext() {
+  public ApplicationContextImpl getApplicationContext() {
     checkState();
-    // TODO [ApplicationContext]: Revise performance improvement with buffering mechanism in place.
+    // TODO [ApplicationContextImpl]: Revise performance improvement with buffering mechanism in place.
     if( !isApplicationContextBuffered() ) {
       getApplicationContextFromSession();
       if( !isApplicationContextBuffered() ) {
@@ -174,22 +174,22 @@ public final class ServiceContext {
   }
 
   private void bufferApplicationContextInSession() {
-    if( sessionStore != null ) {
-      ApplicationContextUtil.set( sessionStore, applicationContext );
+    if( uiSession != null ) {
+      ApplicationContextUtil.set( uiSession, applicationContext );
     }
   }
 
   private void getApplicationContextFromServletContext() {
     // Note [fappel]: Yourkit analysis showed that the following line is
-    //                expensive. Because of this the ApplicationContext is
+    //                expensive. Because of this the ApplicationContextImpl is
     //                buffered in a field.
     ServletContext servletContext = request.getSession().getServletContext();
     applicationContext = ApplicationContextUtil.get( servletContext );
   }
 
   private void getApplicationContextFromSession() {
-    if( sessionStore != null ) {
-      ApplicationContext fromSession = ApplicationContextUtil.get( sessionStore );
+    if( uiSession != null ) {
+      ApplicationContextImpl fromSession = ApplicationContextUtil.get( uiSession );
       if( fromSession != null && fromSession.isActive() ) {
         applicationContext = fromSession;
       }

@@ -34,10 +34,40 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       assertTrue( widget.getUserData( "isControl") );
       assertEquals( "scrolledcomposite", widget.getAppearance() );
       assertNull( widget._content );
-      assertFalse( widget._hasSelectionListener );
       assertFalse( widget._showFocusedControl );
       shell.destroy();
       widget.destroy();
+    },
+
+    testDestroyScrolledCompositeWithChildrenByProtocol : function() {
+      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      var MessageProcessor = rwt.protocol.MessageProcessor;
+      MessageProcessor.processOperation( {
+        "target" : "w3",
+        "action" : "create",
+        "type" : "rwt.widgets.ScrolledComposite",
+        "properties" : {
+          "style" : [],
+          "parent" : "w2"
+        }
+      } );
+      var ObjectRegistry = rwt.protocol.ObjectRegistry;
+      var widget = ObjectRegistry.getObject( "w3" );
+      MessageProcessor.processOperationArray( [ "create", "w4", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w3"
+        }
+      ] );
+      var child  = ObjectRegistry.getObject( "w4" );
+
+      MessageProcessor.processOperationArray( [ "destroy", "w3" ] );
+      TestUtil.flush();
+
+      assertTrue( ObjectRegistry.getObject( "w3" ) == null );
+      assertTrue( widget.isDisposed() );
+      assertTrue( ObjectRegistry.getObject( "w4" ) == null );
+      assertTrue( child.isDisposed() );
     },
 
     testSetBoundsByProtocol : function() {
@@ -109,8 +139,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
           "origin" : [ 1, 2 ]
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
-      var widget = ObjectManager.getObject( "w3" );
+
+      var ObjectRegistry = rwt.protocol.ObjectRegistry;
+      var widget = ObjectRegistry.getObject( "w3" );
       assertEquals( 1, widget._horzScrollBar.getValue() );
       assertEquals( 2, widget._vertScrollBar.getValue() );
       shell.destroy();
@@ -148,35 +179,18 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
         "type" : "rwt.widgets.ScrolledComposite",
         "properties" : {
           "style" : [],
-          "parent" : "w2",
-          "scrollBarsVisible" : [ false, false ]
+          "parent" : "w2"
         }
       } );
+      this._createProtocolScrollBars( "w3" );
+
+      TestUtil.protocolSet( "w3_hscroll", { "visibility" : false } );
+      TestUtil.protocolSet( "w3_vscroll", { "visibility" : false } );
+
       var ObjectManager = rwt.protocol.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertFalse( widget._horzScrollBar.getDisplay() );
       assertFalse( widget._vertScrollBar.getDisplay() );
-      shell.destroy();
-      widget.destroy();
-    },
-
-    testSetHasSelectionListenerByProtocol : function() {
-      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
-      processor.processOperation( {
-        "target" : "w3",
-        "action" : "create",
-        "type" : "rwt.widgets.ScrolledComposite",
-        "properties" : {
-          "style" : [],
-          "parent" : "w2"
-        }
-      } );
-      TestUtil.protocolListen( "w3", { "scrollBarsSelection" : true } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
-      var widget = ObjectManager.getObject( "w3" );
-      assertTrue( widget._hasSelectionListener );
       shell.destroy();
       widget.destroy();
     },
@@ -373,7 +387,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       var composite = this._createComposite();
       this._setScrollDimension( composite, 200, 200 );
       TestUtil.prepareTimerUse();
-      composite.setHasSelectionListener( true );
       composite._clientArea.setScrollLeft( 10 );
       composite._clientArea.setScrollTop( 20 );
       composite._onscroll( {} );
@@ -386,8 +399,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var composite = this._createComposite();
       this._setScrollDimension( composite, 200, 200 );
-      TestUtil.prepareTimerUse();
       org.eclipse.swt.WidgetManager.getInstance().add( composite, "w3" );
+      this._createProtocolScrollBars( "w3" );
       // set directly, otherwise the changes are not sent
 
       composite._clientArea.setScrollLeft( 10 );
@@ -402,42 +415,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       composite.destroy();
     },
 
-    testSendSelectedEventHorizontal : function() {
-      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var composite = this._createComposite();
-      this._setScrollDimension( composite, 200, 200 );
-      TestUtil.prepareTimerUse();
-      composite.setHasSelectionListener( true );
-      org.eclipse.swt.WidgetManager.getInstance().add( composite, "w3" );
-
-      composite._clientArea.setScrollLeft( 10 );
-      composite._onscroll( {} );
-      TestUtil.forceTimerOnce();
-
-      assertEquals( 1, TestUtil.getRequestsSend() );
-      var msg = TestUtil.getMessageObject();
-      assertTrue( msg.findNotifyProperty( "w3", "scrollBarSelected", "horizontal" ) );
-      composite.destroy();
-    },
-
-    testSendSelectedEventVertical : function() {
-      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var composite = this._createComposite();
-      this._setScrollDimension( composite, 200, 200 );
-      TestUtil.prepareTimerUse();
-      composite.setHasSelectionListener( true );
-      org.eclipse.swt.WidgetManager.getInstance().add( composite, "w3" );
-
-      composite._clientArea.setScrollTop( 10 );
-      composite._onscroll( {} );
-      TestUtil.forceTimerOnce();
-
-      assertEquals( 1, TestUtil.getRequestsSend() );
-      var msg = TestUtil.getMessageObject();
-      assertTrue( msg.findNotifyProperty( "w3", "scrollBarSelected", "vertical" ) );
-      composite.destroy();
-    },
-
     testBlockScrolling : function() {
       if(    !rwt.client.Client.isAndroidBrowser()
           && !rwt.client.Client.isMobileSafari() )
@@ -449,8 +426,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
         composite.setVBarSelection( 20 );
         var position = this._getScrollPosition( composite );
         assertEquals( [ 10, 20 ], position );
-        TestUtil.prepareTimerUse();
-        composite.setHasSelectionListener( true );
         var child = new rwt.widgets.base.Terminator();
         child.setParent( composite._clientArea );
         child.setLeft( 0 );
@@ -472,7 +447,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       TestUtil.prepareTimerUse();
       var composite = this._createComposite();
-      composite.setHasSelectionListener( true );
       this._setScrollDimension( composite, 200, 200 );
       composite.setScrollBarsVisible( false, false );
       composite._clientArea.setScrollLeft( 50 );
@@ -489,17 +463,24 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       TestUtil.prepareTimerUse();
       var composite = this._createComposite();
-      composite.setHasSelectionListener( true );
       this._setScrollDimension( composite, 200, 200 );
       composite.setScrollBarsVisible( true, false );
+      TestUtil.protocolListen( "w3_vscroll", { "Selection" : true } );
+      TestUtil.protocolListen( "w3_hscroll", { "Selection" : true } );
       TestUtil.flush();
+
       composite._clientArea.setScrollLeft( 50 );
       composite._clientArea.setScrollTop( 70 );
       composite._onscroll( {} );
+      TestUtil.forceTimerOnce();
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
+
       var position = this._getScrollPosition( composite );
       assertEquals( [ 50, 0 ], position );
-      TestUtil.forceTimerOnce();
       assertEquals( 1, TestUtil.getRequestsSend() );
+      var message = TestUtil.getMessageObject();
+      assertNull( message.findSetOperation( "w3", "verticalBar.selection" ) );
+      assertNull( message.findNotifyOperation( "w3_vscroll", "Selection" ) );
       composite.destroy();
     },
 
@@ -507,16 +488,23 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       TestUtil.prepareTimerUse();
       var composite = this._createComposite();
-      composite.setHasSelectionListener( true );
       this._setScrollDimension( composite, 200, 200 );
       composite.setScrollBarsVisible( false, true );
+      TestUtil.protocolListen( "w3_vscroll", { "Selection" : true } );
+      TestUtil.protocolListen( "w3_hscroll", { "Selection" : true } );
+
       composite._clientArea.setScrollLeft( 50 );
       composite._clientArea.setScrollTop( 70 );
       composite._onscroll( {} );
       TestUtil.forceTimerOnce();
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
+
       assertEquals( 1, TestUtil.getRequestsSend() );
       var position = this._getScrollPosition( composite );
       assertEquals( [ 0, 70 ], position );
+      var message = TestUtil.getMessageObject();
+      assertNull( message.findSetOperation( "w3", "horizontalBar.selection" ) );
+      assertNull( message.findNotifyOperation( "w3_hscroll", "Selection" ) );
       composite.destroy();
     },
 
@@ -585,14 +573,44 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
       assertNull( child.getTop() );
     },
 
+    testSendSelectionHorizontal : function() {
+      var composite = this._createComposite();
+      this._setScrollDimension( composite, 200, 200 );
+      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+      TestUtil.protocolListen( "w3_hscroll", { "Selection" : true } );
+
+      composite.getHorizontalBar().setValue( 20 );
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
+
+      var message = TestUtil.getLastMessage();
+      assertEquals( 20, message.findSetProperty( "w3", "horizontalBar.selection" ) );
+      assertNotNull( message.findNotifyOperation( "w3_hscroll", "Selection" ) );
+      composite.destroy();
+    },
+
+    testSendSelectionVertical : function() {
+      var composite = this._createComposite();
+      this._setScrollDimension( composite, 200, 200 );
+      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+      TestUtil.protocolListen( "w3_vscroll", { "Selection" : true } );
+
+      composite.getVerticalBar().setValue( 20 );
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
+
+      var message = TestUtil.getLastMessage();
+      assertEquals( 20, message.findSetProperty( "w3", "verticalBar.selection" ) );
+      assertNotNull( message.findNotifyOperation( "w3_vscroll", "Selection" ) );
+      composite.destroy();
+    },
+
     /////////
     // Helper
 
     _createComposite : function( noflush ) {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var composite = new rwt.widgets.ScrolledComposite();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
-      widgetManager.add( composite, "w3", true );
+      rwt.protocol.ObjectRegistry.add( "w3", composite );
+      this._createProtocolScrollBars( "w3" );
       composite.setLeft( 10 );
       composite.setTop( 10 );
       composite.setWidth( 100 );
@@ -602,6 +620,29 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrolledCompositeTest", {
         TestUtil.flush();
       }
       return composite;
+    },
+
+    _createProtocolScrollBars : function( id ) {
+      rwt.protocol.MessageProcessor.processOperation( {
+        "target" : id + "_vscroll",
+        "action" : "create",
+        "type" : "rwt.widgets.ScrollBar",
+        "properties" : {
+          "parent" : id,
+          "style" : [ "VERTICAL" ],
+          "visibility" : true
+        }
+      } );
+      rwt.protocol.MessageProcessor.processOperation( {
+        "target" : id + "_hscroll",
+        "action" : "create",
+        "type" : "rwt.widgets.ScrollBar",
+        "properties" : {
+          "parent" : id,
+          "style" : [ "HORIZONTAL" ],
+          "visibility" : true
+        }
+      } );
     },
 
     _isScrollbarVisible : function( composite, horiz ) {

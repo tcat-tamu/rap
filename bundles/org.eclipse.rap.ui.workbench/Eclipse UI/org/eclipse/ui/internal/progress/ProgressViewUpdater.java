@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2009 IBM Corporation and others.
+ * Copyright (c) 2003, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,21 +7,23 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     EclipseSource - adaptation for RAP
  *******************************************************************************/
 package org.eclipse.ui.internal.progress;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionBindingListener;
-
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.SingletonUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
-import org.eclipse.rap.rwt.lifecycle.UICallBack;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISessionEvent;
+import org.eclipse.rap.rwt.service.UISessionListener;
 import org.eclipse.rap.ui.internal.progress.JobCanceler;
 import org.eclipse.rap.ui.internal.progress.ProgressUtil;
 import org.eclipse.swt.widgets.Display;
@@ -37,8 +39,8 @@ import org.eclipse.ui.progress.WorkbenchJob;
 //
 //    private static ProgressViewUpdater singleton;
 public class ProgressViewUpdater implements IJobProgressManagerListener {
-  
-  // RAP [fappel]: This class will be instanciated using the 
+
+  // RAP [fappel]: This class will be instanciated using the
   //               SessionSingletonUtil#getInstance(class) method to have a
   //               replacement for the class variable holding the singleton in
   //               RCP.
@@ -59,11 +61,11 @@ public class ProgressViewUpdater implements IJobProgressManagerListener {
     Object updateLock = new Object();
 
     boolean debug;
-    
+
     // RAP [fappel]:
     private Display display;
-    
-   
+
+
     /**
      * The UpdatesInfo is a private class for keeping track of the updates
      * required.
@@ -225,20 +227,14 @@ public class ProgressViewUpdater implements IJobProgressManagerListener {
         		getBoolean(IWorkbenchPreferenceConstants.SHOW_SYSTEM_JOBS);
         // RAP [fappel]: Ensure that job is removed in case of session timeout.
         //               Note that this is still under investigation.
-        ISessionStore session = RWT.getSessionStore();
-        String watchDogKey = getClass().getName() + ".watchDog";
-        if( session.getAttribute( watchDogKey ) == null ) {
-          session.setAttribute( watchDogKey, new HttpSessionBindingListener() {
-            public void valueBound( final HttpSessionBindingEvent event ) {
+        RWT.getUISession().addUISessionListener( new UISessionListener() {
+          public void beforeDestroy( UISessionEvent event ) {
+            if( updateJob != null ) {
+              updateJob.cancel();
+              updateJob.addJobChangeListener( new JobCanceler() );
             }
-            public void valueUnbound( final HttpSessionBindingEvent event ) {
-              if( updateJob != null ) {
-                updateJob.cancel();
-                updateJob.addJobChangeListener( new JobCanceler() );
-              }
-            }
-          } );
-        }
+          }
+        } );
     }
 
     /**
@@ -290,7 +286,7 @@ public class ProgressViewUpdater implements IJobProgressManagerListener {
         if (ProgressUtil.isWorkbenchRunning( display )) {
           // make sure we don't schedule too often
           final long now = System.currentTimeMillis();
-          UICallBack.runNonUIThreadWithFakeContext( display, new Runnable() {
+          RWT.getUISession( display ).exec( new Runnable() {
             public void run() {
 	          //Add in a 100ms delay so as to keep priority low
               updateJob.schedule(100);

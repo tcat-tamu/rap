@@ -29,7 +29,7 @@ import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleAdapterUtil;
 import org.eclipse.rap.rwt.internal.theme.css.CssFileReader;
 import org.eclipse.rap.rwt.internal.theme.css.StyleSheet;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
-import org.eclipse.rap.rwt.resources.ResourceLoader;
+import org.eclipse.rap.rwt.service.ResourceLoader;
 import org.eclipse.swt.widgets.Widget;
 
 
@@ -43,7 +43,7 @@ public class ThemeManager {
   private static final String FALLBACK_THEME_NAME = "RAP Fallback Theme";
   private static final String DEFAULT_THEME_NAME = "RAP Default Theme";
 
-  // TODO [ApplicationContext]: made field public to replace with a performance
+  // TODO [ApplicationContextImpl]: made field public to replace with a performance
   //      optimized solution for tests. Think about a less intrusive solution.
   public static ResourceLoader STANDARD_RESOURCE_LOADER = new ResourceLoader() {
     ClassLoader classLoader = getClass().getClassLoader();

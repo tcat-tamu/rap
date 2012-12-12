@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 EclipseSource and others.
+ * Copyright (c) 2011, 2012 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,14 +12,18 @@ package org.eclipse.rap.rwt.internal.engine;
 
 import java.io.IOException;
 
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpSession;
 
 import junit.framework.TestCase;
 
-import org.eclipse.rap.rwt.internal.engine.RWTClusterSupport;
-import org.eclipse.rap.rwt.internal.service.SessionStoreImpl;
-import org.eclipse.rap.rwt.testfixture.*;
+import org.eclipse.rap.rwt.internal.service.UISessionImpl;
+import org.eclipse.rap.rwt.testfixture.TestRequest;
+import org.eclipse.rap.rwt.testfixture.TestResponse;
+import org.eclipse.rap.rwt.testfixture.TestSession;
 
 
 public class RWTClusterSupport_Test extends TestCase {
@@ -46,21 +50,22 @@ public class RWTClusterSupport_Test extends TestCase {
     assertTrue( chain.doFilterWasCalled );
   }
 
-  public void testSessionStoreGetsAttached() throws Exception {
+  public void testUISessionIsAttached() throws Exception {
     HttpSession session = new TestSession();
     request.setSession( session );
-    session.setAttribute( SessionStoreImpl.ATTR_SESSION_STORE, new SessionStoreImpl( session ) );
+    session.setAttribute( UISessionImpl.ATTR_SESSION_STORE, new UISessionImpl( session ) );
 
     rwtClusterSupport.doFilter( request, response, chain );
 
-    SessionStoreImpl sessionStore = SessionStoreImpl.getInstanceFromSession( session );
+    UISessionImpl uiSession = UISessionImpl.getInstanceFromSession( session );
     assertTrue( chain.doFilterWasCalled );
-    assertSame( session, sessionStore.getHttpSession() );
+    assertSame( session, uiSession.getHttpSession() );
   }
 
   public void testSessionIsMarkedAsChanged() throws Exception {
     final StringBuilder log = new StringBuilder();
     HttpSession session = new TestSession() {
+      @Override
       public void setAttribute( String name, Object value ) {
         super.setAttribute( name, value );
         if( log.length() > 0 ) {
@@ -71,14 +76,15 @@ public class RWTClusterSupport_Test extends TestCase {
     };
     request.setSession( session );
     session.setAttribute( "foo", "bar" );
-    SessionStoreImpl.attachInstanceToSession( session, new SessionStoreImpl( session ) );
+    UISessionImpl.attachInstanceToSession( session, new UISessionImpl( session ) );
     log.setLength( 0 );
 
     rwtClusterSupport.doFilter( request, response, chain );
 
-    assertEquals( SessionStoreImpl.ATTR_SESSION_STORE, log.toString() );
+    assertEquals( UISessionImpl.ATTR_SESSION_STORE, log.toString() );
   }
 
+  @Override
   protected void setUp() throws Exception {
     request = new TestRequest();
     response = new TestResponse();

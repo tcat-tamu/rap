@@ -32,6 +32,13 @@ public interface IWidgetAdapter {
   String getId();
 
   /**
+   * Returns the parent given to the widgets constructor
+   *
+   * @return the widget
+   */
+  Widget getParent();
+
+  /**
    * Indicates whether this widget has been initialized already. A widget is
    * considered initialized when the response that creates and initializes the
    * widget has been rendered.
@@ -42,10 +49,8 @@ public interface IWidgetAdapter {
   boolean isInitialized();
 
   /**
-   * Preserves a specified value for a specified key. Used to preserve values in
-   * the LCA method
-   * {@link IWidgetLifeCycleAdapter#preserveValues(org.eclipse.swt.widgets.Widget)
-   * preserveValues}.
+   * Preserves a specified value for a specified key. Used to preserve values in the LCA method
+   * {@link WidgetLifeCycleAdapter#preserveValues(Widget) preserveValues}.
    *
    * @param propertyName the key to map the preserved value to
    * @param value the value to preserve

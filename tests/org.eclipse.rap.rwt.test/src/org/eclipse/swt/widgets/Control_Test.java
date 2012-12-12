@@ -25,12 +25,28 @@ import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
-import org.eclipse.rap.rwt.lifecycle.*;
+import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
+import org.eclipse.rap.rwt.lifecycle.PhaseId;
+import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.theme.IControlThemeAdapter;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.DragDetectListener;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.HelpListener;
+import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.MenuDetectListener;
+import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.widgets.ControlHolder;
 import org.eclipse.swt.internal.widgets.ControlUtil;
 import org.eclipse.swt.internal.widgets.IControlAdapter;
@@ -52,7 +68,7 @@ public class Control_Test extends TestCase {
     @SuppressWarnings("unchecked")
     public <T> T getAdapter( Class<T> adapter ) {
       Object result = null;
-      if( adapter == ILifeCycleAdapter.class ) {
+      if( adapter == WidgetLifeCycleAdapter.class ) {
         result = new LoggingWidgetLCA( log );
       } else {
         result = super.getAdapter( adapter );
@@ -528,15 +544,15 @@ public class Control_Test extends TestCase {
     assertEquals( true, control.getVisible() );
     assertEquals( false, control.isVisible() );
   }
-  
+
   public void testSetVisibleSendsShowEvent() {
     Control control = new Button( shell, SWT.PUSH );
     control.setVisible( false );
     Listener listener = mock( Listener.class );
     control.addListener( SWT.Show, listener );
-    
+
     control.setVisible( true );
-    
+
     verify( listener ).handleEvent( any( Event.class ) );
   }
 
@@ -544,19 +560,19 @@ public class Control_Test extends TestCase {
     Control control = new Button( shell, SWT.PUSH );
     Listener listener = mock( Listener.class );
     control.addListener( SWT.Show, listener );
-    
+
     control.setVisible( true );
-    
+
     verify( listener, never() ).handleEvent( any( Event.class ) );
   }
-  
+
   public void testSetVisibleSendsHideEvent() {
     Control control = new Button( shell, SWT.PUSH );
     Listener listener = mock( Listener.class );
     control.addListener( SWT.Hide, listener );
-    
+
     control.setVisible( false );
-    
+
     verify( listener ).handleEvent( any( Event.class ) );
   }
 
@@ -1076,7 +1092,7 @@ public class Control_Test extends TestCase {
     IControlAdapter controlAdapter = shell.getAdapter( IControlAdapter.class );
     assertTrue( controlAdapter.isPacked() );
   }
-  
+
   public void testAddControlListenerWithNullArgument() {
     try {
       shell.addControlListener( null );
@@ -1086,7 +1102,7 @@ public class Control_Test extends TestCase {
 
   public void testAddControlListener() {
     shell.addControlListener( mock( ControlListener.class ) );
-    
+
     assertTrue( shell.isListening( SWT.Move ) );
     assertTrue( shell.isListening( SWT.Resize ) );
   }
@@ -1101,9 +1117,9 @@ public class Control_Test extends TestCase {
   public void testRemoveControlListener() {
     ControlListener listener = mock( ControlListener.class );
     shell.addControlListener( listener );
-    
+
     shell.removeControlListener( listener );
-    
+
     assertFalse( shell.isListening( SWT.Move ) );
     assertFalse( shell.isListening( SWT.Resize ) );
   }
@@ -1114,7 +1130,7 @@ public class Control_Test extends TestCase {
     assertTrue( shell.isListening( SWT.FocusIn ) );
     assertTrue( shell.isListening( SWT.FocusOut ) );
   }
-  
+
   public void testAddFocusListenerWithNullArgument() {
     try {
       shell.addFocusListener( null );
@@ -1125,13 +1141,13 @@ public class Control_Test extends TestCase {
   public void testRemoveFocusListener() {
     FocusListener listener = mock( FocusListener.class );
     shell.addFocusListener( listener );
-    
+
     shell.removeFocusListener( listener );
 
     assertFalse( shell.isListening( SWT.FocusIn ) );
     assertFalse( shell.isListening( SWT.FocusOut ) );
   }
-  
+
   public void testRemoveFocusListenerWithNullArgument() {
     try {
       shell.removeFocusListener( null );
@@ -1144,7 +1160,7 @@ public class Control_Test extends TestCase {
 
     assertTrue( shell.isListening( SWT.Help ) );
   }
-  
+
   public void testAddHelpListenerWithNullArgument() {
     try {
       shell.addHelpListener( null );
@@ -1155,12 +1171,12 @@ public class Control_Test extends TestCase {
   public void testRemoveHelpListener() {
     HelpListener listener = mock( HelpListener.class );
     shell.addHelpListener( listener );
-    
+
     shell.removeHelpListener( listener );
 
     assertFalse( shell.isListening( SWT.Help ) );
   }
-  
+
   public void testRemoveHelpListenerWithNullArgument() {
     try {
       shell.removeHelpListener( null );
@@ -1178,7 +1194,7 @@ public class Control_Test extends TestCase {
     assertTrue( shell.isListening( SWT.KeyUp ) );
     assertTrue( shell.isListening( SWT.KeyDown ) );
   }
-  
+
   public void testAddKeyListenerWithNullArgument() {
     try {
       shell.addKeyListener( null );
@@ -1189,13 +1205,13 @@ public class Control_Test extends TestCase {
   public void testRemoveKeyListener() {
     KeyListener listener = mock( KeyListener.class );
     shell.addKeyListener( listener );
-    
+
     shell.removeKeyListener( listener );
 
     assertFalse( shell.isListening( SWT.KeyUp ) );
     assertFalse( shell.isListening( SWT.KeyDown ) );
   }
-  
+
   public void testRemoveKeyListenerWithNullArgument() {
     try {
       shell.removeKeyListener( null );
@@ -1205,39 +1221,39 @@ public class Control_Test extends TestCase {
 
   public void testAddDragDetectDetectListener() {
     shell.addDragDetectListener( mock( DragDetectListener.class ) );
-    
+
     assertTrue( shell.isListening( SWT.DragDetect ) );
   }
-  
+
   public void testAddDragDetectListenerWithNullArgument() {
     try {
       shell.addDragDetectListener( null );
     } catch( IllegalArgumentException expected ) {
     }
   }
-  
+
   public void testRemoveDragDetectListener() {
     DragDetectListener listener = mock( DragDetectListener.class );
     shell.addDragDetectListener( listener );
-    
+
     shell.removeDragDetectListener( listener );
-    
+
     assertFalse( shell.isListening( SWT.MenuDetect ) );
   }
-  
+
   public void testRemoveDragDetectListenerWithNullArgument() {
     try {
       shell.removeDragDetectListener( null );
     } catch( IllegalArgumentException expected ) {
     }
   }
-  
+
   public void testAddMenuDetectListener() {
     shell.addMenuDetectListener( mock( MenuDetectListener.class ) );
-    
+
     assertTrue( shell.isListening( SWT.MenuDetect ) );
   }
-  
+
   public void testAddMenuDetectListenerWithNullArgument() {
     try {
       shell.addMenuDetectListener( null );
@@ -1250,10 +1266,10 @@ public class Control_Test extends TestCase {
     shell.addMenuDetectListener( listener );
 
     shell.removeMenuDetectListener( listener );
-    
+
     assertFalse( shell.isListening( SWT.MenuDetect ) );
   }
-  
+
   public void testRemoveMenuDetectListenerWithNullArgument() {
     try {
       shell.removeMenuDetectListener( null );
@@ -1263,12 +1279,12 @@ public class Control_Test extends TestCase {
 
   public void testAddMouseListener() {
     shell.addMouseListener( mock( MouseListener.class ) );
-    
+
     assertTrue( shell.isListening( SWT.MouseUp ) );
     assertTrue( shell.isListening( SWT.MouseDown ) );
     assertTrue( shell.isListening( SWT.MouseDoubleClick ) );
   }
-  
+
   public void testAddMouseListenerWithNullArgument() {
     try {
       shell.addMouseListener( null );
@@ -1281,12 +1297,12 @@ public class Control_Test extends TestCase {
     shell.addMouseListener( listener );
 
     shell.removeMouseListener( listener );
-    
+
     assertFalse( shell.isListening( SWT.MouseUp ) );
     assertFalse( shell.isListening( SWT.MouseDown ) );
     assertFalse( shell.isListening( SWT.MouseDoubleClick ) );
   }
-  
+
   public void testRemoveMouseListenerWithNullArgument() {
     try {
       shell.removeMouseListener( null );
@@ -1296,10 +1312,10 @@ public class Control_Test extends TestCase {
 
   public void testAddTraverseListener() {
     shell.addTraverseListener( mock( TraverseListener.class ) );
-    
+
     assertTrue( shell.isListening( SWT.Traverse ) );
   }
-  
+
   public void testAddTraverseListenerWithNullArgument() {
     try {
       shell.addTraverseListener( null );
@@ -1310,12 +1326,12 @@ public class Control_Test extends TestCase {
   public void testRemoveTraverseListener() {
     TraverseListener listener = mock( TraverseListener.class );
     shell.addTraverseListener( listener );
-    
+
     shell.removeTraverseListener( listener );
 
     assertFalse( shell.isListening( SWT.Traverse ) );
   }
-  
+
   public void testRemoveTraverseListenerWithNullArgument() {
     try {
       shell.removeTraverseListener( null );

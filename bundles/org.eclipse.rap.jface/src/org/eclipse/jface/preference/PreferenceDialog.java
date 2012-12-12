@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2009 IBM Corporation and others.
+ * Copyright (c) 2000, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,6 +9,7 @@
  *     IBM Corporation - initial API and implementation
  *     Teddy Walker <teddy.walker@googlemail.com> 
  *     	- Bug 188056 [Preferences] PreferencePages have to less indent in PreferenceDialog
+ *     EclipseSource - adaptation for RAP
  *******************************************************************************/
 package org.eclipse.jface.preference;
 
@@ -44,6 +45,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.ViewerFilter;
+import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.custom.ScrolledComposite;
@@ -128,7 +130,11 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 	}
 
 	//The id of the last page that was selected
-	private static String lastPreferenceId = null;
+//	private static String lastPreferenceId = null;
+// RAP [if] Keep lastPreferenceId in the session store instead of static field
+	private static String LAST_PREFERENCE_ID
+	  = PreferenceDialog.class.getName() + "#lastPreferenceId"; //$NON-NLS-1$
+	
 
 	//The last known tree width
 	private static int lastTreeWidth = 180;
@@ -819,7 +825,9 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 	 * @return String
 	 */
 	protected String getSelectedNodePreference() {
-		return lastPreferenceId;
+// RAP [if] Keep lastPreferenceId in the session store instead of static field
+//		return lastPreferenceId;
+	    return ( String )ContextProvider.getUISession().getAttribute( LAST_PREFERENCE_ID );
 	}
 
 	/**
@@ -1193,7 +1201,9 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 	 *            The identifier for the page
 	 */
 	protected void setSelectedNodePreference(String pageId) {
-		lastPreferenceId = pageId;
+// RAP [if] Keep lastPreferenceId in the session store instead of static field
+//		lastPreferenceId = pageId;
+	    ContextProvider.getUISession().setAttribute( LAST_PREFERENCE_ID, pageId );
 	}
 
 	/**

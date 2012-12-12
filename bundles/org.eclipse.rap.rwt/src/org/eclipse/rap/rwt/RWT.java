@@ -26,9 +26,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.rap.rwt.application.Application;
 import org.eclipse.rap.rwt.client.Client;
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
+import org.eclipse.rap.rwt.client.service.BrowserHistory;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.client.BrowserHistoryImpl;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
@@ -36,17 +38,17 @@ import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServletLog;
 import org.eclipse.rap.rwt.internal.util.ClassUtil;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
-import org.eclipse.rap.rwt.internal.widgets.BrowserHistoryImpl;
 import org.eclipse.rap.rwt.lifecycle.ILifeCycle;
-import org.eclipse.rap.rwt.resources.IResourceManager;
-import org.eclipse.rap.rwt.service.IApplicationStore;
-import org.eclipse.rap.rwt.service.IServiceHandler;
-import org.eclipse.rap.rwt.service.IServiceManager;
+import org.eclipse.rap.rwt.service.ApplicationContext;
 import org.eclipse.rap.rwt.service.IServiceStore;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.service.ISettingStore;
+import org.eclipse.rap.rwt.service.ResourceManager;
+import org.eclipse.rap.rwt.service.ServiceHandler;
+import org.eclipse.rap.rwt.service.ServiceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.internal.widgets.IDisplayAdapter;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
@@ -54,19 +56,15 @@ import org.eclipse.swt.widgets.Widget;
 
 
 /**
- * This class provides access to aspects of RWT which are not
- * part of the SWT API as RAP needs some additions regarding
- * the server and client communication. It is responsible for
- * providing access to the {@link ISessionStore} and the
- * {@link HttpServletRequest}.
+ * This class provides access to those parts of RWT which are not covered by the SWT API. For
+ * example, it provides access to the current UI session and the request.
  *
  * @since 2.0
  * @see ILifeCycle
- * @see ISessionStore
+ * @see UISession
  * @see IServiceStore
- * @see IApplicationStore
- * @see IBrowserHistory
- * @see IResourceManager
+ * @see ApplicationContext
+ * @see ResourceManager
  * @see HttpServletRequest
  * @see HttpServletResponse
  */
@@ -196,9 +194,9 @@ public final class RWT {
    * </p>
    * <p>
    * Valid strings for key sequences consist of one key and any number of modifier keys,
-   * separated by <code>+</code>. Keys can be identified by their character or by any of the
-   * keywords below. Special characters (not a letter or digit) should not be combined with any
-   * modifiers, and will issue events regardless of pressed modifiers.
+   * separated by <code>+</code>. Keys can be identified by their upper case character or by any
+   * of the keywords below. Special characters (not a letter or digit) should not be combined with
+   * any modifiers, and will issue events regardless of pressed modifiers.
    * </p>
    * <p>
    * The following keywords can be used to refer to special keys:
@@ -417,28 +415,32 @@ public final class RWT {
   }
 
   /**
-   * Returns the instance of the currently available
-   * {@link IResourceManager}
+   * Returns the instance of the resource manager for the current application context. The resource
+   * manager is used to register static resources such as images of JavaScript files.
    *
-   * @return instance of {@link IResourceManager}
+   * @return the resource manager for the current application context
+   * @see ResourceManager
    */
-  public static IResourceManager getResourceManager() {
+  public static ResourceManager getResourceManager() {
     return RWTFactory.getResourceManager();
   }
 
   /**
-   * Returns a manager to add and remove {@link IServiceHandler}s.
+   * Returns the instance of the service manager for the current application context. The service
+   * manager is used to register and unregister service handlers.
    *
-   * @return the {@link IServiceManager}
+   * @return the service manager instance for the current application context
+   * @see ServiceHandler
+   * @see ServiceManager
    */
-  public static IServiceManager getServiceManager() {
+  public static ServiceManager getServiceManager() {
     return RWTFactory.getServiceManager();
   }
 
   /**
-   * Returns the setting store instance for this session.
-   * @return a {@link ISettingStore}; never <code>null</code>
-   * @since 1.1
+   * Returns the setting store instance for the current UI session.
+   *
+   * @return the setting store, for the current session, never <code>null</code>
    */
   public static ISettingStore getSettingStore() {
     return RWTFactory.getSettingStoreManager().getStore();
@@ -456,34 +458,58 @@ public final class RWT {
   }
 
   /**
-   * Returns the <code>ISessionStore</code> of the <code>HttpSession</code>
-   * to which the currently processed request belongs.
+   * Returns the current UI session. This method must be executed from the UI thread.
    *
-   * @return instance of {@link ISessionStore}
+   * @return the current UI session instance, never <code>null</code>
    */
-  public static ISessionStore getSessionStore() {
-    return ContextProvider.getSessionStore();
+  public static UISession getUISession() {
+    return ContextProvider.getUISession();
   }
 
   /**
-   * Returns the <code>IApplicationStore</code> instance that represents the web context's
+   * Returns the UI session that is associated with the given display.
+   *
+   * @return the UI session instance for the given display, never <code>null</code>
+   */
+  public static UISession getUISession( Display display ) {
+    ParamCheck.notNull( display, "display" );
+    return display.getAdapter( IDisplayAdapter.class ).getUISession();
+  }
+
+  /**
+   * @deprecated Use {@link #getUISession()} instead
+   */
+  @Deprecated
+  public static UISession getSessionStore() {
+    return ContextProvider.getUISession();
+  }
+
+  /**
+   * Returns the <code>ApplicationContext</code> instance that represents the web context's
    * global data storage area.
    *
-   * @return instance of {@link IApplicationStore}
-   * @since 1.4
+   * @return instance of {@link ApplicationContext}
    */
-  public static IApplicationStore getApplicationStore() {
-    return RWTFactory.getApplicationStore();
+  public static ApplicationContext getApplicationContext() {
+    return RWTFactory.getApplicationContext();
+  }
+
+  /**
+   * @deprecated Use {@link #getApplicationContext()} instead.
+   */
+  @Deprecated
+  public static ApplicationContext getApplicationStore() {
+    return getApplicationContext();
   }
 
   /**
    * Returns the <code>HttpServletRequest</code> that is currently processed.
    * <p>
-   * Typical application code rarely needs to call this method. It is meant mainly for
-   * service handlers obtain parameters of the request to process.
+   * Typical application code rarely needs to call this method. It can be used to obtain request
+   * details, e.g. certain request headers.
    * </p>
-   * @return instance of {@link HttpServletRequest}
-   * @see IServiceHandler
+   *
+   * @return the currently processed request
    */
   public static HttpServletRequest getRequest() {
     checkHasSessionContext();
@@ -491,16 +517,13 @@ public final class RWT {
   }
 
   /**
-   * Returns the <code>HttpServletResponse</code> that is mapped
-   * to the currently processed request.
+   * Returns the <code>HttpServletResponse</code> that will be sent to the client after processing
+   * the current request.
    * <p>
-   * Typical application code <em>never</em> needs to call this method. It is meant only for
-   * service handlers to be able to write output and control other aspects of the response.
-   * Calling this method from a UI request (e.g. in an  SWT event listener) is almost
-   * certainly an error.
+   * Typical application code <em>never</em> needs to call this method.
    * </p>
-   * @return instance of {@link HttpServletResponse}
-   * @see IServiceHandler
+   *
+   * @return the response object that will be sent to the client
    */
   public static HttpServletResponse getResponse() {
     checkHasSessionContext();
@@ -522,7 +545,7 @@ public final class RWT {
    */
   public static Locale getLocale() {
     checkHasSessionContext();
-    Locale result = ( Locale )ContextProvider.getSessionStore().getAttribute( LOCALE );
+    Locale result = ( Locale )ContextProvider.getUISession().getAttribute( LOCALE );
     if( result == null ) {
       result = ContextProvider.getRequest().getLocale();
     }
@@ -541,21 +564,20 @@ public final class RWT {
    */
   public static void setLocale( Locale locale ) {
     checkHasSessionContext();
-    ISessionStore sessionStore = ContextProvider.getSessionStore();
-    sessionStore.setAttribute( LOCALE, locale );
+    UISession uiSession = ContextProvider.getUISession();
+    uiSession.setAttribute( LOCALE, locale );
   }
 
   /**
-   * Returns an instance if <code>IBrowserHistory</code> that provides support
-   * for the browser's history.
+   * Returns an instance of the browser history for the current UI session.
    *
-   * @return the browser history support implementation
-   * @see IBrowserHistory
-   * @since 1.3
-   * @deprecated use BrowserHistory service instead
+   * @return the browser history instance for the current UI session
+   * @see BrowserHistory
+   * @deprecated use {@link BrowserHistory} client service instead, see
+   *             {@link Client#getService(Class)}
    */
   @Deprecated
-  public static IBrowserHistory getBrowserHistory() {
+  public static BrowserHistory getBrowserHistory() {
     return SingletonUtil.getSessionInstance( BrowserHistoryImpl.class );
   }
 
@@ -570,7 +592,6 @@ public final class RWT {
    * @throws SWTException <ul>
    *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the UI thread</li>
    * </ul>
-   * @since 1.3
    */
   public static void requestThreadExec( Runnable runnable ) {
     ParamCheck.notNull( runnable, "runnable" );
@@ -584,17 +605,16 @@ public final class RWT {
   }
 
   /**
-   * Returns a representation of the client that is connected with the server in the current
+   * Returns a representation of the client that is connected with the server in the current UI
    * session.
    *
-   * @return The client for the current session
+   * @return The client for the current UI session
    * @throws IllegalStateException when called outside of the request context
-   * @since 2.0
    */
   public static Client getClient() {
-    ApplicationContext applicationContext = ApplicationContextUtil.getInstance();
-    ISessionStore sessionStore = ContextProvider.getSessionStore();
-    return applicationContext.getClientSelector().getSelectedClient( sessionStore );
+    ApplicationContextImpl applicationContext = ApplicationContextUtil.getInstance();
+    UISession uiSession = ContextProvider.getUISession();
+    return applicationContext.getClientSelector().getSelectedClient( uiSession );
   }
 
   private static void checkHasSessionContext() {

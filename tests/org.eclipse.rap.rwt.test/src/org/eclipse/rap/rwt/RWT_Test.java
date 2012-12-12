@@ -11,17 +11,18 @@
 package org.eclipse.rap.rwt;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import junit.framework.TestCase;
 
-import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycle;
+import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
-import org.eclipse.rap.rwt.lifecycle.UICallBack;
-import org.eclipse.rap.rwt.service.IApplicationStore;
+import org.eclipse.rap.rwt.service.ApplicationContext;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.internal.NoOpRunnable;
 import org.eclipse.swt.SWT;
@@ -41,10 +42,12 @@ public class RWT_Test extends TestCase {
     Fixture.tearDown();
   }
 
-  public void testGetApplicationStore() {
-    IApplicationStore applicationStore = RWT.getApplicationStore();
+  public void testGetApplicationContext() {
+    ApplicationContext context = RWT.getApplicationContext();
 
-    assertSame( applicationStore, RWTFactory.getApplicationStore() );
+    ApplicationContext result = RWTFactory.getApplicationContext();
+
+    assertSame( context, result );
   }
 
   public void testRequestThreadExecFromBackgroundThread() throws Throwable {
@@ -178,7 +181,7 @@ public class RWT_Test extends TestCase {
     try {
       Fixture.runInThread( new Runnable() {
         public void run() {
-          UICallBack.runNonUIThreadWithFakeContext( display, runnable );
+          RWT.getUISession( display ).exec( runnable );
         }
       } );
       fail();
@@ -186,15 +189,88 @@ public class RWT_Test extends TestCase {
     }
   }
 
+  public void testGetUISession() {
+    UISession result = RWT.getUISession();
+
+    assertSame( result, result );
+  }
+
+  public void testGetUISession_failsInBackgroundThread() throws Throwable {
+    try {
+      Fixture.runInThread( new Runnable() {
+        public void run() {
+          RWT.getUISession();
+        }
+      } );
+      fail();
+    } catch( IllegalStateException exception ) {
+      assertTrue( exception.getMessage().startsWith( "No context available" ) );
+    }
+  }
+
+  public void testGetUISession_succeedsInBackgroundThreadWithContext() throws Throwable {
+    final AtomicReference<UISession> result = new AtomicReference<UISession>();
+    final UISession currentUISession = RWT.getUISession();
+
+    Fixture.runInThread( new Runnable() {
+      public void run() {
+        Fixture.createServiceContext();
+        ContextProvider.getContext().setUISession( currentUISession );
+        result.set( RWT.getUISession() );
+      }
+    } );
+
+    assertSame( currentUISession, result.get() );
+  }
+
+  public void testGetUISessionForDisplay() {
+    Display display = new Display();
+
+    UISession result = RWT.getUISession( display );
+
+    assertSame( RWT.getUISession(), result );
+  }
+
+  public void testGetUISessionForDisplay_failsWithNullArgument() {
+    try {
+      RWT.getUISession( null );
+      fail();
+    } catch( NullPointerException exception ) {
+      assertTrue( exception.getMessage().contains( "display" ) );
+    }
+  }
+
+  public void testGetUISessionForDisplay_fromBackgroundThread() throws Throwable {
+    final AtomicReference<UISession> result = new AtomicReference<UISession>();
+    final Display display = new Display();
+
+    Fixture.runInThread( new Runnable() {
+      public void run() {
+        result.set( RWT.getUISession( display ) );
+      }
+    } );
+
+    assertSame( RWT.getUISession(), result.get() );
+  }
+
+  public void testGetUISessionForDisplay_alsoWorksWhenDisplayIsDisposed() {
+    final Display display = new Display();
+    display.dispose();
+
+    UISession result = RWT.getUISession( display );
+
+    assertSame( RWT.getUISession(), result );
+  }
+
   private static class TestLifeCycle extends LifeCycle {
     static final String REQUEST_THREAD_EXEC = "requestThreadExec";
 
     private String invocationLog = "";
 
-    public TestLifeCycle( ApplicationContext applicationContext ) {
+    public TestLifeCycle( ApplicationContextImpl applicationContext ) {
       super( applicationContext );
     }
-    
+
     @Override
     public void execute() throws IOException {
     }

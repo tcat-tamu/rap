@@ -46,13 +46,16 @@ import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
-import org.eclipse.rap.rwt.internal.lifecycle.IDisplayLifeCycleAdapter;
+import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.IUIThreadHolder;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
+import org.eclipse.rap.rwt.internal.remote.RemoteObject;
+import org.eclipse.rap.rwt.internal.remote.RemoteObjectFactory;
+import org.eclipse.rap.rwt.internal.remote.RemoteObjectImpl;
 import org.eclipse.rap.rwt.internal.resources.ResourceDirectory;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
@@ -63,7 +66,9 @@ import org.eclipse.rap.rwt.lifecycle.IWidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.service.IServiceStore;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISession;
+import org.eclipse.rap.rwt.service.ResourceManager;
+import org.eclipse.rap.rwt.testfixture.internal.TestResourceManager;
 import org.eclipse.rap.rwt.testfixture.internal.engine.ThemeManagerHelper;
 import org.eclipse.swt.internal.widgets.IDisplayAdapter;
 import org.eclipse.swt.internal.widgets.WidgetAdapter;
@@ -133,7 +138,13 @@ public final class Fixture {
     registerConfigurer();
     rwtServletContextListener = new RWTServletContextListener();
     ServletContextEvent event = new ServletContextEvent( servletContext );
-    rwtServletContextListener.contextInitialized( event );
+    ClassLoader oldContextClassLoader = Thread.currentThread().getContextClassLoader();
+    try {
+      Thread.currentThread().setContextClassLoader( Fixture.class.getClassLoader() );
+      rwtServletContextListener.contextInitialized( event );
+    } finally {
+      Thread.currentThread().setContextClassLoader( oldContextClassLoader );
+    }
   }
 
   public static void triggerServletContextDestroyed() {
@@ -157,7 +168,7 @@ public final class Fixture {
   public static void disposeOfApplicationContext() {
     triggerServletContextDestroyed();
     disposeOfServletContext();
-    // TODO [ApplicationContext]: At the time beeing this improves RWTAllTestSuite performance by
+    // TODO [ApplicationContext]: At the time being this improves RWTAllTestSuite performance by
     //      50% on my machine without causing any test to fail. However this has a bad smell
     //      with it, so I introduced a flag that can be switch on for fast tests on local machines
     //      and switched of for the integration build tests. Think about a less intrusive solution.
@@ -229,11 +240,11 @@ public final class Fixture {
   }
 
   public static void useDefaultResourceManager() {
-    ApplicationContextHelper.useDefaultResourceManager();
+    ApplicationContextHelper.fakeResourceManager( null );
   }
 
   public static void useTestResourceManager() {
-    ApplicationContextHelper.useTestResourceManager();
+    ApplicationContextHelper.fakeResourceManager( new TestResourceManager() );
   }
 
   public static void tearDown() {
@@ -248,7 +259,7 @@ public final class Fixture {
   // LifeCycle helpers
 
   public static void readDataAndProcessAction( Display display ) {
-    IDisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
+    DisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
     fakePhase( PhaseId.READ_DATA );
     displayLCA.readData( display );
     Fixture.preserveWidgets();
@@ -280,7 +291,7 @@ public final class Fixture {
 
   public static void preserveWidgets() {
     Display display = LifeCycleUtil.getSessionDisplay();
-    IDisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
+    DisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
     PhaseId bufferedPhaseId = CurrentPhase.get();
     fakePhase( PhaseId.READ_DATA );
     displayLCA.preserveValues( display );
@@ -289,7 +300,7 @@ public final class Fixture {
 
   public static void clearPreserved() {
     Display display = LifeCycleUtil.getSessionDisplay();
-    IDisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
+    DisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
     PhaseId bufferedPhaseId = CurrentPhase.get();
     fakePhase( PhaseId.RENDER );
     displayLCA.clearPreserved( display );
@@ -314,7 +325,12 @@ public final class Fixture {
   }
 
   public static void fakeClient( Client client ) {
-    ContextProvider.getSessionStore().setAttribute( ClientSelector.SELECTED_CLIENT, client );
+    ContextProvider.getUISession().setAttribute( ClientSelector.SELECTED_CLIENT, client );
+  }
+
+  public static void fakeRemoteObjectFactory( RemoteObjectFactory factory ) {
+    UISession uiSession = ContextProvider.getUISession();
+    uiSession.setAttribute( RemoteObjectFactory.class.getName() + "#instance", factory );
   }
 
   public static void fakeNewRequest( Display display ) {
@@ -398,9 +414,30 @@ public final class Fixture {
     }
   }
 
+  public static void dispatchNotify( RemoteObject remoteObject,
+                                     String eventName,
+                                     Map<String, Object> properties )
+  {
+    RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
+    remoteObjectImpl.handleNotify( eventName, properties );
+  }
+
+  public static void dispatchCall( RemoteObject remoteObject,
+                                   String methodName,
+                                   Map<String, Object> parameters )
+  {
+    RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
+    remoteObjectImpl.call( methodName, parameters );
+  }
+
+  public static void dispatchSet( RemoteObject remoteObject, Map<String, Object> properties ) {
+    RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
+    remoteObjectImpl.handleSet( properties );
+  }
+
   public static void fakeNotifyOperation( String target,
                                           String eventName,
-                                          Map<String, Object> parameters )
+                                          Map<String, Object> properties )
   {
     checkMessage();
     TestRequest request = ( TestRequest )ContextProvider.getRequest();
@@ -412,7 +449,7 @@ public final class Fixture {
       newOperation.put( ClientMessage.OPERATION_NOTIFY );
       newOperation.put( target );
       newOperation.put( eventName );
-      newOperation.put( new JSONObject( parameters ) );
+      newOperation.put( new JSONObject( properties ) );
       operations.put( newOperation );
       request.setBody( message.toString() );
     } catch( JSONException exception ) {
@@ -446,6 +483,10 @@ public final class Fixture {
     if( ProtocolUtil.isClientMessageProcessed() ) {
       throw new IllegalStateException( "Client message is already processed" );
     }
+  }
+
+  public static void fakeResourceManager( ResourceManager resourceManager ) {
+    ApplicationContextHelper.fakeResourceManager( resourceManager );
   }
 
   public static void fakeResponseWriter() {
@@ -676,8 +717,8 @@ public final class Fixture {
         return this;
       }
     };
-    ISessionStore sessionStore = ContextProvider.getSessionStore();
-    LifeCycleUtil.setUIThread( sessionStore, result );
+    UISession uiSession = ContextProvider.getUISession();
+    LifeCycleUtil.setUIThread( uiSession, result );
     return result;
   }
 

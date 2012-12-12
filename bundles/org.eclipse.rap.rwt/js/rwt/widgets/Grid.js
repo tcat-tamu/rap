@@ -18,7 +18,6 @@ qx.Class.define( "rwt.widgets.Grid", {
     this.base( arguments );
     this._rootItem = new rwt.widgets.GridItem();
     // Style-Flags:
-    this._isVirtual = false;
     this._hasMultiSelection = false;
     // Internal State:
     this._hasSelectionListener = false;
@@ -26,6 +25,7 @@ qx.Class.define( "rwt.widgets.Grid", {
     this._leadItem = null;
     this._topItemIndex = 0;
     this._topItem = null;
+    this._hasSetDataListener = false;
     this._selection = [];
     this._focusItem = null;
     this._renderQueue = {};
@@ -44,14 +44,11 @@ qx.Class.define( "rwt.widgets.Grid", {
     this._itemHeight = 16;
     // Timer & Border
     this._mergeEventsTimer = new rwt.client.Timer( 50 );
-    this._scrollBarChangesTimer = null;
     // Subwidgets
     this._rowContainer = org.eclipse.rwt.GridUtil.createTreeRowContainer( argsMap );
     this._columns = {};
     this._horzScrollBar = new rwt.widgets.base.ScrollBar( true );
     this._vertScrollBar = new rwt.widgets.base.ScrollBar( false );
-    this._hasScrollBarsSelectionListener = false;
-    this._scrollChanges = {};
     this._header = null;
     this._footer = null;
     this.add( this._rowContainer );
@@ -73,10 +70,6 @@ qx.Class.define( "rwt.widgets.Grid", {
     this._rootItem.removeEventListener( "update", this._onItemUpdate, this );
     this._rootItem.dispose();
     this._rootItem = null;
-    if( this._scrollBarChangesTimer != null ) {
-      this._scrollBarChangesTimer.dispose();
-      this._scrollBarChangesTimer = null;
-    }
     this._mergeEventsTimer.dispose();
     this._mergeEventsTimer = null;
     this._rowContainer = null;
@@ -88,7 +81,6 @@ qx.Class.define( "rwt.widgets.Grid", {
     this._focusItem = null;
     this._sortColumn = null;
     this._resizeLine = null;
-    this._scrollChanges = null;
     if( this._cellToolTip ) {
       this._cellToolTip.destroy();
       this._cellToolTip = null;
@@ -175,9 +167,6 @@ qx.Class.define( "rwt.widgets.Grid", {
         this._config.checkBoxLeft = map.checkBoxMetrics[ 0 ];
         this._config.checkBoxWidth = map.checkBoxMetrics[ 1 ];
       }
-      if( map.virtual ) {
-        this._isVirtual = true;
-      }
       if( typeof map.indentionWidth === "number" ) {
         this._config.indentionWidth = map.indentionWidth;
       }
@@ -187,16 +176,6 @@ qx.Class.define( "rwt.widgets.Grid", {
       this._hasFixedColumns = map.splitContainer;
       this._rowContainer.setBaseAppearance( map.appearance );
       this.setAppearance( map.appearance );
-    },
-
-    _getScrollBarChangesTimer : function() {
-      if( this._scrollBarChangesTimer === null ) {
-        var timer = new rwt.client.Timer( 400 );
-        var req = rwt.remote.Server.getInstance();
-        timer.addEventListener( "interval", req.send, req );
-        this._scrollBarChangesTimer = timer;
-      }
-      return this._scrollBarChangesTimer;
     },
 
     ///////////////////////////
@@ -350,6 +329,22 @@ qx.Class.define( "rwt.widgets.Grid", {
       this._layoutY();
     },
 
+    getVerticalBar : function() {
+      return this._vertScrollBar;
+    },
+
+    getHorizontalBar : function() {
+      return this._horzScrollBar;
+    },
+
+    isVerticalBarVisible : function() {
+      return this._vertScrollBar.getVisibility();
+    },
+
+    isHorizontalBarVisible : function() {
+      return this._horzScrollBar.getVisibility();
+    },
+
     setHasSelectionListener : function( value ) {
       this._hasSelectionListener = value;
     },
@@ -364,6 +359,10 @@ qx.Class.define( "rwt.widgets.Grid", {
 
     setHasCollapseListener : function( value ) {
       this._hasCollapseListener = value;
+    },
+
+    setHasSetDataListener : function( value ) {
+      this._hasSetDataListener = value;
     },
 
     setAlignment : function( column, value ) {
@@ -464,7 +463,9 @@ qx.Class.define( "rwt.widgets.Grid", {
     _onItemUpdate : function( event ) {
       var item = event.target;
       if( event.msg === "collapsed" ) {
-        if( this._focusItem && this._focusItem.isChildOf( item ) ) {
+        if(    this._focusItem
+            && ( this._focusItem.isDisposed() || this._focusItem.isChildOf( item ) )
+        ) {
           this.setFocusItem( item );
         }
       }
@@ -605,6 +606,7 @@ qx.Class.define( "rwt.widgets.Grid", {
       event.stopPropagation();
       var change = event.getWheelDelta() * this._itemHeight * 2;
       this._vertScrollBar.setValue( this._vertScrollBar.getValue() - change );
+      this._vertScrollBar.setValue( this._vertScrollBar.getValue() ); // See Bug 396309
     },
 
     _onKeyPress : function( event ) {
@@ -924,7 +926,8 @@ qx.Class.define( "rwt.widgets.Grid", {
     },
 
     setHasScrollBarsSelectionListener : function( value ) {
-      this._hasScrollBarsSelectionListener = value;
+      this._vertScrollBar.setHasSelectionListener( true );
+      this._horzScrollBar.setHasSelectionListener( true );
     },
 
     //////////////
@@ -970,13 +973,11 @@ qx.Class.define( "rwt.widgets.Grid", {
     },
 
     _sendTopItemIndexChange : function() {
-      var req = rwt.remote.Server.getInstance();
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
-      var id = wm.findIdByWidget( this );
-      req.addParameter( id + ".topItemIndex", this._topItemIndex );
-      if( this._isVirtual || this._hasScrollBarsSelectionListener ) {
-        this._scrollChanges[ "vertical" ] = true;
-        this._startScrollBarChangesTimer();
+      var server = rwt.remote.Server.getInstance();
+      var serverObject = server.getServerObject( this );
+      serverObject.set( "topItemIndex", this._topItemIndex );
+      if( this._hasSetDataListener || this._vertScrollBar.getHasSelectionListener() ) {
+        this._startScrollBarChangesTimer( false );
       }
     },
 
@@ -984,30 +985,42 @@ qx.Class.define( "rwt.widgets.Grid", {
       // TODO [tb] : There should be a check for _inServerResponse,
       // but currently this is needed to sync the value with the
       // server when the scrollbars are hidden by the server.
-      var req = rwt.remote.Server.getInstance();
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
-      var id = wm.findIdByWidget( this );
-      req.addParameter( id + ".scrollLeft", this._horzScrollBar.getValue() );
-      if( this._isVirtual || this._hasScrollBarsSelectionListener ) {
-        this._scrollChanges[ "horizontal" ] = true;
-        this._startScrollBarChangesTimer();
-      }
-    },
-
-    _startScrollBarChangesTimer : function() {
-      if( !this._getScrollBarChangesTimer().isEnabled() ) {
-        this._getScrollBarChangesTimer().start();
-        var server = rwt.remote.Server.getInstance();
-        server.addEventListener( "send", this._onSend, this );
-      }
-    },
-
-    _onSend : function() {
       var server = rwt.remote.Server.getInstance();
-      server.getServerObject( this ).notify( "scrollBarSelected", this._scrollChanges );
-      this._scrollChanges = {};
-      this._getScrollBarChangesTimer().stop();
-      server.removeEventListener( "send", this._onSend, this );
+      var serverObject = server.getServerObject( this );
+      serverObject.set( "scrollLeft", this._horzScrollBar.getValue() );
+      if( this._hasSetDataListener || this._horzScrollBar.getHasSelectionListener() ) {
+        this._startScrollBarChangesTimer( true );
+      }
+    },
+
+    _startScrollBarChangesTimer : function( horizontal ) {
+      var server = rwt.remote.Server.getInstance();
+      if( horizontal && this._horzScrollBar.getHasSelectionListener() ) {
+        server.onNextSend( this._sendHorizontalScrolled, this );
+      } else {
+        if( this._vertScrollBar.getHasSelectionListener() ) {
+          server.onNextSend( this._sendVerticalScrolled, this );
+        }
+        if( this._hasSetDataListener ) {
+          server.onNextSend( this._sendSetData, this );
+        }
+      }
+      server.sendDelayed( 400 );
+    },
+
+    _sendVerticalScrolled : function() {
+      var server = rwt.remote.Server.getInstance();
+      server.getServerObject( this._vertScrollBar ).notify( "Selection" );
+    },
+
+    _sendHorizontalScrolled : function() {
+      var server = rwt.remote.Server.getInstance();
+      server.getServerObject( this._horzScrollBar ).notify( "Selection" );
+    },
+
+    _sendSetData : function() {
+      var server = rwt.remote.Server.getInstance();
+      server.getServerObject( this ).notify( "SetData" );
     },
 
     _sendItemUpdate : function( item, event ) {
@@ -1187,6 +1200,7 @@ qx.Class.define( "rwt.widgets.Grid", {
     },
 
     deselectAll : function() {
+      this._checkDisposedItems();
       var oldSelection = this._selection;
       this._selection = [];
       for( var i = 0; i < oldSelection.length; i++ ) {

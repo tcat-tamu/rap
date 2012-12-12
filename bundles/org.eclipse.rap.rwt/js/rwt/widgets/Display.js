@@ -41,6 +41,7 @@ rwt.widgets.Display.prototype = {
     this._appendSystemDPI();
     this._appendColorDepth();
     this._appendInitialHistoryEvent();
+    this._appendTimezoneOffset();
     this._attachListener();
     this._request.send();
     this._initialized = true;
@@ -207,5 +208,12 @@ rwt.widgets.Display.prototype = {
     this._request.addParameter( id + ".clientCapture", clientCapture );
     this._request.send();
    }
+
+  _appendTimezoneOffset : function() {
+    // NOTE : using ObjectRegistry implicitly registers the ClientInfo service
+    var clientObject = rwt.protocol.ObjectRegistry.getObject( "rwt.client.ClientInfo" );
+    var remoteObject = rwt.remote.Server.getInstance().getServerObject( clientObject );
+    remoteObject.set( "timezoneOffset", clientObject.getTimezoneOffset() );
+  }
 
 };

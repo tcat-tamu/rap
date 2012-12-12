@@ -1,27 +1,35 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2008 IBM Corporation and others.
+ * Copyright (c) 2004, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- * IBM - Initial API and implementation
+ *    IBM - Initial API and implementation
+ *    EclipseSource - adaptation for RAP
  *******************************************************************************/
 package org.eclipse.ui.internal.progress;
 
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionBindingListener;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.jobs.*;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IProgressMonitorWithBlocking;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.core.runtime.jobs.IJobChangeListener;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
-import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.lifecycle.UICallBack;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISession;
+import org.eclipse.rap.rwt.service.UISessionEvent;
+import org.eclipse.rap.rwt.service.UISessionListener;
 import org.eclipse.rap.ui.internal.progress.JobCanceler;
 import org.eclipse.rap.ui.internal.progress.ProgressUtil;
 import org.eclipse.swt.SWT;
@@ -30,9 +38,15 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.internal.*;
+import org.eclipse.ui.internal.IPreferenceConstants;
+import org.eclipse.ui.internal.WorkbenchMessages;
+import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.progress.IProgressConstants;
 import org.eclipse.ui.progress.WorkbenchJob;
 
@@ -423,37 +437,31 @@ class ProgressMonitorFocusJobDialog extends ProgressMonitorJobsDialog {
 			cleanUpFinishedJob();
 		} else {
           // RAP [fappel]: Ensure that job changed listener is removed in case
-		  //               of session timeout before the job ends. Note that
-		  //               this is still under investigation
-          final ISessionStore session = RWT.getSessionStore();
-          final JobChangeAdapter doneListener[] = new JobChangeAdapter[ 1 ];
-          final boolean[] isSessionAlive = { false };
-          final HttpSessionBindingListener watchDog
-            = new HttpSessionBindingListener()
-          {
-            public void valueBound( final HttpSessionBindingEvent event ) {
-            }
-            public void valueUnbound( final HttpSessionBindingEvent event ) {
-              if( !isSessionAlive[ 0 ] ) {
-            	  job.removeJobChangeListener( listener );
-            	  job.removeJobChangeListener( doneListener[ 0 ] );
-            	  job.cancel();
-            	  job.addJobChangeListener( new JobCanceler() );
+          //               of session timeout before the job ends. Note that
+          //               this is still under investigation
+          final UISession uiSession = RWT.getUISession();
+          final AtomicReference<JobChangeAdapter> doneListener
+            = new AtomicReference<JobChangeAdapter>();
+          final AtomicBoolean isSessionAlive = new AtomicBoolean();
+          final UISessionListener cleanupListener = new UISessionListener() {
+            public void beforeDestroy( UISessionEvent event ) {
+              if( !isSessionAlive.get() ) {
+                job.removeJobChangeListener( listener );
+                job.removeJobChangeListener( doneListener.get() );
+                job.cancel();
+                job.addJobChangeListener( new JobCanceler() );
               }
             }
           };
-          final String watchDogKey = String.valueOf( watchDog.hashCode() );
-          doneListener[ 0 ] = new JobChangeAdapter() {
+          doneListener.set( new JobChangeAdapter() {
             public void done( final IJobChangeEvent event ) {
               job.removeJobChangeListener( this );
-              isSessionAlive[ 0 ] = true;
-              session.removeAttribute( watchDogKey );
+              isSessionAlive.set( true );
+              uiSession.removeUISessionListener( cleanupListener );
             }
-          };
-          if( session.getAttribute( watchDogKey ) == null ) {
-        	  session.setAttribute( watchDogKey, watchDog );
-          }
-          job.addJobChangeListener( doneListener[ 0 ] );
+          } );
+          uiSession.addUISessionListener( cleanupListener );
+          job.addJobChangeListener( doneListener.get() );
         }
 
 		return result;

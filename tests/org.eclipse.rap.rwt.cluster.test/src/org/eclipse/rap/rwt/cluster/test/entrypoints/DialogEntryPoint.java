@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 EclipseSource and others.
+ * Copyright (c) 2011, 2012 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,8 +11,8 @@
 package org.eclipse.rap.rwt.cluster.test.entrypoints;
 
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.application.EntryPoint;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.widgets.DialogCallback;
 import org.eclipse.rap.rwt.widgets.DialogUtil;
 import org.eclipse.swt.SWT;
@@ -21,11 +21,11 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 
-public class DialogEntryPoint implements IEntryPoint {
+public class DialogEntryPoint implements EntryPoint {
   private static final String RETURN_CODE = "returnCode";
-  
-  public static int getDialogReturnCode( ISessionStore sessionStore ) {
-    return ( ( Integer )sessionStore.getAttribute( RETURN_CODE ) ).intValue();
+
+  public static int getDialogReturnCode( UISession uiSession ) {
+    return ( ( Integer )uiSession.getAttribute( RETURN_CODE ) ).intValue();
   }
 
   public int createUI() {
@@ -40,7 +40,7 @@ public class DialogEntryPoint implements IEntryPoint {
   private static class ColorDialogCallback implements DialogCallback {
 
     public void dialogClosed( int returnCode ) {
-      RWT.getSessionStore().setAttribute( RETURN_CODE, new Integer( returnCode ) );
+      RWT.getUISession().setAttribute( RETURN_CODE, new Integer( returnCode ) );
     }
   }
 }

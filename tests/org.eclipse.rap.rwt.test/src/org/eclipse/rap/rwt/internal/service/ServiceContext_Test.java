@@ -21,11 +21,8 @@ import javax.servlet.http.HttpSession;
 import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.application.ApplicationConfiguration;
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
-import org.eclipse.rap.rwt.internal.service.ContextProvider;
-import org.eclipse.rap.rwt.internal.service.ServiceContext;
-import org.eclipse.rap.rwt.internal.service.SessionStoreImpl;
 import org.eclipse.rap.rwt.lifecycle.UICallBack;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
@@ -36,17 +33,17 @@ import org.eclipse.swt.widgets.Display;
 
 public class ServiceContext_Test extends TestCase {
 
-  private SessionStoreImpl sessionStore;
-  private ApplicationContext applicationContext;
+  private UISessionImpl uiSession;
+  private ApplicationContextImpl applicationContext;
 
   @Override
   protected void setUp() {
     ApplicationConfiguration applicationConfiguration = mock( ApplicationConfiguration.class );
     ServletContext servletContext = mock( ServletContext.class );
     when( servletContext.getRealPath( anyString() ) ).thenReturn( "" );
-    applicationContext = new ApplicationContext( applicationConfiguration, servletContext );
+    applicationContext = new ApplicationContextImpl( applicationConfiguration, servletContext );
     Fixture.setSkipResourceRegistration( true );
-    sessionStore = new SessionStoreImpl( new TestSession() );
+    uiSession = new UISessionImpl( new TestSession() );
   }
 
   @Override
@@ -60,36 +57,36 @@ public class ServiceContext_Test extends TestCase {
   public void testGetApplicationContext() {
     ServiceContext context = createContext( applicationContext );
 
-    ApplicationContext foundInContext = context.getApplicationContext();
-    ApplicationContext foundInSession = ApplicationContextUtil.get( sessionStore );
+    ApplicationContextImpl foundInContext = context.getApplicationContext();
+    ApplicationContextImpl foundInSession = ApplicationContextUtil.get( uiSession );
     assertSame( applicationContext, foundInContext );
     assertSame( applicationContext, foundInSession );
   }
 
-  public void testGetApplicationContextWithNullSessionStore() {
-    sessionStore = null;
+  public void testGetApplicationContextWithNullUISession() {
+    uiSession = null;
     ServiceContext context = createContext( applicationContext );
 
-    ApplicationContext found = context.getApplicationContext();
+    ApplicationContextImpl found = context.getApplicationContext();
 
     assertSame( applicationContext, found );
   }
 
-  public void testGetApplicationContextFromSessionStore() {
+  public void testGetApplicationContextFromUISession() {
     ServiceContext context = createContext();
     applicationContext.activate();
-    ApplicationContextUtil.set( sessionStore, applicationContext );
+    ApplicationContextUtil.set( uiSession, applicationContext );
 
-    ApplicationContext found = context.getApplicationContext();
+    ApplicationContextImpl found = context.getApplicationContext();
 
     assertSame( applicationContext, found );
   }
 
-  public void testGetApplicationContextFromSessionStoreWithDeactivatedApplicationContext() {
+  public void testGetApplicationContextFromUISessionWithDeactivatedApplicationContext() {
     ServiceContext context = createContext();
-    ApplicationContextUtil.set( sessionStore, applicationContext );
+    ApplicationContextUtil.set( uiSession, applicationContext );
 
-    ApplicationContext found = context.getApplicationContext();
+    ApplicationContextImpl found = context.getApplicationContext();
 
     assertNull( found );
   }
@@ -108,7 +105,7 @@ public class ServiceContext_Test extends TestCase {
   public void testGetApplicationContextFromBackgroundThread() throws Throwable {
     ServiceContext serviceContext = createContext( applicationContext );
     ContextProvider.setContext( serviceContext );
-    final ApplicationContext[] backgroundApplicationContext = { null };
+    final ApplicationContextImpl[] backgroundApplicationContext = { null };
     final Display display = new Display();
     Runnable runnable = new Runnable() {
       public void run() {
@@ -125,7 +122,7 @@ public class ServiceContext_Test extends TestCase {
     assertSame( ApplicationContextUtil.getInstance(), backgroundApplicationContext[ 0 ] );
   }
 
-  private ServiceContext createContext( ApplicationContext applicationContext ) {
+  private ServiceContext createContext( ApplicationContextImpl applicationContext ) {
     ServiceContext result = createContext();
     ServletContext servletContext = result.getRequest().getSession().getServletContext();
     ApplicationContextUtil.set( servletContext, applicationContext );
@@ -137,15 +134,15 @@ public class ServiceContext_Test extends TestCase {
     request.setBody( Fixture.createEmptyMessage() );
     TestResponse response = new TestResponse();
     HttpSession session = new TestSession();
-    if( sessionStore != null ) {
-      session = sessionStore.getHttpSession();
+    if( uiSession != null ) {
+      session = uiSession.getHttpSession();
     }
     request.setSession( session );
     return createContext( request, response );
   }
 
   private ServiceContext createContext( TestRequest request, TestResponse response ) {
-    ServiceContext result = new ServiceContext( request, response, sessionStore );
+    ServiceContext result = new ServiceContext( request, response, uiSession );
     result.setServiceStore( new ServiceStore() );
     return result;
   }

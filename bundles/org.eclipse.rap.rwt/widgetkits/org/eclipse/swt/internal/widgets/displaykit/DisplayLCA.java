@@ -18,20 +18,21 @@ import java.io.IOException;
 
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
+import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.DisposedWidgets;
-import org.eclipse.rap.rwt.internal.lifecycle.IDisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.RequestId;
 import org.eclipse.rap.rwt.internal.lifecycle.UITestUtil;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
+import org.eclipse.rap.rwt.internal.remote.RemoteObjectLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.util.ActiveKeysUtil;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.IWidgetAdapter;
-import org.eclipse.rap.rwt.lifecycle.IWidgetLifeCycleAdapter;
+import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.dnd.DragSource;
 import org.eclipse.swt.dnd.DropTarget;
@@ -50,7 +51,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 
 
-public class DisplayLCA implements IDisplayLifeCycleAdapter {
+public class DisplayLCA implements DisplayLifeCycleAdapter {
 
   private static final String PROP_REQUEST_COUNTER = "requestCounter";
   //[ariddle] - added to support metrics gathering
@@ -60,7 +61,7 @@ public class DisplayLCA implements IDisplayLifeCycleAdapter {
   private static final String METHOD_BEEP = "beep";
 
   ////////////////////////////////////////////////////////
-  // interface implementation of IDisplayLifeCycleAdapter
+  // interface implementation of DisplayLifeCycleAdapter
 
   public void readData( Display display ) {
     //[ariddle] - added to support metrics gathering
@@ -71,7 +72,7 @@ public class DisplayLCA implements IDisplayLifeCycleAdapter {
     WidgetTreeVisitor visitor = new AllWidgetTreeVisitor() {
       @Override
       public boolean doVisit( Widget widget ) {
-        IWidgetLifeCycleAdapter adapter = WidgetUtil.getLCA( widget );
+        WidgetLifeCycleAdapter adapter = WidgetUtil.getLCA( widget );
         adapter.readData( widget );
         return true;
       }
@@ -89,6 +90,7 @@ public class DisplayLCA implements IDisplayLifeCycleAdapter {
       }
     }
     DNDSupport.processEvents();
+    RemoteObjectLifeCycleAdapter.readData();
   }
 
   public void preserveValues( Display display ) {
@@ -126,6 +128,7 @@ public class DisplayLCA implements IDisplayLifeCycleAdapter {
     markInitialized( display );
     ActiveKeysUtil.renderActiveKeys( display );
     ActiveKeysUtil.renderCancelKeys( display );
+    RemoteObjectLifeCycleAdapter.render();
   }
 
   //[ariddle] - added to support metrics gathering

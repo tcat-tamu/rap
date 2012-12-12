@@ -30,8 +30,6 @@ import junit.framework.TestCase;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
-import org.eclipse.rap.rwt.internal.uicallback.UICallBackManager;
-import org.eclipse.rap.rwt.internal.uicallback.UICallBackServiceHandler;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
 import org.eclipse.rap.rwt.testfixture.Fixture;
@@ -91,7 +89,8 @@ public class UICallBackManager_Test extends TestCase {
         UICallBackServiceHandler uiCallBackServiceHandler = new UICallBackServiceHandler();
         try {
           manager.activateUICallBacksFor( "foo" );
-          uiCallBackServiceHandler.service();
+          uiCallBackServiceHandler.service( ContextProvider.getRequest(),
+                                            ContextProvider.getResponse() );
         } catch( Throwable thr ) {
           uiCallBackServiceHandlerThrowable[ 0 ] = thr;
         }
@@ -213,7 +212,7 @@ public class UICallBackManager_Test extends TestCase {
     CallBackRequestSimulator callBackRequestSimulator = new CallBackRequestSimulator( context );
     callBackRequestSimulator.sendRequest();
 
-    context.getSessionStore().getHttpSession().invalidate();
+    context.getUISession().getHttpSession().invalidate();
     callBackRequestSimulator.waitForRequest();
 
     assertFalse( manager.isCallBackRequestBlocked() );
@@ -221,8 +220,8 @@ public class UICallBackManager_Test extends TestCase {
     assertFalse( callBackRequestSimulator.exceptionOccured() );
   }
 
-  public void testCallBackRequestIsReleasedWhenSessionExpires() throws Exception {
-    HttpSession httpSession = ContextProvider.getSessionStore().getHttpSession();
+  public void testCallBackRequestIsReleasedWhenSessionExpires() {
+    HttpSession httpSession = ContextProvider.getUISession().getHttpSession();
     httpSession.setMaxInactiveInterval( 1 );
     HttpSessionBindingListener sessionListener = mock( HttpSessionBindingListener.class );
     httpSession.setAttribute( "listener", sessionListener );
@@ -513,7 +512,7 @@ public class UICallBackManager_Test extends TestCase {
   }
 
   public void testIsSessionExpiredWithInfiniteSessionTimeout() {
-    ContextProvider.getSessionStore().getHttpSession().setMaxInactiveInterval( -1 );
+    ContextProvider.getUISession().getHttpSession().setMaxInactiveInterval( -1 );
 
     boolean sessionExpired = UICallBackManager.isSessionExpired( 1, 2 );
 
@@ -521,7 +520,7 @@ public class UICallBackManager_Test extends TestCase {
   }
 
   public void testIsSessionExpiredWhenSessionTimedOut() {
-    ContextProvider.getSessionStore().getHttpSession().setMaxInactiveInterval( 10 );
+    ContextProvider.getUISession().getHttpSession().setMaxInactiveInterval( 10 );
 
     boolean sessionExpired = UICallBackManager.isSessionExpired( 1, 20000 );
 
@@ -529,7 +528,7 @@ public class UICallBackManager_Test extends TestCase {
   }
 
   public void testIsSessionExpiredWhenSessionActive() {
-    ContextProvider.getSessionStore().getHttpSession().setMaxInactiveInterval( 10 );
+    ContextProvider.getUISession().getHttpSession().setMaxInactiveInterval( 10 );
 
     boolean sessionExpired = UICallBackManager.isSessionExpired( 1, 9000 );
 
@@ -587,11 +586,11 @@ public class UICallBackManager_Test extends TestCase {
 
   private void fakeNewRequest() {
     Fixture.fakeNewRequest( display );
-    ContextProvider.getSessionStore().setAttribute( "org.eclipse.swt.display", display );
+    ContextProvider.getUISession().setAttribute( "org.eclipse.swt.display", display );
   }
 
   private static ServiceContext createServiceContext( TestResponse response ) {
-    HttpSession httpSession = ContextProvider.getContext().getSessionStore().getHttpSession();
+    HttpSession httpSession = ContextProvider.getContext().getUISession().getHttpSession();
     TestRequest request = new TestRequest();
     request.setSession( httpSession );
     ServiceContext result = new ServiceContext( request, response );
@@ -625,7 +624,8 @@ public class UICallBackManager_Test extends TestCase {
           Fixture.fakeResponseWriter();
           try {
             manager.activateUICallBacksFor( "foo" );
-            uiCallBackServiceHandler.service();
+            uiCallBackServiceHandler.service( ContextProvider.getRequest(),
+                                              ContextProvider.getResponse() );
           } catch( Throwable thr ) {
             exception = thr;
           }

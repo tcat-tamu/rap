@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 EclipseSource and others.
+ * Copyright (c) 2011, 2012 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,9 +13,9 @@ package org.eclipse.rap.rwt.cluster.test.entrypoints;
 import java.io.Serializable;
 
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
+import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
@@ -32,7 +32,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 
 
-public class DNDEntryPoint implements IEntryPoint {
+public class DNDEntryPoint implements EntryPoint {
 
   public static final String ID_SOURCE_LABEL = "sourceLabel";
   public static final String ID_TARGET_LABEL = "targetLabel";
@@ -40,15 +40,15 @@ public class DNDEntryPoint implements IEntryPoint {
   private static final String TRANSFER_DATA = "transfer data";
   private static final String ATTR_DRAG_FINISHED = "dragFinished";
   private static final String ATTR_DROP_FINISHED = "dropFinished";
-  
-  public static boolean isDragFinished( ISessionStore sessionStore ) {
-    return Boolean.TRUE.equals( sessionStore.getAttribute( ATTR_DRAG_FINISHED ) );
+
+  public static boolean isDragFinished( UISession uiSession ) {
+    return Boolean.TRUE.equals( uiSession.getAttribute( ATTR_DRAG_FINISHED ) );
   }
-  
-  public static boolean isDropFinished( ISessionStore sessionStore ) {
-    return Boolean.TRUE.equals( sessionStore.getAttribute( ATTR_DROP_FINISHED ) );
+
+  public static boolean isDropFinished( UISession uiSession ) {
+    return Boolean.TRUE.equals( uiSession.getAttribute( ATTR_DROP_FINISHED ) );
   }
-  
+
   public int createUI() {
     Display display = new Display();
     Shell shell = new Shell( display );
@@ -77,9 +77,9 @@ public class DNDEntryPoint implements IEntryPoint {
     public void dragSetData( DragSourceEvent event ) {
       event.data = TRANSFER_DATA;
     }
-  
+
     public void dragFinished( DragSourceEvent event ) {
-      RWT.getSessionStore().setAttribute( ATTR_DRAG_FINISHED, Boolean.TRUE );
+      RWT.getUISession().setAttribute( ATTR_DRAG_FINISHED, Boolean.TRUE );
     }
   }
 
@@ -87,7 +87,7 @@ public class DNDEntryPoint implements IEntryPoint {
 
     public void drop( DropTargetEvent event ) {
       if( TRANSFER_DATA.equals( event.data ) ) {
-        RWT.getSessionStore().setAttribute( ATTR_DROP_FINISHED, Boolean.TRUE );
+        RWT.getUISession().setAttribute( ATTR_DROP_FINISHED, Boolean.TRUE );
       }
     }
   }

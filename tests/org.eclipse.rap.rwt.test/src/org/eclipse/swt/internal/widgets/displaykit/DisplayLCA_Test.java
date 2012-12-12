@@ -14,34 +14,41 @@ package org.eclipse.swt.internal.widgets.displaykit;
 
 import static org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil.getId;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.RWT;
+import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
-import org.eclipse.rap.rwt.internal.lifecycle.IDisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.IRenderRunnable;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.UITestUtil;
+import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
+import org.eclipse.rap.rwt.internal.remote.RemoteObjectImpl;
+import org.eclipse.rap.rwt.internal.remote.RemoteObjectRegistry;
 import org.eclipse.rap.rwt.internal.uicallback.UICallBackManager;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
-import org.eclipse.rap.rwt.lifecycle.ILifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.IWidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
+import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
@@ -191,7 +198,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( Boolean.TRUE, compositeInitState[ 0 ] );
   }
 
-  public void testRenderInitiallyDisposed() throws Exception {
+  public void testRenderInitiallyDisposed() {
     RWTFactory.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
                                                       TestRenderInitiallyDisposedEntryPoint.class,
                                                       null );
@@ -242,7 +249,7 @@ public class DisplayLCA_Test extends TestCase {
     WidgetAdapter widgetAdapter = ( WidgetAdapter )WidgetUtil.getAdapter( widget );
     IRenderRunnable renderRunnable = mock( IRenderRunnable.class );
     widgetAdapter.setRenderRunnable( renderRunnable );
-    IDisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
+    DisplayLifeCycleAdapter displayLCA = DisplayUtil.getLCA( display );
 
     displayLCA.render( display );
 
@@ -393,6 +400,29 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( JSONObject.NULL, message.findSetProperty( displayId, "exitConfirmation" ) );
   }
 
+  public void testRendersRemoteObjects() throws IOException {
+    RemoteObjectImpl remoteObject = mock( RemoteObjectImpl.class );
+    when( remoteObject.getId() ).thenReturn( "id" );
+    RemoteObjectRegistry.getInstance().register( remoteObject );
+
+    displayLCA.render( display );
+
+    verify( remoteObject ).render( any( ProtocolMessageWriter.class ) );
+  }
+
+  public void testReadDataDelegatesToRemoteObjects() {
+    RemoteObjectImpl remoteObject = mock( RemoteObjectImpl.class );
+    when( remoteObject.getId() ).thenReturn( "id" );
+    RemoteObjectRegistry.getInstance().register( remoteObject );
+    HashMap<String, Object> properties = new HashMap<String, Object>();
+    properties.put( "foo", "bar" );
+    Fixture.fakeCallOperation( "id", "method", properties );
+
+    displayLCA.readData( display );
+
+    verify( remoteObject ).handleCall( eq( "method" ), eq( properties ) );
+  }
+
   private static void setEnableUiTests( boolean value ) {
     Field field;
     try {
@@ -435,7 +465,7 @@ public class DisplayLCA_Test extends TestCase {
     @SuppressWarnings("unchecked")
     public <T> T getAdapter( Class<T> adapter ) {
       Object result;
-      if( adapter == ILifeCycleAdapter.class ) {
+      if( adapter == WidgetLifeCycleAdapter.class ) {
         result = widgetLCA;
       } else {
         result = super.getAdapter( adapter );
@@ -458,7 +488,7 @@ public class DisplayLCA_Test extends TestCase {
     @SuppressWarnings("unchecked")
     public <T> T getAdapter( Class<T> adapter ) {
       Object result;
-      if( adapter == ILifeCycleAdapter.class ) {
+      if( adapter == WidgetLifeCycleAdapter.class ) {
         result = widgetLCA;
       } else {
         result = super.getAdapter( adapter );
@@ -467,7 +497,7 @@ public class DisplayLCA_Test extends TestCase {
     }
   }
 
-  public static final class TestRenderInitiallyDisposedEntryPoint implements IEntryPoint {
+  public static final class TestRenderInitiallyDisposedEntryPoint implements EntryPoint {
     public int createUI() {
       Display display = new Display();
       display.dispose();
@@ -475,7 +505,7 @@ public class DisplayLCA_Test extends TestCase {
     }
   }
 
-  public static final class TestRenderDisposedEntryPoint implements IEntryPoint {
+  public static final class TestRenderDisposedEntryPoint implements EntryPoint {
     public int createUI() {
       Display display = new Display();
       Shell shell = new Shell( display );

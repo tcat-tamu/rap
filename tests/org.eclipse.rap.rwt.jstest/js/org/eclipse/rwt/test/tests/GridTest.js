@@ -13,6 +13,7 @@
 
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 var ObjectRegistry = rwt.protocol.ObjectRegistry;
+var MessageProcessor = rwt.protocol.MessageProcessor;
 
 qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
 
@@ -45,7 +46,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       assertFalse( widget.getRenderConfig().fullSelection );
       assertFalse( widget.getRenderConfig().hideSelection );
       assertFalse( widget.getRenderConfig().hasCheckBoxes );
-      assertFalse( widget._isVirtual );
       assertFalse( widget._hasMultiSelection );
       assertTrue( widget._rowContainer.hasEventListeners( "mousewheel" ) );
       assertEquals( [ 2, 4 ], widget.getRenderConfig().selectionPadding );
@@ -56,6 +56,32 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       widget.destroy();
     },
 
+    testDestroyGridWithItemsByProtocol : function() {
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      var grid = this._createDefaultTreeByProtocol( "w3", "w2", [] );
+      MessageProcessor.processOperation( {
+        "target" : "w4",
+        "action" : "create",
+        "type" : "rwt.widgets.GridItem",
+        "properties" : {
+          "parent" : "w3",
+          "index": 3
+        }
+      } );
+      var item = ObjectRegistry.getObject( "w4" );
+
+      MessageProcessor.processOperation( {
+        "target" : "w3",
+        "action" : "destroy"
+      } );
+      TestUtil.flush();
+
+      assertTrue( grid.isDisposed() );
+      assertTrue( item.isDisposed() );
+      assertTrue( ObjectRegistry.getObject( "w4" ) == null );
+      shell.destroy();
+    },
+
     testCreateTreeWithStylesByProtocol : function() {
       var shell = TestUtil.createShellByProtocol( "w2" );
       var styles = [ "FULL_SELECTION", "HIDE_SELECTION", "NO_SCROLL", "CHECK", "VIRTUAL", "MULTI" ];
@@ -63,7 +89,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       assertTrue( widget.getRenderConfig().fullSelection );
       assertTrue( widget.getRenderConfig().hideSelection );
       assertTrue( widget.getRenderConfig().hasCheckBoxes );
-      assertTrue( widget._isVirtual );
       assertTrue( widget._hasMultiSelection );
       assertFalse( widget._rowContainer.hasEventListeners( "mousewheel" ) );
       assertEquals( undefined, widget.getRenderConfig().selectionPadding );
@@ -217,6 +242,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       TestUtil.flush();
       TestUtil.protocolSet( "w3", { "topItemIndex" : 3 } );
       assertEquals( 60, widget._vertScrollBar.getValue() );
+      assertEquals( 3, widget.getTopItemIndex() );
       shell.destroy();
       widget.destroy();
     },
@@ -255,7 +281,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       widget.setItemCount( 1 );
       widget.setItemMetrics( 0, 0, 150, 0, 0, 0, 0 );
       TestUtil.flush();
+
       TestUtil.protocolSet( "w3", { "scrollLeft" : 10 } );
+
       assertEquals( 10, widget._horzScrollBar.getValue() );
       shell.destroy();
       widget.destroy();
@@ -277,23 +305,33 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       widget.destroy();
     },
 
+    testSetSelectionWithDisposeByProtocol : function() {
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      var widget = this._createDefaultTreeByProtocol( "w3", "w2", [ "MULTI" ] );
+      widget.setItemCount( 3 );
+      var item1 = this._createTreeItemByProtocol( "w4", "w3", 0 );
+      var item2 = this._createTreeItemByProtocol( "w5", "w3", 1 );
+      var item3 = this._createTreeItemByProtocol( "w6", "w3", 2 );
+
+      TestUtil.protocolSet( "w3", { "selection" : [ "w4", "w5" ] } );
+      MessageProcessor.processOperation( {
+        "target" : "w4",
+        "action" : "destroy"
+      } );
+      TestUtil.protocolSet( "w3", { "selection" : [] } );
+      TestUtil.flush();
+
+      assertTrue( item1.isDisposed() );
+      shell.destroy();
+      widget.destroy();
+    },
+
     testSetScrollBarsVisibleByProtocol : function() {
       var shell = TestUtil.createShellByProtocol( "w2" );
       var widget = this._createDefaultTreeByProtocol( "w3", "w2", [] );
       TestUtil.protocolSet( "w3", { "scrollBarsVisible" : [ true, true ] } );
       assertTrue( widget._horzScrollBar.getDisplay() );
       assertTrue( widget._vertScrollBar.getDisplay() );
-      shell.destroy();
-      widget.destroy();
-    },
-
-    testSetHasScrollBarsSelectionListenerByProtocol : function() {
-      var shell = TestUtil.createShellByProtocol( "w2" );
-      this._createDefaultTreeByProtocol( "w3", "w2", [] );
-      TestUtil.protocolListen( "w3", { "scrollBarsSelection" : true } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
-      var widget = ObjectManager.getObject( "w3" );
-      assertTrue( widget._hasScrollBarsSelectionListener );
       shell.destroy();
       widget.destroy();
     },
@@ -1135,7 +1173,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       tree.setHeaderVisible( true );
       tree.setFooterHeight( 20 );
       tree.setFooterVisible( true );
-      tree._getScrollBarChangesTimer();
       TestUtil.flush();
       tree.setFocusItem( item );
       tree._shiftSelectItem( item );
@@ -1151,7 +1188,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       var columnArea = tree._header;
       var footer = tree._footer;
       var mergeTimer = tree._mergeEventsTimer;
-      var requestTimer = tree._scrollBarChangesTimer;
       assertTrue( element.parentNode === document.body );
       assertNotNull( tree._rootItem );
       assertNotNull( tree._focusItem );
@@ -1170,14 +1206,11 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       assertTrue( resize.isDisposed() );
       assertTrue( rootItem.isDisposed() );
       assertTrue( mergeTimer.isDisposed() );
-      assertTrue( requestTimer.isDisposed() );
       assertTrue( dummy.isDisposed() );
       assertNull( tree._rootItem );
       assertNull( tree._focusItem );
       assertNull( tree._leadItem );
       assertNull( tree._mergeEventsTimer );
-      assertNull( tree._scrollBarChangesTimer );
-      assertNull( tree._scrollChanges );
       assertNull( tree._rowContainer );
       assertNull( tree._horzScrollBar );
       assertNull( tree._vertScrollBar );
@@ -2269,7 +2302,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
     testSendTopItemIndex : function() {
       var wm = org.eclipse.swt.WidgetManager.getInstance();
       var tree = this._createDefaultTree();
-      wm.add( tree, "w11", false );
       this._fillTree( tree, 100 );
       TestUtil.initRequestLog();
       TestUtil.flush();
@@ -2278,7 +2310,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       assertEquals( 0, TestUtil.getRequestsSend() );
       rwt.remote.Server.getInstance().send();
 
-      assertEquals( 8, TestUtil.getMessageObject().findSetProperty( "w11", "topItemIndex" ) );
+      assertEquals( 8, TestUtil.getMessageObject().findSetProperty( "w3", "topItemIndex" ) );
       tree.destroy();
     },
 
@@ -2824,7 +2856,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       var wm = org.eclipse.swt.WidgetManager.getInstance();
       var tree = this._createDefaultTree();
       tree.setItemMetrics( 0, 0, 1000, 0, 0, 0, 500 );
-      wm.add( tree, "w11", false );
       tree.setTreeColumn( 1 );
       tree.setItemCount( 1 );
       this._createItem( tree.getRootItem(), 0 );
@@ -2835,7 +2866,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       assertEquals( 0, TestUtil.getRequestsSend() );
       rwt.remote.Server.getInstance().send();
 
-      assertEquals( 160, TestUtil.getMessageObject().findSetProperty( "w11", "scrollLeft" ) );
+      assertEquals( 160, TestUtil.getMessageObject().findSetProperty( "w3", "scrollLeft" ) );
       tree.destroy();
     },
 
@@ -3160,12 +3191,10 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       tree.destroy();
     },
 
-
     testVirtualSendTopItemIndex : function() {
       TestUtil.prepareTimerUse();
       var wm = org.eclipse.swt.WidgetManager.getInstance();
       var tree = this._createDefaultTree( false, false, "virtual" );
-      wm.add( tree, "w11", false );
       this._fillTree( tree, 100 );
       TestUtil.initRequestLog();
       TestUtil.flush();
@@ -3173,10 +3202,10 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       tree._vertScrollBar.setValue( 50 );
       tree._vertScrollBar.setValue( 160 );
       assertEquals( 0, TestUtil.getRequestsSend() );
-      TestUtil.forceInterval( tree._scrollBarChangesTimer );
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
 
       assertEquals( 1, TestUtil.getRequestsSend() );
-      assertEquals( 8, TestUtil.getMessageObject().findSetProperty( "w11", "topItemIndex" ) );
+      assertEquals( 8, TestUtil.getMessageObject().findSetProperty( "w3", "topItemIndex" ) );
       tree.destroy();
     },
 
@@ -3185,7 +3214,6 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       var wm = org.eclipse.swt.WidgetManager.getInstance();
       var tree = this._createDefaultTree( false, false, "virtual" );
       tree.setItemMetrics( 0, 0, 1000, 0, 0, 0, 500 );
-      wm.add( tree, "w11", false );
       tree.setItemCount( 1 );
       this._createItem( tree.getRootItem(), 0 );
       TestUtil.initRequestLog();
@@ -3194,10 +3222,30 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       tree._horzScrollBar.setValue( 50 );
       tree._horzScrollBar.setValue( 160 );
       assertEquals( 0, TestUtil.getRequestsSend() );
-      TestUtil.forceInterval( tree._scrollBarChangesTimer );
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
 
       assertEquals( 1, TestUtil.getRequestsSend() );
-      assertEquals( 160, TestUtil.getMessageObject().findSetProperty( "w11", "scrollLeft" ) );
+      assertEquals( 160, TestUtil.getMessageObject().findSetProperty( "w3", "scrollLeft" ) );
+      tree.destroy();
+    },
+
+    testVirtualNoScrollSendTopItemIndex : function() {
+      TestUtil.prepareTimerUse();
+      var wm = org.eclipse.swt.WidgetManager.getInstance();
+      var tree = this._createDefaultTree( false, false, "virtual" );
+      this._fillTree( tree, 100 );
+      TestUtil.initRequestLog();
+      TestUtil.flush();
+
+      tree._vertScrollBar.setValue( 50 );
+      tree._vertScrollBar.setValue( 160 );
+      assertEquals( 0, TestUtil.getRequestsSend() );
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
+
+      assertEquals( 1, TestUtil.getRequestsSend() );
+      assertEquals( 8, TestUtil.getMessageObject().findSetProperty( "w3", "topItemIndex" ) );
+      assertNull( TestUtil.getMessageObject().findNotifyOperation( "w3", "Selection" ) );
+      assertNotNull( TestUtil.getMessageObject().findNotifyOperation( "w3", "SetData" ) );
       tree.destroy();
     },
 
@@ -3211,7 +3259,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       tree._horzScrollBar.setValue( 160 );
       assertEquals( 0, TestUtil.getRequestsSend() );
       rwt.remote.Server.getInstance().send();
-      assertFalse( tree._scrollBarChangesTimer.getEnabled() );
+      assertFalse( rwt.remote.Server.getInstance()._delayTimer.getEnabled() );
       assertEquals( 1, TestUtil.getRequestsSend() );
       tree.destroy();
     },
@@ -3705,6 +3753,47 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       tree.destroy();
     },
 
+    testKeyboardNavigationEndThenAddItems : function() {
+      var tree = this._createDefaultTree();
+      tree.setHeight( 416 );
+      tree.setItemHeight( 28 );
+      this._fillTree( tree, 2 );
+      var root = tree.getRootItem();
+      TestUtil.flush();
+      TestUtil.clickDOM( tree._rowContainer._children[ 0 ]._getTargetNode() );
+      tree.setItemCount( 21 );
+
+      TestUtil.press( tree, "End" );
+      assertEquals( 7, tree.getTopItemIndex() );
+      tree.setItemCount( 26 );
+      TestUtil.flush();
+
+      assertEquals( 7, tree.getTopItemIndex() );
+      tree.destroy();
+    },
+
+    testScrollWheelToEndThenAddItems : function() {
+      var tree = this._createDefaultTree();
+      tree.setHeight( 416 );
+      tree.setItemHeight( 28 );
+      this._fillTree( tree, 2 );
+      var root = tree.getRootItem();
+      TestUtil.flush();
+      TestUtil.clickDOM( tree._rowContainer._children[ 0 ]._getTargetNode() );
+      tree.setItemCount( 21 );
+
+      for( var i = 0; i < 10; i++ ) {
+        TestUtil.fakeWheel( tree._rowContainer, -1 );
+      }
+      assertEquals( 7, tree.getTopItemIndex() );
+      tree.setItemCount( 26 );
+      TestUtil.flush();
+
+      assertEquals( 7, tree.getTopItemIndex() );
+      tree.destroy();
+    },
+
+
     testDeselectionOnCollapseByMouse : function() {
       var tree = this._createDefaultTree( false, false, "multiSelection" );
       TestUtil.fakeAppearance( "tree-row-indent",  {
@@ -4063,6 +4152,15 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
     testSendSelectedEventHorizontal : function() {
       TestUtil.createShellByProtocol( "w2" );
       var tree = this._createDefaultTreeByProtocol( "w3", "w2", [] );
+      rwt.protocol.MessageProcessor.processOperation( {
+        "target" : "w3_hscroll",
+        "action" : "create",
+        "type" : "rwt.widgets.ScrollBar",
+        "properties" : {
+          "parent" : "w3",
+          "style" : [ "HORIZONTAL" ]
+        }
+      } );
       this._createTreeItemByProtocol( "w4", "w3", 0 );
       tree.setItemHeight( 20 );
       tree.setItemMetrics( 0, 0, 500, 0, 0, 0, 500, 0, 10 );
@@ -4070,18 +4168,27 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       TestUtil.flush();
 
       tree.setScrollLeft( 30 );
-      TestUtil.forceInterval( tree._scrollBarChangesTimer );
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
 
       assertEquals( 1, TestUtil.getRequestsSend() );
       var msg = TestUtil.getMessageObject();
       assertEquals( 30, msg.findSetProperty( "w3", "scrollLeft" ) );
-      assertTrue( msg.findNotifyProperty( "w3", "scrollBarSelected", "horizontal" ) );
+      assertNotNull( msg.findNotifyOperation( "w3_hscroll", "Selection" ) );
       tree.destroy();
     },
 
     testSendSelectedEventVertical : function() {
       TestUtil.createShellByProtocol( "w2" );
       var tree = this._createDefaultTreeByProtocol( "w3", "w2", [] );
+      rwt.protocol.MessageProcessor.processOperation( {
+        "target" : "w3_vscroll",
+        "action" : "create",
+        "type" : "rwt.widgets.ScrollBar",
+        "properties" : {
+          "parent" : "w3",
+          "style" : [ "VERTICAL" ]
+        }
+      } );
       this._fillTree( tree, 10 );
       tree.setItemHeight( 20 );
       tree.setItemMetrics( 0, 0, 500, 0, 0, 0, 500, 0, 10 );
@@ -4089,12 +4196,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       TestUtil.flush();
 
       tree.setTopItemIndex( 3 );
-      TestUtil.forceInterval( tree._scrollBarChangesTimer );
+      TestUtil.forceInterval( rwt.remote.Server.getInstance()._delayTimer );
 
       assertEquals( 1, TestUtil.getRequestsSend() );
       var msg = TestUtil.getMessageObject();
       assertEquals( 3, msg.findSetProperty( "w3", "topItemIndex" ) );
-      assertTrue( msg.findNotifyProperty( "w3", "scrollBarSelected", "vertical" ) );
+      assertNotNull( msg.findNotifyOperation( "w3_vscroll", "Selection" ) );
       tree.destroy();
     },
 
@@ -4153,6 +4260,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       rwt.protocol.ObjectRegistry.add( "w3", tree );
       if( option === "fixedColumns" ) {
         org.eclipse.rwt.GridUtil.setFixedColumns( tree, arg );
+      }
+      if( option === "virtual" ) {
+        tree.setHasSetDataListener( true );
       }
       tree.setItemHeight( 20 );
       tree.setLeft( 0 );

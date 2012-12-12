@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.application;
 
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
-import org.eclipse.rap.rwt.testfixture.internal.TestResourceManager;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
+import org.eclipse.rap.rwt.service.ResourceManager;
 
 
 public class ApplicationContextHelper {
@@ -24,11 +24,8 @@ public class ApplicationContextHelper {
     ApplicationContextActivator.skipResoureDeletion = ignore;
   }
 
-  public static void useDefaultResourceManager() {
-    ApplicationContext.testResourceManager = null;
+  public static void fakeResourceManager( ResourceManager fake ) {
+    ApplicationContextImpl.testResourceManager = fake;
   }
 
-  public static void useTestResourceManager() {
-    ApplicationContext.testResourceManager = new TestResourceManager();
-  }
 }

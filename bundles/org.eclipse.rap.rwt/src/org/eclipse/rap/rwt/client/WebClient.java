@@ -15,14 +15,21 @@ import java.util.Map;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.SingletonUtil;
 import org.eclipse.rap.rwt.application.Application;
+import org.eclipse.rap.rwt.application.EntryPointFactory;
 import org.eclipse.rap.rwt.client.service.BrowserHistory;
+import org.eclipse.rap.rwt.client.service.ClientInfo;
 import org.eclipse.rap.rwt.client.service.ClientService;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
 import org.eclipse.rap.rwt.client.service.JavaScriptExecutor;
+import org.eclipse.rap.rwt.client.service.JavaScriptLoader;
+import org.eclipse.rap.rwt.internal.client.BrowserHistoryImpl;
+import org.eclipse.rap.rwt.internal.client.ClientInfoImpl;
 import org.eclipse.rap.rwt.internal.client.ExitConfirmationImpl;
-import org.eclipse.rap.rwt.internal.widgets.BrowserHistoryImpl;
-import org.eclipse.rap.rwt.internal.widgets.JavaScriptExecutorImpl;
-import org.eclipse.rap.rwt.lifecycle.IEntryPointFactory;
+import org.eclipse.rap.rwt.internal.client.JavaScriptExecutorImpl;
+import org.eclipse.rap.rwt.internal.client.JavaScriptLoaderImpl;
+import org.eclipse.rap.rwt.internal.resources.JavaScriptModuleLoader;
+import org.eclipse.rap.rwt.internal.resources.JavaScriptModuleLoaderImpl;
+import org.eclipse.rap.rwt.service.ResourceLoader;
 
 
 /**
@@ -41,7 +48,7 @@ public class WebClient implements Client {
    *
    * @see RWT#DEFAULT_THEME_ID
    * @see Application#addEntryPoint(String, Class, Map)
-   * @see Application#addEntryPoint(String, IEntryPointFactory, Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
    */
   public static final String THEME_ID = PREFIX + ".themeId";
 
@@ -59,7 +66,7 @@ public class WebClient implements Client {
    * </p>
    *
    * @see Application#addEntryPoint(String, Class, Map)
-   * @see Application#addEntryPoint(String, IEntryPointFactory, Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
    */
   public static final String HEAD_HTML = PREFIX + ".additionalHeaders";
 
@@ -75,8 +82,7 @@ public class WebClient implements Client {
    * </p>
    *
    * @see Application#addEntryPoint(String, Class, Map)
-   * @see Application#addEntryPoint(String, IEntryPointFactory,
-   *      Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
    */
   public static final String BODY_HTML = PREFIX + ".bodyHtml";
 
@@ -85,8 +91,7 @@ public class WebClient implements Client {
    * browser window. The value must be the title string without any HTML markup.
    *
    * @see Application#addEntryPoint(String, Class, Map)
-   * @see Application#addEntryPoint(String, IEntryPointFactory,
-   *      Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
    */
   public static final String PAGE_TITLE = PREFIX + ".pageTitle";
 
@@ -99,21 +104,31 @@ public class WebClient implements Client {
    * must be registered to be available.
    * </p>
    *
-   * @see Application#addResource(String,org.eclipse.rap.rwt.resources.ResourceLoader)
+   * @see Application#addResource(String, ResourceLoader)
    * @see Application#addEntryPoint(String, Class, Map)
-   * @see Application#addEntryPoint(String, IEntryPointFactory, Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
    */
   public static final String FAVICON = PREFIX + ".favicon";
+
+  public WebClient() {
+    initializeServices();
+  }
 
   @SuppressWarnings( "unchecked" )
   public <T extends ClientService> T getService( Class<T> type ) {
     T result = null;
     if( type == JavaScriptExecutor.class ) {
       result = ( T )getServiceImpl( JavaScriptExecutorImpl.class );
+    } else if( type == JavaScriptLoader.class ) {
+      result = ( T )getServiceImpl( JavaScriptLoaderImpl.class );
+    } else if( type == JavaScriptModuleLoader.class ) {
+      result = ( T )getServiceImpl( JavaScriptModuleLoaderImpl.class );
     } else if( type == BrowserHistory.class ) {
       result = ( T )getServiceImpl( BrowserHistoryImpl.class );
     } else if( type == ExitConfirmation.class ) {
       result = ( T )getServiceImpl( ExitConfirmationImpl.class );
+    } else if( type == ClientInfo.class ) {
+      result = ( T )getServiceImpl( ClientInfoImpl.class );
     }
     return result;
   }
@@ -121,5 +136,10 @@ public class WebClient implements Client {
   private <T> T getServiceImpl( Class<T> impl ) {
     return SingletonUtil.getSessionInstance( impl );
   }
+
+  private void initializeServices() {
+    getServiceImpl( ClientInfoImpl.class );
+  }
+
 
 }

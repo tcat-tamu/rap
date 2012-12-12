@@ -15,6 +15,7 @@ qx.Class.define( "rwt.widgets.ScrolledComposite", {
 
   construct : function() {
     this.base( arguments, new rwt.widgets.base.Parent() );
+    this.setScrollBarsVisible( false, false );
     this._clientArea.addEventListener( "mousewheel", this._onMouseWheel, this );
     this._clientArea.addEventListener( "keypress", this._onKeyPress, this );
     if( rwt.client.Client.supportsTouch() ) {
@@ -22,7 +23,6 @@ qx.Class.define( "rwt.widgets.ScrolledComposite", {
     }
     this.addEventListener( "userScroll", this._onUserScroll );
     this._content = null;
-    this._hasSelectionListener = false;
     this._requestTimerRunning = false;
     this._showFocusedControl = false;
     this._focusRoot = null;
@@ -37,10 +37,6 @@ qx.Class.define( "rwt.widgets.ScrolledComposite", {
 
     setShowFocusedControl : function( value ) {
       this._showFocusedControl = value;
-    },
-
-    setHasSelectionListener : function( value ) {
-      this._hasSelectionListener = value;
     },
 
     setContent : function( widget ) {
@@ -117,11 +113,30 @@ qx.Class.define( "rwt.widgets.ScrolledComposite", {
       }
     },
 
-    _onUserScroll : function() {
-      if( !this._requestTimerRunning ) {
-        this._requestTimerRunning = true;
-        rwt.client.Timer.once( this._sendChanges, this, 500 );
+    _onUserScroll : function( horizontal ) {
+      var server = rwt.remote.Server.getInstance();
+      var scrollbar = horizontal ? this._horzScrollBar : this._vertScrollBar;
+      var serverObject = server.getServerObject( this );
+      var prop = horizontal ? "horizontalBar.selection" : "verticalBar.selection";
+      serverObject.set( prop, scrollbar.getValue() );
+      if( scrollbar.getHasSelectionListener() ) {
+        if( horizontal ) {
+          server.onNextSend( this._sendHorizontalScrolled, this );
+        } else {
+          server.onNextSend( this._sendVerticalScrolled, this );
+        }
+        server.sendDelayed( 500 );
       }
+    },
+
+    _sendVerticalScrolled : function() {
+      var server = rwt.remote.Server.getInstance();
+      server.getServerObject( this._vertScrollBar ).notify( "Selection" );
+    },
+
+    _sendHorizontalScrolled : function() {
+      var server = rwt.remote.Server.getInstance();
+      server.getServerObject( this._horzScrollBar ).notify( "Selection" );
     },
 
     _onChangeFocusedChild : function( evt ) {

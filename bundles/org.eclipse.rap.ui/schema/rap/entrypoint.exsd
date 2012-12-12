@@ -6,7 +6,7 @@
          <meta.schema plugin="org.eclipse.rap.ui" id="entrypoint" name="EntryPoint"/>
       </appInfo>
       <documentation>
-         For every RAP application, an entry point class must be registered with the framework. The framework will create a separate instance of this entry point for every user session. Entry points must implement the interface &lt;code&gt;IEntryPoint&lt;/code&gt;.
+         For every RAP application, an entry point must be registered with the framework. The framework will create a separate instance of this entry point for every user session. Entry points must implement the interface &lt;code&gt;EntryPoint&lt;/code&gt;.
 &lt;p&gt;
 An application can register several entrypoints, each at a different URL path. To access an entry point, the path that it is registered at must be appended to the context path of the application.
 &lt;/p&gt;
@@ -63,18 +63,8 @@ As an alternative to registering an entrypoint, Eclipse applications can also us
          <attribute name="id" type="string" use="required">
             <annotation>
                <documentation>
-                  The identifier of this entrypoint. Used in &lt;code&gt;org.eclipse.rap.ui.branding&lt;/code&gt; extension point.
+                  The identifier of this entrypoint.
                </documentation>
-            </annotation>
-         </attribute>
-         <attribute name="class" type="string" use="required">
-            <annotation>
-               <documentation>
-                  An implementation of &lt;code&gt;IEntryPoint&lt;/code&gt; which starts the application.
-               </documentation>
-               <appInfo>
-                  <meta.attribute kind="java" basedOn=":org.eclipse.rwt.lifecycle.IEntryPoint"/>
-               </appInfo>
             </annotation>
          </attribute>
          <attribute name="path" type="string" use="required">
@@ -82,6 +72,26 @@ As an alternative to registering an entrypoint, Eclipse applications can also us
                <documentation>
                   The URL path to register the entry point at. Must start with a slash.
                </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="class" type="string">
+            <annotation>
+               <documentation>
+                  An implementation of &lt;code&gt;IEntryPoint&lt;/code&gt; which starts the application. Either this attribute or applicationId must be specified.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="java" basedOn=":org.eclipse.rap.rwt.application.EntryPoint"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+         <attribute name="applicationId" type="string">
+            <annotation>
+               <documentation>
+                  The id of an IApplication extension to start instead of an EntryPoint class.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="identifier" basedOn="org.eclipse.core.runtime.applications/@id"/>
+               </appInfo>
             </annotation>
          </attribute>
          <attribute name="brandingId" type="string">
@@ -102,12 +112,12 @@ As an alternative to registering an entrypoint, Eclipse applications can also us
          <meta.section type="apiInfo"/>
       </appInfo>
       <documentation>
-         Each entrypoint has to implement the &lt;code&gt;IEntryPoint&lt;/code&gt; interface.
-In the createUI() method the user interface of the application is created.
+         Each entrypoint must implement the interface &lt;code&gt;EntryPoint&lt;/code&gt;.
+In the createUI() method, the user interface of the application is created.
 An entrypoint for a simple RAP application could look like this:
 
 &lt;pre&gt;
-public class MyEntryPoint implements IEntryPoint {
+public class MyEntryPoint implements EntryPoint {
 
   public int createUI() {
     Display display = new Display();
@@ -145,10 +155,10 @@ public class MyEntryPoint implements IEntryPoint {
     id=&quot;org.eclipse.rap.demo.demoentrypoint&quot;
     point=&quot;org.eclipse.rap.ui.entrypoint&quot;&gt;
   &lt;entrypoint
-      id=&quot;org.eclipse.rap.demo.entrypoint&quot;
-      class=&quot;org.eclipse.rap.demo.MyEntrypoint&quot;
+      id=&quot;example.entrypoint&quot;
+      class=&quot;example.MyEntrypoint&quot;
       path=&quot;/myapp&quot;/&gt;
-  &lt;/extension&gt;
+&lt;/extension&gt;
 &lt;/pre&gt;
       </documentation>
    </annotation>

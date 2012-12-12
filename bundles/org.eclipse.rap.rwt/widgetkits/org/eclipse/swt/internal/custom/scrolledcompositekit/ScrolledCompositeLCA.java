@@ -11,9 +11,7 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.custom.scrolledcompositekit;
 
-import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
-import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
 
 import java.io.IOException;
@@ -27,7 +25,7 @@ import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.internal.events.EventLCAUtil;
+import org.eclipse.swt.internal.widgets.ScrollBarLCAUtil;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Widget;
 
@@ -45,12 +43,9 @@ public final class ScrolledCompositeLCA extends AbstractWidgetLCA {
   private static final String PROP_ORIGIN = "origin";
   private static final String PROP_CONTENT = "content";
   private static final String PROP_SHOW_FOCUSED_CONTROL = "showFocusedControl";
-  private static final String PROP_SCROLLBARS_VISIBLE = "scrollBarsVisible";
-  private static final String PROP_SCROLLBARS_SELECTION_LISTENER = "scrollBarsSelection";
 
   // Default values
   private static final Point DEFAULT_ORIGIN = new Point( 0, 0 );
-  private static final boolean[] DEFAULT_SCROLLBARS_VISIBLE = new boolean[] { true, true };
 
   @Override
   public void preserveValues( Widget widget ) {
@@ -60,10 +55,7 @@ public final class ScrolledCompositeLCA extends AbstractWidgetLCA {
     preserveProperty( composite, PROP_ORIGIN, getOrigin( composite ) );
     preserveProperty( composite, PROP_CONTENT, composite.getContent() );
     preserveProperty( composite, PROP_SHOW_FOCUSED_CONTROL, composite.getShowFocusedControl() );
-    preserveProperty( composite, PROP_SCROLLBARS_VISIBLE, getScrollBarsVisible( composite ) );
-    preserveListener( composite,
-                      PROP_SCROLLBARS_SELECTION_LISTENER,
-                      EventLCAUtil.hasScrollBarsSelectionListener( composite ) );
+    ScrollBarLCAUtil.preserveValues( composite );
   }
 
   public void readData( Widget widget ) {
@@ -84,16 +76,17 @@ public final class ScrolledCompositeLCA extends AbstractWidgetLCA {
     ControlLCAUtil.processKeyEvents( composite );
     ControlLCAUtil.processMenuDetect( composite );
     WidgetLCAUtil.processHelp( composite );
-    EventLCAUtil.processScrollBarSelection( composite );
+    ScrollBarLCAUtil.processSelectionEvent( composite );
   }
 
   @Override
   public void renderInitialization( Widget widget ) throws IOException {
-    ScrolledComposite scrolledComposite = ( ScrolledComposite )widget;
-    IClientObject clientObject = ClientObjectFactory.getClientObject( scrolledComposite );
+    ScrolledComposite composite = ( ScrolledComposite )widget;
+    IClientObject clientObject = ClientObjectFactory.getClientObject( composite );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( scrolledComposite.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( scrolledComposite, ALLOWED_STYLES ) );
+    clientObject.set( "parent", WidgetUtil.getId( composite.getParent() ) );
+    clientObject.set( "style", WidgetLCAUtil.getStyles( composite, ALLOWED_STYLES ) );
+    ScrollBarLCAUtil.renderInitialization( composite );
   }
 
   @Override
@@ -107,19 +100,7 @@ public final class ScrolledCompositeLCA extends AbstractWidgetLCA {
                     PROP_SHOW_FOCUSED_CONTROL,
                     composite.getShowFocusedControl(),
                     false );
-    renderProperty( composite,
-                    PROP_SCROLLBARS_VISIBLE,
-                    getScrollBarsVisible( composite ),
-                    DEFAULT_SCROLLBARS_VISIBLE );
-    renderListener( composite,
-                    PROP_SCROLLBARS_SELECTION_LISTENER,
-                    EventLCAUtil.hasScrollBarsSelectionListener( composite ),
-                    false );
-  }
-
-  @Override
-  public void renderDispose( Widget widget ) throws IOException {
-    ClientObjectFactory.getClientObject( widget ).destroy();
+    ScrollBarLCAUtil.renderChanges( composite );
   }
 
   //////////////////
@@ -136,20 +117,6 @@ public final class ScrolledCompositeLCA extends AbstractWidgetLCA {
       result.y = verticalBar.getSelection();
     }
     return result;
-  }
-
-  private static boolean[] getScrollBarsVisible( ScrolledComposite composite ) {
-    return new boolean[] { hasHScrollBar( composite ), hasVScrollBar( composite ) };
-  }
-
-  private static boolean hasHScrollBar( ScrolledComposite composite ) {
-    ScrollBar horizontalBar = composite.getHorizontalBar();
-    return horizontalBar != null && horizontalBar.getVisible();
-  }
-
-  private static boolean hasVScrollBar( ScrolledComposite composite ) {
-    ScrollBar verticalBar = composite.getVerticalBar();
-    return verticalBar != null && verticalBar.getVisible();
   }
 
 }

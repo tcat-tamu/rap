@@ -18,10 +18,10 @@ import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
 import org.eclipse.swt.SWTException;
@@ -346,7 +346,7 @@ public final class Image extends Resource implements Drawable {
     }
     ImageData result;
     if( device != null ) {
-      ApplicationContext applicationContext = getApplicationContext();
+      ApplicationContextImpl applicationContext = getApplicationContext();
       result = applicationContext.getImageDataFactory().findImageData( internalImage );
     } else {
       result = internalImage.getImageData();
@@ -441,11 +441,11 @@ public final class Image extends Resource implements Drawable {
     new ImageSerializer( this ).readObject( stream );
   }
 
-  private ApplicationContext getApplicationContext() {
+  private ApplicationContextImpl getApplicationContext() {
     Display display = ( Display )device;
     IDisplayAdapter adapter = display.getAdapter( IDisplayAdapter.class );
-    ISessionStore sessionStore = adapter.getSessionStore();
-    return ApplicationContextUtil.get( sessionStore );
+    UISession uiSession = adapter.getUISession();
+    return ApplicationContextUtil.get( uiSession );
   }
 
   private static InternalImage findInternalImage( ImageData imageData ) {

@@ -24,18 +24,18 @@ import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.SingletonUtil;
+import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.engine.RWTServlet;
 import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.RequestParams;
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
-import org.eclipse.rap.rwt.service.ISessionStore;
-import org.eclipse.rap.rwt.service.SessionStoreEvent;
-import org.eclipse.rap.rwt.service.SessionStoreListener;
+import org.eclipse.rap.rwt.service.UISession;
+import org.eclipse.rap.rwt.service.UISessionEvent;
+import org.eclipse.rap.rwt.service.UISessionListener;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestLogger;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
@@ -93,7 +93,7 @@ public class RWTLifeCycle2_Test extends TestCase {
 
   public void testSessionRestartAfterExceptionInUIThread() throws Exception {
     TestRequest request;
-    Class<? extends IEntryPoint> entryPoint = ExceptionInReadAndDispatchEntryPoint.class;
+    Class<? extends EntryPoint> entryPoint = ExceptionInReadAndDispatchEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // send initial request - response is index.html
     request = newGetRequest();
@@ -106,7 +106,7 @@ public class RWTLifeCycle2_Test extends TestCase {
     assertEquals( 0, eventLog.size() );
 
     // send 'application startup' request - response is JavaScript to create
-    // client-side representation of what was created in IEntryPoint#createUI
+    // client-side representation of what was created in EntryPoint#createUI
     request = newPostRequest( false );
     runRWTDelegate( request );
     assertNull( session.getAttribute( TEST_SESSION_ATTRIBUTE ) );
@@ -137,7 +137,7 @@ public class RWTLifeCycle2_Test extends TestCase {
 
   public void testSessionRestartAfterExceptionInInitialRequest() throws Exception {
     TestRequest request;
-    Class<? extends IEntryPoint> entryPoint = ExceptionInCreateUIEntryPoint.class;
+    Class<? extends EntryPoint> entryPoint = ExceptionInCreateUIEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // send initial request - response creates ui
     request = newPostRequest( true );
@@ -159,12 +159,12 @@ public class RWTLifeCycle2_Test extends TestCase {
   }
 
   /*
-   * 353053: FakeContextUtil doesn't support getProperty on Request proxy
+   * 353053: ContextUtil doesn't support getProperty on Request proxy
    * https://bugs.eclipse.org/bugs/show_bug.cgi?id=353053
    */
   public void testSessionRestartWithStringMeasurementInDisplayDispose() throws Exception {
     TestRequest request;
-    Class<? extends IEntryPoint> entryPoint = StringMeasurementInDisplayDisposeEntryPoint.class;
+    Class<? extends EntryPoint> entryPoint = StringMeasurementInDisplayDisposeEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // send initial request - response creates ui
     request = newPostRequest( true );
@@ -178,10 +178,10 @@ public class RWTLifeCycle2_Test extends TestCase {
 
   public void testEventProcessingOnSessionRestart() throws Exception {
     TestRequest request;
-    Class<? extends IEntryPoint> entryPoint = EventProcessingOnSessionRestartEntryPoint.class;
+    Class<? extends EntryPoint> entryPoint = EventProcessingOnSessionRestartEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // send 'application startup' request - response is JavaScript to create
-    // client-side representation of what was created in IEntryPoint#createUI
+    // client-side representation of what was created in EntryPoint#createUI
     request = newPostRequest( true );
     runRWTDelegate( request );
     assertTrue( createUIEntered );
@@ -200,7 +200,7 @@ public class RWTLifeCycle2_Test extends TestCase {
    */
   public void testSessionInvalidateWithDisposeInFinally() throws Exception {
     TestRequest request;
-    Class<? extends IEntryPoint> clazz = TestSessionInvalidateWithDisposeInFinallyEntryPoint.class;
+    Class<? extends EntryPoint> clazz = TestSessionInvalidateWithDisposeInFinallyEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", clazz, null );
     // send initial request - response creates ui
     request = newPostRequest( true );
@@ -219,9 +219,9 @@ public class RWTLifeCycle2_Test extends TestCase {
    * 354368: Occasional exception on refresh (F5)
    * https://bugs.eclipse.org/bugs/show_bug.cgi?id=354368
    */
-  public void testClearSessionStoreOnSessionRestart() throws Exception {
+  public void testClearUISessionOnSessionRestart() throws Exception {
     TestRequest request;
-    Class<? extends IEntryPoint> entryPointClass = TestEntryPoint.class;
+    Class<? extends EntryPoint> entryPointClass = TestEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPointClass, null );
     // send initial request - response creates ui
     request = newPostRequest( true );
@@ -242,23 +242,23 @@ public class RWTLifeCycle2_Test extends TestCase {
     // ensures that no exceptions has been thrown
   }
 
-  public void testGetRequestDoesNotClearSessionStore() throws Exception {
-    Class<? extends IEntryPoint> entryPoint = TestEntryPoint.class;
+  public void testGetRequestDoesNotClearUISession() throws Exception {
+    Class<? extends EntryPoint> entryPoint = TestEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // inital GET request
     runRWTDelegate( newGetRequest() );
     // inital POST request starts the UI thread
     runRWTDelegate( newPostRequest( true ) );
-    ContextProvider.getSessionStore().setAttribute( "dummy", Boolean.TRUE );
+    ContextProvider.getUISession().setAttribute( "dummy", Boolean.TRUE );
 
     // subsequent GET request should not run the lifecycle
     runRWTDelegate( newGetRequest() );
 
-    assertEquals( Boolean.TRUE, ContextProvider.getSessionStore().getAttribute( "dummy" ) );
+    assertEquals( Boolean.TRUE, ContextProvider.getUISession().getAttribute( "dummy" ) );
   }
 
   public void testGetRequestAlwaysReturnsHtml() throws Exception {
-    Class<? extends IEntryPoint> entryPoint = TestEntryPoint.class;
+    Class<? extends EntryPoint> entryPoint = TestEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // inital GET request
     runRWTDelegate( newGetRequest() );
@@ -272,7 +272,7 @@ public class RWTLifeCycle2_Test extends TestCase {
   }
 
   public void testPostRequestReturnsJsonAfterSessionTimeout() throws Exception {
-    Class<? extends IEntryPoint> entryPoint = TestEntryPoint.class;
+    Class<? extends EntryPoint> entryPoint = TestEntryPoint.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // inital GET request
     runRWTDelegate( newGetRequest() );
@@ -290,8 +290,8 @@ public class RWTLifeCycle2_Test extends TestCase {
    * listener beforeDestroy method.
    * see bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=372946
    */
-  public void testGetLockOnSessionStore() throws Exception {
-    Class<? extends IEntryPoint> entryPoint = EntryPointWithSynchronizationOnSessionStore.class;
+  public void testGetLockOnUISession() throws Exception {
+    Class<? extends EntryPoint> entryPoint = EntryPointWithSynchronizationOnUISession.class;
     RWTFactory.getEntryPointManager().register( "/test", entryPoint, null );
     // inital POST request starts the UI thread
     runRWTDelegate( newPostRequest( true ) );
@@ -351,7 +351,7 @@ public class RWTLifeCycle2_Test extends TestCase {
   }
 
   private void registerTestLogger() {
-    session = ContextProvider.getSessionStore().getHttpSession();
+    session = ContextProvider.getUISession().getHttpSession();
     ServletContext servletContext = session.getServletContext();
     TestServletContext servletContextImpl = ( TestServletContext )servletContext;
     servletContextImpl.setLogger( new TestLogger() {
@@ -363,7 +363,7 @@ public class RWTLifeCycle2_Test extends TestCase {
     } );
   }
 
-  public static final class ExceptionInReadAndDispatchEntryPoint implements IEntryPoint {
+  public static final class ExceptionInReadAndDispatchEntryPoint implements EntryPoint {
     public int createUI() {
       createUIEntered = true;
       Display display = new Display();
@@ -379,7 +379,7 @@ public class RWTLifeCycle2_Test extends TestCase {
         maliciousButton.addSelectionListener( new SelectionAdapter() {
           @Override
           public void widgetSelected( SelectionEvent e ) {
-            HttpSession httpSession = RWT.getSessionStore().getHttpSession();
+            HttpSession httpSession = RWT.getUISession().getHttpSession();
             httpSession.setAttribute( TEST_SESSION_ATTRIBUTE, new Object() );
             throw new RuntimeException( EXCEPTION_MSG );
           }
@@ -400,7 +400,7 @@ public class RWTLifeCycle2_Test extends TestCase {
     }
   }
 
-  public static final class ExceptionInCreateUIEntryPoint implements IEntryPoint {
+  public static final class ExceptionInCreateUIEntryPoint implements EntryPoint {
     @SuppressWarnings("unused")
     public int createUI() {
       createUIEntered = true;
@@ -431,7 +431,7 @@ public class RWTLifeCycle2_Test extends TestCase {
     }
   }
 
-  public static final class StringMeasurementInDisplayDisposeEntryPoint implements IEntryPoint {
+  public static final class StringMeasurementInDisplayDisposeEntryPoint implements EntryPoint {
     public int createUI() {
       Display display = new Display();
       display.addListener( SWT.Dispose, new Listener() {
@@ -457,7 +457,7 @@ public class RWTLifeCycle2_Test extends TestCase {
     }
   }
 
-  public static final class EventProcessingOnSessionRestartEntryPoint implements IEntryPoint {
+  public static final class EventProcessingOnSessionRestartEntryPoint implements EntryPoint {
     public int createUI() {
       createUIEntered = true;
       try {
@@ -468,9 +468,9 @@ public class RWTLifeCycle2_Test extends TestCase {
             eventLog.add(  event );
           }
         } );
-        ISessionStore sessionStore = RWT.getSessionStore();
-        sessionStore.addSessionStoreListener( new SessionStoreListener() {
-          public void beforeDestroy( SessionStoreEvent event ) {
+        UISession uiSession = RWT.getUISession();
+        uiSession.addUISessionListener( new UISessionListener() {
+          public void beforeDestroy( UISessionEvent event ) {
             shell.dispose();
           }
         } );
@@ -489,15 +489,15 @@ public class RWTLifeCycle2_Test extends TestCase {
     }
   }
 
-  public static final class EntryPointWithSynchronizationOnSessionStore implements IEntryPoint {
+  public static final class EntryPointWithSynchronizationOnUISession implements EntryPoint {
     public int createUI() {
       Display display = new Display();
       Shell shell = new Shell( display );
-      final ISessionStore sessionStore = RWT.getSessionStore();
-      sessionStore.addSessionStoreListener( new SessionStoreListener() {
-        public void beforeDestroy( SessionStoreEvent event ) {
-          synchronized( sessionStore ) {
-            sessionStore.removeAttribute( "foo" );
+      final UISession uiSession = RWT.getUISession();
+      uiSession.addUISessionListener( new UISessionListener() {
+        public void beforeDestroy( UISessionEvent event ) {
+          synchronized( uiSession ) {
+            uiSession.removeAttribute( "foo" );
           }
         }
       } );
@@ -512,7 +512,7 @@ public class RWTLifeCycle2_Test extends TestCase {
     }
   }
 
-  public static final class TestEntryPoint implements IEntryPoint {
+  public static final class TestEntryPoint implements EntryPoint {
 
     public int createUI() {
       createUIEntered = true;
@@ -536,7 +536,7 @@ public class RWTLifeCycle2_Test extends TestCase {
   }
 
   public static final class TestSessionInvalidateWithDisposeInFinallyEntryPoint
-    implements IEntryPoint
+    implements EntryPoint
   {
     public int createUI() {
       createUIEntered = true;

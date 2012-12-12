@@ -24,7 +24,7 @@ import org.eclipse.rap.rwt.internal.theme.QxAppearanceWriter;
 import org.eclipse.rap.rwt.internal.theme.Theme;
 import org.eclipse.rap.rwt.internal.theme.ThemeManager;
 import org.eclipse.rap.rwt.internal.util.HTTP;
-import org.eclipse.rap.rwt.resources.IResourceManager;
+import org.eclipse.rap.rwt.service.ResourceManager;
 
 
 public final class ClientResources {
@@ -184,6 +184,7 @@ public final class ClientResources {
     "rwt/protocol/adapter/DragSourceAdapter.js",
     "rwt/theme/ThemeValues.js",
     "rwt/widgets/Grid.js",
+    "rwt/protocol/adapter/ScrollBarAdapter.js",
     "rwt/protocol/adapter/GridAdapter.js",
     "rwt/widgets/GridItem.js",
     "rwt/protocol/adapter/GridItemAdapter.js",
@@ -281,7 +282,11 @@ public final class ClientResources {
     "org/eclipse/rwt/KeyEventSupport.js",
     "rwt/client/JavaScriptExecutor.js",
     "rwt/protocol/adapter/JavaScriptExecutorAdapter.js",
-    "rwt/runtime/System.js"
+    "rwt/client/JavaScriptLoader.js",
+    "rwt/protocol/adapter/JavaScriptLoaderAdapter.js",
+    "rwt/runtime/System.js",
+    "rwt/protocol/adapter/ClientInfoAdapter.js",
+    "rap.js"
   };
 
   private static final String[] WIDGET_IMAGES = new String[] {
@@ -307,10 +312,10 @@ public final class ClientResources {
     "resource/widget/rap/scale/v_line.gif"
   };
 
-  private final IResourceManager resourceManager;
+  private final ResourceManager resourceManager;
   private final ThemeManager themeManager;
 
-  public ClientResources( IResourceManager resourceManager, ThemeManager themeManager ) {
+  public ClientResources( ResourceManager resourceManager, ThemeManager themeManager ) {
     this.resourceManager = resourceManager;
     this.themeManager = themeManager;
   }
@@ -391,7 +396,7 @@ public final class ClientResources {
       inputStream.close();
     }
     String location = resourceManager.getLocation( name );
-    RWTFactory.getStartupPage().addJsLibrary( location );
+    RWTFactory.getStartupPage().setClientJsLibrary( location );
   }
 
   private String readResourceContent( String location ) throws IOException {

@@ -33,11 +33,11 @@ import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.events.EventLCAUtil;
 import org.eclipse.swt.internal.widgets.CellToolTipUtil;
 import org.eclipse.swt.internal.widgets.ICellToolTipAdapter;
 import org.eclipse.swt.internal.widgets.ICellToolTipProvider;
 import org.eclipse.swt.internal.widgets.ITreeAdapter;
+import org.eclipse.swt.internal.widgets.ScrollBarLCAUtil;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Item;
@@ -76,9 +76,8 @@ public final class TreeLCA extends AbstractWidgetLCA {
   private static final String PROP_SELECTION = "selection";
   private static final String PROP_SORT_DIRECTION = "sortDirection";
   private static final String PROP_SORT_COLUMN = "sortColumn";
-  private static final String PROP_SCROLLBARS_VISIBLE = "scrollBarsVisible";
-  private static final String PROP_SCROLLBARS_SELECTION_LISTENER = "scrollBarsSelection";
   private static final String PROP_SELECTION_LISTENER = "Selection";
+  private static final String PROP_SETDATA_LISTENER = "SetData";
   private static final String PROP_DEFAULT_SELECTION_LISTENER = "DefaultSelection";
   private static final String PROP_EXPAND_LISTENER = "Expand";
   private static final String PROP_COLLAPSE_LISTENER = "Collapse";
@@ -88,7 +87,6 @@ public final class TreeLCA extends AbstractWidgetLCA {
 
   private static final int ZERO = 0 ;
   private static final String[] DEFAULT_SELECTION = new String[ 0 ];
-  private static final boolean[] DEFAULT_SCROLLBARS_VISIBLE = new boolean[] { false, false };
   private static final String DEFAULT_SORT_DIRECTION = "none";
 
   @Override
@@ -111,11 +109,8 @@ public final class TreeLCA extends AbstractWidgetLCA {
     preserveProperty( tree, PROP_SELECTION, getSelection( tree ) );
     preserveProperty( tree, PROP_SORT_DIRECTION, getSortDirection( tree ) );
     preserveProperty( tree, PROP_SORT_COLUMN, tree.getSortColumn() );
-    preserveProperty( tree, PROP_SCROLLBARS_VISIBLE, getScrollBarsVisible( tree ) );
-    preserveListener( tree,
-                      PROP_SCROLLBARS_SELECTION_LISTENER,
-                      EventLCAUtil.hasScrollBarsSelectionListener( tree ) );
     preserveListener( tree, PROP_SELECTION_LISTENER, tree.isListening( SWT.Selection ) );
+    preserveListener( tree, PROP_SETDATA_LISTENER, listensToSetData( tree ) );
     preserveListener( tree,
                       PROP_DEFAULT_SELECTION_LISTENER,
                       tree.isListening( SWT.DefaultSelection ) );
@@ -123,6 +118,7 @@ public final class TreeLCA extends AbstractWidgetLCA {
     preserveListener( tree, PROP_COLLAPSE_LISTENER, hasCollapseListener( tree ) );
     preserveProperty( tree, PROP_ENABLE_CELL_TOOLTIP, CellToolTipUtil.isEnabledFor( tree ) );
     preserveProperty( tree, PROP_CELL_TOOLTIP_TEXT, null );
+    ScrollBarLCAUtil.preserveValues( tree );
   }
 
   public void readData( Widget widget ) {
@@ -139,7 +135,7 @@ public final class TreeLCA extends AbstractWidgetLCA {
     ControlLCAUtil.processKeyEvents( tree );
     ControlLCAUtil.processMenuDetect( tree );
     WidgetLCAUtil.processHelp( tree );
-    EventLCAUtil.processScrollBarSelection( tree );
+    ScrollBarLCAUtil.processSelectionEvent( tree );
   }
 
   @Override
@@ -165,6 +161,7 @@ public final class TreeLCA extends AbstractWidgetLCA {
     }
     clientObject.set( "indentionWidth", adapter.getIndentionWidth() );
     clientObject.set( PROP_MARKUP_ENABLED, isMarkupEnabled( tree ) );
+    ScrollBarLCAUtil.renderInitialization( tree );
   }
 
   @Override
@@ -189,15 +186,8 @@ public final class TreeLCA extends AbstractWidgetLCA {
     renderProperty( tree, PROP_SELECTION, getSelection( tree ), DEFAULT_SELECTION );
     renderProperty( tree, PROP_SORT_DIRECTION, getSortDirection( tree ), DEFAULT_SORT_DIRECTION );
     renderProperty( tree, PROP_SORT_COLUMN, tree.getSortColumn(), null );
-    renderProperty( tree,
-                    PROP_SCROLLBARS_VISIBLE,
-                    getScrollBarsVisible( tree ),
-                    DEFAULT_SCROLLBARS_VISIBLE );
-    renderListener( tree,
-                    PROP_SCROLLBARS_SELECTION_LISTENER,
-                    EventLCAUtil.hasScrollBarsSelectionListener( tree ),
-                    false );
     renderListener( tree, PROP_SELECTION_LISTENER, tree.isListening( SWT.Selection ), false );
+    renderListener( tree, PROP_SETDATA_LISTENER, listensToSetData( tree ), false );
     renderListener( tree,
                     PROP_DEFAULT_SELECTION_LISTENER,
                     tree.isListening( SWT.DefaultSelection ),
@@ -206,17 +196,13 @@ public final class TreeLCA extends AbstractWidgetLCA {
     renderListener( tree, PROP_COLLAPSE_LISTENER, hasCollapseListener( tree ), false );
     renderProperty( tree, PROP_ENABLE_CELL_TOOLTIP, CellToolTipUtil.isEnabledFor( tree ), false );
     renderProperty( tree, PROP_CELL_TOOLTIP_TEXT, getCellToolTipText( tree ), null );
-  }
-
-  @Override
-  public void renderDispose( Widget widget ) throws IOException {
-    ClientObjectFactory.getClientObject( widget ).destroy();
+    ScrollBarLCAUtil.renderChanges( tree );
   }
 
   @Override
   public void doRedrawFake( Control control ) {
     Tree tree = ( Tree )control;
-    tree.getAdapter( ITreeAdapter.class ).checkData();
+    getTreeAdapter( tree ).checkData();
   }
 
   private static void processWidgetSelectedEvent( Tree tree ) {
@@ -328,6 +314,10 @@ public final class TreeLCA extends AbstractWidgetLCA {
   //////////////////
   // Helping methods
 
+  private boolean listensToSetData( Tree tree ) {
+    return ( tree.getStyle() & SWT.VIRTUAL ) != 0;
+  }
+
   private static boolean isMarkupEnabled( Tree tree ) {
     return Boolean.TRUE.equals( tree.getData( RWT.MARKUP_ENABLED ) );
   }
@@ -377,18 +367,6 @@ public final class TreeLCA extends AbstractWidgetLCA {
     return result;
   }
 
-  private static boolean[] getScrollBarsVisible( Tree tree ) {
-    return new boolean[] { hasHScrollBar( tree ), hasVScrollBar( tree ) };
-  }
-
-  private static boolean hasHScrollBar( Tree tree ) {
-    return getTreeAdapter( tree ).hasHScrollBar();
-  }
-
-  private static boolean hasVScrollBar( Tree tree ) {
-    return getTreeAdapter( tree ).hasVScrollBar();
-  }
-
   private static void processScrollBarSelection( ScrollBar scrollBar, int selection ) {
     if( scrollBar != null ) {
       scrollBar.setSelection( selection );
@@ -427,8 +405,7 @@ public final class TreeLCA extends AbstractWidgetLCA {
   }
 
   private static ITreeAdapter getTreeAdapter( Tree tree ) {
-    Object adapter = tree.getAdapter( ITreeAdapter.class );
-    return ( ITreeAdapter )adapter;
+    return tree.getAdapter( ITreeAdapter.class );
   }
 
   ///////////////

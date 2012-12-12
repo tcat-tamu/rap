@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH.
+ * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,10 +26,11 @@ import junit.framework.TestCase;
 import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
-import org.eclipse.rap.rwt.lifecycle.ILifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.IWidgetAdapter;
+import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
+import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
@@ -117,7 +118,7 @@ public class ControlLCA_Test extends TestCase {
     adapter = WidgetUtil.getAdapter( control );
     assertEquals( "some text", control.getToolTipText() );
   }
-  
+
   public void testMenuDetectListener() {
     Shell shell = new Shell( display );
     Label label = new Label( shell, SWT.NONE );
@@ -148,7 +149,7 @@ public class ControlLCA_Test extends TestCase {
       @SuppressWarnings("unchecked")
       public <T> T getAdapter( Class<T> adapter ) {
         Object result;
-        if( adapter == ILifeCycleAdapter.class ) {
+        if( adapter == WidgetLifeCycleAdapter.class ) {
           result = new AbstractWidgetLCA() {
             @Override
             public void preserveValues( Widget widget ) {
@@ -190,5 +191,23 @@ public class ControlLCA_Test extends TestCase {
     Fixture.executeLifeCycleFromServerThread();
     assertEquals( "renderDispose", log.toString() );
   }
+
+  public void testRenderNoDisposeWhenParentDisposed() {
+    Shell shell = new Shell( display );
+    Label label = new Label( shell, SWT.NONE );
+    Fixture.fakeNewRequest( display );
+    Fixture.fakeResponseWriter();
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( shell );
+    Fixture.markInitialized( label );
+
+    shell.dispose();
+    Fixture.executeLifeCycleFromServerThread();
+
+    Message message = Fixture.getProtocolMessage();
+    assertNotNull( message.findDestroyOperation( shell ) );
+    assertNull( message.findDestroyOperation( label ) );
+  }
+
 
 }

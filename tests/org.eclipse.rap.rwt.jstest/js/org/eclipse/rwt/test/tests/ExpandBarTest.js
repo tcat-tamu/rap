@@ -65,7 +65,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ExpandBarTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
       var widget = this._createExpandBarByProtocol( "w3", "w2", [ "NONE" ] );
-      TestUtil.protocolSet( "w3", { "vScrollBarVisible"  : true } );
+
+      TestUtil.protocolSet( "w3_vscroll", { "visibility" : true } );
+
       assertTrue( widget._vertScrollBar.getDisplay() );
       shell.destroy();
       widget.destroy();
@@ -92,6 +94,31 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ExpandBarTest", {
       bar.destroy();
       item.destroy();
     },
+
+    testDestroyExpandBarWithChildren : function() {
+      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      var bar = this._createExpandBarByProtocol( "w3", "w2", [ "NONE" ] );
+      var item = this._createExpandItemByProtocol( "w4", "w3", [ "NONE" ] );
+      rwt.protocol.MessageProcessor.processOperationArray( [ "create", "w5", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w3"
+        }
+      ] );
+      var control = rwt.protocol.ObjectRegistry.getObject( "w5" );
+
+      rwt.protocol.MessageProcessor.processOperationArray( [ "destroy", "w3" ] );
+      TestUtil.flush();
+
+      assertTrue( bar.isDisposed() );
+      assertTrue( rwt.protocol.ObjectRegistry.getObject( "w3" ) == null );
+      assertTrue( item.isDisposed() );
+      assertTrue( rwt.protocol.ObjectRegistry.getObject( "w4" ) == null );
+      assertTrue( control.isDisposed() );
+      assertTrue( rwt.protocol.ObjectRegistry.getObject( "w5" ) == null );
+      shell.destroy();
+    },
+
 
     testSetItemCustomVariantByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
@@ -243,6 +270,26 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ExpandBarTest", {
         "properties" : {
           "style" : style,
           "parent" : parentId
+        }
+      } );
+      rwt.protocol.MessageProcessor.processOperation( {
+        "target" : id + "_vscroll",
+        "action" : "create",
+        "type" : "rwt.widgets.ScrollBar",
+        "properties" : {
+          "parent" : id,
+          "style" : [ "VERTICAL" ],
+          "visibility" : true
+        }
+      } );
+      rwt.protocol.MessageProcessor.processOperation( {
+        "target" : id + "_hscroll",
+        "action" : "create",
+        "type" : "rwt.widgets.ScrollBar",
+        "properties" : {
+          "parent" : id,
+          "style" : [ "HORIZONTAL" ],
+          "visibility" : true
         }
       } );
       return rwt.protocol.ObjectRegistry.getObject( id );

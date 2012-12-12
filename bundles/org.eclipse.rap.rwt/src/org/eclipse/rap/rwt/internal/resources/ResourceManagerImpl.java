@@ -25,9 +25,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
-import org.eclipse.rap.rwt.resources.IResourceManager;
+import org.eclipse.rap.rwt.internal.util.StreamUtil;
+import org.eclipse.rap.rwt.service.ResourceLoader;
+import org.eclipse.rap.rwt.service.ResourceManager;
 
 
 /**
@@ -43,18 +44,37 @@ import org.eclipse.rap.rwt.resources.IResourceManager;
  * This class is not intended to be used by clients.
  * </p>
  */
-public class ResourceManagerImpl implements IResourceManager {
+public class ResourceManagerImpl implements ResourceManager {
 
   private final ResourceDirectory resourceDirectory;
   private final Set<String> resources;
 
   public ResourceManagerImpl( ResourceDirectory resourceDirectory ) {
     this.resourceDirectory = resourceDirectory;
-    this.resources = Collections.synchronizedSet( new HashSet<String>() );
+    resources = Collections.synchronizedSet( new HashSet<String>() );
   }
 
   /////////////////////////////
-  // interface IResourceManager
+  // interface ResourceManager
+
+  public void registerOnce( String resource, ResourceLoader loader ) {
+    ParamCheck.notNull( resource, "resource" );
+    ParamCheck.notNull( loader, "loader" );
+    if( !resources.contains( resource ) ) {
+      checkPath( resource );
+      InputStream stream = null;
+      try {
+        stream = loader.getResourceAsStream( resource );
+        internalRegister( resource, stream );
+      } catch( IOException ioe ) {
+        throw new RuntimeException( "Failed to register resource: " + resource, ioe );
+      } finally {
+        if( stream != null ) {
+          StreamUtil.close( stream );
+        }
+      }
+    }
+  }
 
   public void register( String path, InputStream inputStream ) {
     ParamCheck.notNull( path, "name" );
@@ -100,7 +120,7 @@ public class ResourceManagerImpl implements IResourceManager {
     }
     return result;
   }
-  
+
   //////////////////
   // helping methods
 
@@ -118,14 +138,7 @@ public class ResourceManagerImpl implements IResourceManager {
     File location = getDiskLocation( name );
     try {
       createDirectories( location );
-      // TODO [rst] Explicitly register internal JavaScript files
-      if( isJavascriptResource( name ) ) {
-        byte[] content = ResourceUtil.readBinary( inputStream );
-        ResourceUtil.write( location, content );
-        RWTFactory.getJSLibraryConcatenator().appendJSLibrary( content );
-      } else {
-        writeResource( inputStream, location );
-      }
+      writeResource( inputStream, location );
     } catch ( IOException ioe ) {
       throw new RuntimeException( "Failed to register resource: " + name, ioe );
     }
@@ -149,10 +162,6 @@ public class ResourceManagerImpl implements IResourceManager {
     }
   }
 
-  private static boolean isJavascriptResource( String resourceName ) {
-    return resourceName.endsWith( ".js" ) && !resourceName.startsWith( "rap-" );
-  }
-
   private static void createDirectories( File file ) throws IOException {
     File dir = new File( file.getParent() );
     if( !dir.mkdirs() ) {
@@ -169,7 +178,7 @@ public class ResourceManagerImpl implements IResourceManager {
 
   //////////////////
   // helping methods
-  
+
   private static void checkPath( String path ) {
     if( path.length() == 0 ) {
       throw new IllegalArgumentException( "Path must not be empty" );

@@ -12,16 +12,16 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.rap.rwt.Adaptable;
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleAdapterFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObjectAdapter;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.rap.rwt.internal.theme.ThemeManager;
-import org.eclipse.rap.rwt.lifecycle.ILifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.IWidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
+import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -151,6 +151,8 @@ public abstract class Widget implements Adaptable, SerializableCompatibility {
     this.style = style;
     display = parent.display;
     reskinWidget();
+    WidgetAdapter adapter = ( WidgetAdapter )getAdapter( IWidgetAdapter.class );
+    adapter.setParent( parent );
   }
 
   /**
@@ -173,7 +175,7 @@ public abstract class Widget implements Adaptable, SerializableCompatibility {
       }
       result = ( T )widgetAdapter;
     } else if( adapter == IThemeAdapter.class ) {
-      ApplicationContext applicationContext = getApplicationContext();
+      ApplicationContextImpl applicationContext = getApplicationContext();
       ThemeManager themeManager = applicationContext.getThemeManager();
       result = ( T )themeManager.getThemeAdapterManager().getThemeAdapter( this );
     } else if( adapter == IWidgetGraphicsAdapter.class ) {
@@ -181,7 +183,7 @@ public abstract class Widget implements Adaptable, SerializableCompatibility {
         widgetGraphicsAdapter = new WidgetGraphicsAdapter();
       }
       result = ( T )widgetGraphicsAdapter;
-    } else if ( adapter == ILifeCycleAdapter.class ) {
+    } else if ( adapter == WidgetLifeCycleAdapter.class ) {
       if( lifeCycleAdapterFactory == null ) {
         lifeCycleAdapterFactory = getApplicationContext().getLifeCycleAdapterFactory();
       }
@@ -190,9 +192,9 @@ public abstract class Widget implements Adaptable, SerializableCompatibility {
     return result;
   }
 
-  private ApplicationContext getApplicationContext() {
+  private ApplicationContextImpl getApplicationContext() {
     IDisplayAdapter displayAdapter = display.getAdapter( IDisplayAdapter.class );
-    return ApplicationContextUtil.get( displayAdapter.getSessionStore() );
+    return ApplicationContextUtil.get( displayAdapter.getUISession() );
   }
 
   /**

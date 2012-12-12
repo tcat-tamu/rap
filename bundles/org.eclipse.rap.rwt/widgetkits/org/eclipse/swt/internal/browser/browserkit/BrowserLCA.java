@@ -37,8 +37,8 @@ import org.eclipse.rap.rwt.lifecycle.PhaseListener;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
 import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
-import org.eclipse.rap.rwt.resources.IResourceManager;
 import org.eclipse.rap.rwt.service.IServiceStore;
+import org.eclipse.rap.rwt.service.ResourceManager;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.internal.events.EventTypes;
@@ -115,11 +115,6 @@ public final class BrowserLCA extends AbstractWidgetLCA {
     renderEvaluate( browser );
     renderFunctionResult( browser );
     renderListener( browser, PARAM_PROGRESS_LISTENER, hasProgressListener( browser ), false );
-  }
-
-  @Override
-  public void renderDispose( Widget widget ) throws IOException {
-    ClientObjectFactory.getClientObject( widget ).destroy();
   }
 
   private static void fireProgressEvent( Browser browser ) {
@@ -238,7 +233,7 @@ public final class BrowserLCA extends AbstractWidgetLCA {
     String name = createUrlFromHtml( html );
     byte[] bytes = html.getBytes( "UTF-8" );
     InputStream inputStream = new ByteArrayInputStream( bytes );
-    IResourceManager resourceManager = RWT.getResourceManager();
+    ResourceManager resourceManager = RWT.getResourceManager();
     resourceManager.register( name, inputStream );
     return resourceManager.getLocation( name );
   }

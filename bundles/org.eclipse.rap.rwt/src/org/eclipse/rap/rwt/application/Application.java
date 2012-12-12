@@ -15,14 +15,12 @@ import java.util.Map;
 
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.client.WebClient;
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
-import org.eclipse.rap.rwt.lifecycle.IEntryPointFactory;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
-import org.eclipse.rap.rwt.resources.ResourceLoader;
-import org.eclipse.rap.rwt.service.IApplicationStore;
-import org.eclipse.rap.rwt.service.IServiceHandler;
+import org.eclipse.rap.rwt.service.ApplicationContext;
 import org.eclipse.rap.rwt.service.ISettingStore;
 import org.eclipse.rap.rwt.service.ISettingStoreFactory;
+import org.eclipse.rap.rwt.service.ResourceLoader;
+import org.eclipse.rap.rwt.service.ServiceHandler;
 import org.eclipse.rap.rwt.widgets.DialogUtil;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Widget;
@@ -102,41 +100,38 @@ public interface Application {
   void setOperationMode( OperationMode operationMode );
 
   /**
-   * Registers an entry point at the given servlet path. A servlet path must
-   * begin with slash ('/') and must not end with a slash ('/'). The root path
-   * (&quot;/&quot;) is currently not supported, as well as nested paths (e.g.
-   * &quot;/path/subpath&quot;). Properties can be specified to control
-   * client-specific aspects of the entrypoint such as theme, icons, etc. The
-   * acceptable keys and values depend on the client implementation. The class
-   * {@link WebClient} provides constants for the default RAP client.
+   * Registers an entrypoint at the given servlet path. A servlet path must begin with slash ('/')
+   * and must not end with a slash. The root path (&quot;/&quot;) is currently not supported, as
+   * well as nested paths (e.g. &quot;/path/subpath&quot;). Properties can be specified to control
+   * client-specific aspects of the entrypoint such as theme, icons, etc. The acceptable keys and
+   * values depend on the client implementation. The class {@link WebClient} provides constants for
+   * the default RAP client.
    *
    * @param path a valid path to register the entry point at
-   * @param entryPointType the entry point class to be registered, must not be
-   *          <code>null</code>
-   * @param properties properties that control client-specific aspects of the
-   *          application, such as theme, icons, etc., may be <code>null</code>
+   * @param entryPointType the entry point class to be registered, must not be <code>null</code>
+   * @param properties properties that control client-specific aspects of the application, such as
+   *          theme, icons, etc., may be <code>null</code>
    */
   void addEntryPoint( String path,
-                      Class<? extends IEntryPoint> entryPointType,
+                      Class<? extends EntryPoint> entryPointType,
                       Map<String, String> properties );
 
   /**
-   * Registers an entry point factory at the given servlet path. A servlet path
-   * must begin with slash ('/') and must not end with slash ('/'). The root
-   * path (&quot;/&quot;) is currently not supported, as well as nested paths
-   * (e.g. &quot;/path/subpath&quot;). Properties can be specified to control
-   * client-specific aspects of the entrypoint such as theme, icons, etc. The
-   * acceptable keys and values depend on the client implementation. The class
-   * {@link WebClient} provides constants for the default RAP client.
+   * Registers an entrypoint factory at the given servlet path. A servlet path must begin with slash
+   * ('/') and must not end with a slash. The root path (&quot;/&quot;) is currently not supported,
+   * as well as nested paths (e.g. &quot;/path/subpath&quot;). Properties can be specified to
+   * control client-specific aspects of the entrypoint such as theme, icons, etc. The acceptable
+   * keys and values depend on the client implementation. The class {@link WebClient} provides
+   * constants for the default RAP client.
    *
    * @param path a valid path to register the entry point at
-   * @param entryPointFactory the entry point factory to be registered, must not
-   *          be <code>null</code>
-   * @param properties properties that control client-specific aspects of the
-   *          application, such as theme, icons, etc., may be <code>null</code>
+   * @param entryPointFactory the entry point factory to be registered, must not be
+   *          <code>null</code>
+   * @param properties properties that control client-specific aspects of the application, such as
+   *          theme, icons, etc., may be <code>null</code>
    */
   void addEntryPoint( String path,
-                      IEntryPointFactory entryPointFactory,
+                      EntryPointFactory entryPointFactory,
                       Map<String, String> properties );
 
   /**
@@ -180,11 +175,11 @@ public interface Application {
   void addPhaseListener( PhaseListener phaseListener );
 
   /**
-   * Set an initial attribute in the application store.
+   * Set an initial attribute in the application context.
    *
    * @param name the name of the attribute, must not be <code>null</code>
    * @param value the attribute value
-   * @see IApplicationStore
+   * @see ApplicationContext
    */
   void setAttribute( String name, Object value );
 
@@ -211,15 +206,15 @@ public interface Application {
    * Adds a service handler to the application. A service handler is used to
    * handle requests with a certain parameter inside the application. You can
    * think of it like a lightweight servlet that has access to the user's
-   * session. Please see the documentation of {@link IServiceHandler} for the
+   * session. Please see the documentation of {@link ServiceHandler} for the
    * URL to access this service handler.
    *
    * @param serviceHandlerId the id for this servlet handler, used in the
    *          parameter
    * @param serviceHandler the servlet handler to register
-   * @see IServiceHandler
+   * @see ServiceHandler
    */
-  void addServiceHandler( String serviceHandlerId, IServiceHandler serviceHandler );
+  void addServiceHandler( String serviceHandlerId, ServiceHandler serviceHandler );
 
   void addResource( String resourceName, ResourceLoader resourceLoader );
 }

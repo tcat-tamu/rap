@@ -16,32 +16,31 @@ import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.Map;
 
-import org.eclipse.rap.rwt.Adaptable;
 import org.eclipse.rap.rwt.application.Application;
 import org.eclipse.rap.rwt.application.ApplicationConfiguration;
+import org.eclipse.rap.rwt.application.EntryPoint;
+import org.eclipse.rap.rwt.application.EntryPointFactory;
 import org.eclipse.rap.rwt.internal.client.ClientProvider;
 import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
-import org.eclipse.rap.rwt.internal.service.ServiceManager;
+import org.eclipse.rap.rwt.internal.service.ServiceManagerImpl;
 import org.eclipse.rap.rwt.internal.theme.Theme;
 import org.eclipse.rap.rwt.internal.theme.ThemeManager;
 import org.eclipse.rap.rwt.internal.theme.css.CssFileReader;
 import org.eclipse.rap.rwt.internal.theme.css.StyleSheet;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
-import org.eclipse.rap.rwt.lifecycle.IEntryPoint;
-import org.eclipse.rap.rwt.lifecycle.IEntryPointFactory;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
-import org.eclipse.rap.rwt.resources.ResourceLoader;
-import org.eclipse.rap.rwt.service.IServiceHandler;
 import org.eclipse.rap.rwt.service.ISettingStoreFactory;
+import org.eclipse.rap.rwt.service.ResourceLoader;
+import org.eclipse.rap.rwt.service.ServiceHandler;
 import org.eclipse.swt.widgets.Widget;
 
 
-public class ApplicationImpl implements Application, Adaptable {
+public class ApplicationImpl implements Application {
 
-  private final ApplicationContext applicationContext;
+  private final ApplicationContextImpl applicationContext;
   private final ApplicationConfiguration configuration;
 
-  public ApplicationImpl( ApplicationContext applicationContext,
+  public ApplicationImpl( ApplicationContextImpl applicationContext,
                           ApplicationConfiguration configuration )
   {
     this.applicationContext = applicationContext;
@@ -77,7 +76,7 @@ public class ApplicationImpl implements Application, Adaptable {
   }
 
   public void addEntryPoint( String path,
-                             Class<? extends IEntryPoint> entryPointType,
+                             Class<? extends EntryPoint> entryPointType,
                              Map<String, String> properties )
   {
     ParamCheck.notNull( path, "path" );
@@ -87,7 +86,7 @@ public class ApplicationImpl implements Application, Adaptable {
   }
 
   public void addEntryPoint( String path,
-                             IEntryPointFactory entryPointFactory,
+                             EntryPointFactory entryPointFactory,
                              Map<String, String> properties )
   {
     ParamCheck.notNull( path, "path" );
@@ -99,15 +98,15 @@ public class ApplicationImpl implements Application, Adaptable {
   public void addResource( String resourceName, ResourceLoader resourceLoader ) {
     ParamCheck.notNull( resourceName, "resourceName" );
     ParamCheck.notNull( resourceLoader, "resourceLoader" );
-    
+
     applicationContext.getResourceRegistry().add( resourceName, resourceLoader );
   }
 
-  public void addServiceHandler( String serviceHandlerId, IServiceHandler serviceHandler ) {
+  public void addServiceHandler( String serviceHandlerId, ServiceHandler serviceHandler ) {
     ParamCheck.notNull( serviceHandlerId, "serviceHandlerId" );
     ParamCheck.notNull( serviceHandler, "serviceHandler" );
 
-    ServiceManager serviceManager = applicationContext.getServiceManager();
+    ServiceManagerImpl serviceManager = applicationContext.getServiceManager();
     serviceManager.registerServiceHandler( serviceHandlerId, serviceHandler );
   }
 
@@ -146,7 +145,7 @@ public class ApplicationImpl implements Application, Adaptable {
   }
 
   public void setAttribute( String name, Object value ) {
-    applicationContext.getApplicationStore().setAttribute( name, value );
+    applicationContext.setAttribute( name, value );
   }
 
   private ClassLoader getClassLoader() {
@@ -166,13 +165,8 @@ public class ApplicationImpl implements Application, Adaptable {
     return result;
   }
 
-  @SuppressWarnings("unchecked")
-  public <T> T getAdapter( Class<T> adapter ) {
-    T result = null;
-    if( adapter == ApplicationContext.class ) {
-      result = ( T )applicationContext;
-    }
-    return result;
+  public ApplicationContextImpl getApplicationContext() {
+    return applicationContext;
   }
 
   static class ResourceLoaderImpl implements ResourceLoader {

@@ -12,6 +12,7 @@ package org.eclipse.swt.internal.widgets.displaykit;
 
 import java.io.IOException;
 import java.io.InputStream;
+
 import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.RWT;
@@ -19,14 +20,14 @@ import org.eclipse.rap.rwt.internal.RWTProperties;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.resources.TestUtil;
 import org.eclipse.rap.rwt.internal.theme.Theme;
-import org.eclipse.rap.rwt.resources.IResourceManager;
+import org.eclipse.rap.rwt.service.ResourceManager;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 
 
 public class ClientResources_Test extends TestCase {
 
   private ClientResources clientResources;
-  private IResourceManager resourceManager;
+  private ResourceManager resourceManager;
 
   @Override
   protected void setUp() {
@@ -51,8 +52,7 @@ public class ClientResources_Test extends TestCase {
   }
 
   public void testRegisterResourcesDebug() {
-    System.setProperty( RWTProperties.CLIENT_LIBRARY_VARIANT,
-                        RWTProperties.DEBUG_CLIENT_LIBRARY_VARIANT );
+    System.setProperty( RWTProperties.DEVELOPMEMT_MODE, "true" );
     clientResources.registerResources();
 
     assertTrue( resourceManager.isRegistered( "rap-client.js" ) );
@@ -62,7 +62,7 @@ public class ClientResources_Test extends TestCase {
   }
 
   public void testRegisteredContent() throws IOException {
-    System.getProperties().remove( RWTProperties.CLIENT_LIBRARY_VARIANT );
+    System.getProperties().remove( RWTProperties.DEVELOPMEMT_MODE );
     clientResources.registerResources();
     String clientJs = getRegisteredContent( "rap-client.js" );
 
@@ -74,8 +74,7 @@ public class ClientResources_Test extends TestCase {
   }
 
   public void testRegisteredContentDebug() throws IOException {
-    System.setProperty( RWTProperties.CLIENT_LIBRARY_VARIANT,
-                        RWTProperties.DEBUG_CLIENT_LIBRARY_VARIANT );
+    System.setProperty( RWTProperties.DEVELOPMEMT_MODE, "true" );
     clientResources.registerResources();
     String clientJs = getRegisteredContent( "rap-client.js" );
 

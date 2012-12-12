@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 Frank Appel and others.
+ * Copyright (c) 2011, 2012 Frank Appel and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    Frank Appel - initial API and implementation
+ *    EclipseSource - ongoing development
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.application;
 
@@ -17,10 +18,8 @@ import javax.servlet.ServletContext;
 
 import junit.framework.TestCase;
 
-import org.eclipse.rap.rwt.internal.application.ApplicationContext;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
-import org.eclipse.rap.rwt.internal.service.SessionStoreImpl;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.internal.service.UISessionImpl;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestSession;
 import org.eclipse.rap.rwt.testfixture.internal.NoOpRunnable;
@@ -28,10 +27,10 @@ import org.eclipse.rap.rwt.testfixture.internal.NoOpRunnable;
 
 public class ApplicationContextUtil_Test extends TestCase {
 
-  private ApplicationContext applicationContext;
+  private ApplicationContextImpl applicationContext;
 
   public void setUp() {
-    applicationContext = new ApplicationContext( null, null );
+    applicationContext = new ApplicationContextImpl( null, null );
   }
 
   public void testSetToServletContext() {
@@ -51,17 +50,17 @@ public class ApplicationContextUtil_Test extends TestCase {
     assertNull( ApplicationContextUtil.get( servletContext ) );
   }
 
-  public void testSetToSessionStore() {
-    SessionStoreImpl sessionStore = new SessionStoreImpl( new TestSession() );
-    ApplicationContext applicationContext = new ApplicationContext( null, null );
+  public void testSetToUISession() {
+    UISessionImpl uiSession = new UISessionImpl( new TestSession() );
+    ApplicationContextImpl applicationContext = new ApplicationContextImpl( null, null );
 
-    ApplicationContextUtil.set( sessionStore, applicationContext );
+    ApplicationContextUtil.set( uiSession, applicationContext );
 
-    assertSame( applicationContext, ApplicationContextUtil.get( sessionStore ) );
+    assertSame( applicationContext, ApplicationContextUtil.get( uiSession ) );
   }
 
   public void testRunWith() {
-    final ApplicationContext[] found = new ApplicationContext[ 1 ];
+    final ApplicationContextImpl[] found = new ApplicationContextImpl[ 1 ];
     Runnable runnable = new Runnable() {
       public void run() {
         found[ 0 ] = ApplicationContextUtil.getInstance();
@@ -129,7 +128,7 @@ public class ApplicationContextUtil_Test extends TestCase {
     Fixture.createServiceContext();
     ApplicationContextUtil.set( servletContext, applicationContext );    
 
-    ApplicationContext found = ApplicationContextUtil.getInstance();
+    ApplicationContextImpl found = ApplicationContextUtil.getInstance();
 
     assertSame( applicationContext, found );
     Fixture.disposeOfServiceContext();
@@ -156,13 +155,13 @@ public class ApplicationContextUtil_Test extends TestCase {
     assertFalse( contextDirectory.exists() );
   }
 
-  public void testApplicationContextInSessionStoreIsNotSerialized() throws Exception {
-    SessionStoreImpl sessionStore = new SessionStoreImpl( new TestSession() );
-    ApplicationContextUtil.set( sessionStore, applicationContext );
+  public void testApplicationContextInUISessionIsNotSerialized() throws Exception {
+    UISessionImpl uiSession = new UISessionImpl( new TestSession() );
+    ApplicationContextUtil.set( uiSession, applicationContext );
 
-    ISessionStore deserializedSessionStore = Fixture.serializeAndDeserialize( sessionStore );
+    UISession deserializedUiSession = Fixture.serializeAndDeserialize( uiSession );
 
-    ApplicationContext appContext = ApplicationContextUtil.get( deserializedSessionStore );
+    ApplicationContextImpl appContext = ApplicationContextUtil.get( deserializedUiSession );
 
     assertNull( appContext );
   }

@@ -13,7 +13,6 @@ package org.eclipse.swt.internal.widgets.menuitemkit;
 
 import java.io.IOException;
 
-import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MenuItem;
@@ -46,10 +45,6 @@ public final class MenuItemLCA extends AbstractWidgetLCA {
   public void renderChanges( Widget widget ) throws IOException {
     MenuItem item = ( MenuItem )widget;
     getDelegateLCA( item ).renderChanges( item );
-  }
-
-  public void renderDispose( Widget widget ) throws IOException {
-    ClientObjectFactory.getClientObject( widget ).destroy();
   }
 
   private static boolean isTopLevelMenuBarItem( MenuItem item ) {

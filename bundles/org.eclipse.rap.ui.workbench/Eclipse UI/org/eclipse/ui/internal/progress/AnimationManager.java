@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2006 IBM Corporation and others.
+ * Copyright (c) 2003, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,20 +7,23 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     EclipseSource - adaptation for RAP
  *******************************************************************************/
 package org.eclipse.ui.internal.progress;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionBindingListener;
-
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.SingletonUtil;
-import org.eclipse.rap.rwt.lifecycle.UICallBack;
-import org.eclipse.rap.rwt.service.ISessionStore;
+import org.eclipse.rap.rwt.service.UISessionEvent;
+import org.eclipse.rap.rwt.service.UISessionListener;
 import org.eclipse.rap.ui.internal.progress.IJobMarker;
 import org.eclipse.rap.ui.internal.progress.JobCanceler;
 import org.eclipse.swt.SWT;
@@ -76,7 +79,7 @@ public class AnimationManager {
          //               due to thread management.
          //               Note that this is still under investigation.
          //               See comment in JobManagerAdapter
-         final boolean[] done = new boolean[ 1 ];
+         final AtomicBoolean done = new AtomicBoolean();
 
 
         animationProcessor = new ProgressAnimationProcessor(this);
@@ -107,7 +110,7 @@ public class AnimationManager {
               if( adapter == IJobMarker.class ) {
                 result = new IJobMarker() {
                   public boolean canBeRemoved() {
-                    return done[ 0 ];
+                    return done.get();
                   }
                 };
               } else {
@@ -126,21 +129,15 @@ public class AnimationManager {
         //               due to thread management.
         //               Note that this is still under investigation.
         //               See comment in JobManagerAdapter
-        ISessionStore session = RWT.getSessionStore();
-        String watchDogKey = getClass().getName() + ".watchDog";
-        if( session.getAttribute( watchDogKey ) == null ) {
-          session.setAttribute( watchDogKey, new HttpSessionBindingListener() {
-            public void valueBound( final HttpSessionBindingEvent event ) {
+        RWT.getUISession().addUISessionListener( new UISessionListener() {
+          public void beforeDestroy( UISessionEvent event ) {
+            if( animationUpdateJob != null ) {
+              animationUpdateJob.cancel();
+              animationUpdateJob.addJobChangeListener( new JobCanceler() );
+              done.set( true );
             }
-            public void valueUnbound( final HttpSessionBindingEvent event ) {
-              if( animationUpdateJob != null ) {
-                animationUpdateJob.cancel();
-                animationUpdateJob.addJobChangeListener( new JobCanceler() );
-                done[ 0 ] = true;
-              }
-            }
-          } );
-        }
+          }
+        } );
     }
 
     /**
@@ -187,7 +184,7 @@ public class AnimationManager {
           animationUpdateJob.schedule(100);
         }
       };
-      UICallBack.runNonUIThreadWithFakeContext( display, scheduler );
+      RWT.getUISession( display ).exec( scheduler );
     }
 
     /**

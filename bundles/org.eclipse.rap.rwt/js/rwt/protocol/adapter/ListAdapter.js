@@ -23,13 +23,14 @@ rwt.protocol.AdapterRegistry.add( "rwt.widgets.List", {
 
   destructor : rwt.protocol.AdapterUtil.getControlDestructor(),
 
+  getDestroyableChildren : rwt.protocol.AdapterUtil.getDestroyableChildrenFinder(),
+
   properties : rwt.protocol.AdapterUtil.extendControlProperties( [
     // order of items, selection, focus is crucial
     "items",
     "selectionIndices",
     "topIndex",
     "focusIndex",
-    "scrollBarsVisible",
     "itemDimensions"
   ] ),
 
@@ -59,6 +60,8 @@ rwt.protocol.AdapterRegistry.add( "rwt.widgets.List", {
   listeners : rwt.protocol.AdapterUtil.extendControlListeners( [
     "Selection",
     "DefaultSelection"
-  ] )
+  ] ),
+
+  listenerHandler : rwt.protocol.AdapterUtil.extendControlListenerHandler( {} )
 
 } );

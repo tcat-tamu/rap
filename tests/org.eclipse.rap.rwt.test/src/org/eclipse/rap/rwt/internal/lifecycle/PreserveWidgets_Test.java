@@ -16,20 +16,31 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
+import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
-import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
-import org.eclipse.rap.rwt.lifecycle.*;
+import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
+import org.eclipse.rap.rwt.lifecycle.ILifeCycle;
+import org.eclipse.rap.rwt.lifecycle.IWidgetAdapter;
+import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
+import org.eclipse.rap.rwt.lifecycle.PhaseId;
+import org.eclipse.rap.rwt.lifecycle.PhaseListener;
+import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
+import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.widgets.Props;
 import org.eclipse.swt.internal.widgets.displaykit.DisplayLCA;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Widget;
 
 
 public class PreserveWidgets_Test extends TestCase {
 
-  public static class TestEntryPointWithShell implements IEntryPoint {
+  public static class TestEntryPointWithShell implements EntryPoint {
     public int createUI() {
       Display display = new Display();
       new Shell( display, SWT.NONE );
@@ -86,7 +97,7 @@ public class PreserveWidgets_Test extends TestCase {
     @SuppressWarnings("unchecked")
     public <T> T getAdapter( Class<T> adapter ) {
       Object result;
-      if( adapter == ILifeCycleAdapter.class ) {
+      if( adapter == WidgetLifeCycleAdapter.class ) {
         result = widgetLCA;
       } else {
         result = super.getAdapter( adapter );
@@ -109,7 +120,7 @@ public class PreserveWidgets_Test extends TestCase {
     @SuppressWarnings("unchecked")
     public <T> T getAdapter( Class<T> adapter ) {
       Object result;
-      if( adapter == ILifeCycleAdapter.class ) {
+      if( adapter == WidgetLifeCycleAdapter.class ) {
         result = widgetLCA;
       } else {
         result = super.getAdapter( adapter );

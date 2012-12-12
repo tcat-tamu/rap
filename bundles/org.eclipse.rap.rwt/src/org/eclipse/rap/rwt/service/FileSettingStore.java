@@ -11,8 +11,19 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.service;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
 
 import org.eclipse.rap.rwt.internal.service.ServletLog;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
@@ -27,13 +38,13 @@ import org.eclipse.rap.rwt.internal.util.ParamCheck;
 public final class FileSettingStore implements ISettingStore {
 
   /**
-   * This key (value "org.eclipse.rwt.service.FileSettingStore.dir") can be
+   * This key (value "org.eclipse.rap.rwt.service.FileSettingStore.dir") can be
    * used to configure the working directory for file settings stores.
    * See {@link RWTFileSettingStoreFactory} and
    * <code>WorkbenchFileSettingStoreFactory</code>.
    */
   public static final String FILE_SETTING_STORE_DIR
-    = "org.eclipse.rwt.service.FileSettingStore.dir";
+    = "org.eclipse.rap.rwt.service.FileSettingStore.dir";
 
   private static final Random RANDOM = new Random( System.currentTimeMillis() );
 
