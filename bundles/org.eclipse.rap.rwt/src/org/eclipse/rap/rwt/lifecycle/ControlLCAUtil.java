@@ -13,6 +13,7 @@ package org.eclipse.rap.rwt.lifecycle;
 
 
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_DETAIL;
+import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_INDEX;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readEventPropertyValue;
 
 import java.lang.reflect.Field;
@@ -574,6 +575,9 @@ public class ControlLCAUtil {
     } else if( "cancel".equals( detail ) ) {
       result.detail = SWT.ICON_CANCEL;
     }
+    String index = readEventPropertyValue( widget, eventName, EVENT_PARAM_INDEX );
+    if (index != null)
+      result.index = Integer.parseInt( index );
     return result;
   }
 

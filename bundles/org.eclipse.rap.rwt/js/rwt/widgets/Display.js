@@ -75,7 +75,7 @@ rwt.widgets.Display.prototype = {
   
   //[ariddle] - added to support metrics gathering
   setGenerateMetrics : function( generate ) {
-    org.eclipse.swt.Request.getInstance().setGenerateMetrics( generate );
+    rwt.remote.Server.getInstance().setGenerateMetrics( generate );
   },
 
   setEnableUiTests : function( value ) {
