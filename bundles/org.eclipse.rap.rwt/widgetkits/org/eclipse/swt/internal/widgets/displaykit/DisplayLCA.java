@@ -256,7 +256,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
   }
 
   private static void renderUICallBack( Display display ) {
-    new UICallBackRenderer().render();
+    new ServerPushRenderer().render();
   }
 
   private static void renderEnableUiTests( Display display ) {

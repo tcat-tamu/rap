@@ -11,28 +11,25 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.client.service;
 
+import org.eclipse.swt.internal.SWTEventListener;
 
 
 /**
+ * An event handler that is invoked whenever the user navigates within the application, i.e. changes
+ * the fragment part of the URL. This can happen by pressing the browser's <em>back</em> button, by
+ * selecting an item from the browser's history, or by manually changing the fragment part of the
+ * URL in the browser's URL bar.
+ *
+ * @see BrowserNavigation
  * @since 2.0
- * @deprecated Use {@link BrowserHistory} instead
  */
-@Deprecated
-public interface IBrowserHistory {
+public interface BrowserNavigationListener extends SWTEventListener {
 
   /**
-   * @deprecated Use {@link BrowserHistory} instead of {@link IBrowserHistory}
+   * Called when the user navigated within the application.
+   *
+   * @param event the event that contains details of the navigation
    */
-  void createEntry( String id, String text );
-
-  /**
-   * @deprecated Use {@link BrowserHistory} instead of {@link IBrowserHistory}
-   */
-  void addBrowserHistoryListener( BrowserHistoryListener listener );
-
-  /**
-   * @deprecated Use {@link BrowserHistory} instead of {@link IBrowserHistory}
-   */
-  void removeBrowserHistoryListener( BrowserHistoryListener listener );
+  void navigated( BrowserNavigationEvent event );
 
 }

@@ -42,7 +42,7 @@
  * The original code is licensed under a BSD license
  * (http://developer.yahoo.com/yui/license.txt).
  */
-qx.Class.define("rwt.client.History",
+qx.Class.define("rwt.client.BrowserNavigation",
 {
   type : "singleton",
   extend : qx.core.Target,
@@ -375,10 +375,10 @@ qx.Class.define("rwt.client.History",
     },
 
     _historyNavigated : function( event ) {
-      var entryId = event.getData();
+      var state = event.getData();
       var server = rwt.remote.Server.getInstance();
       server.getServerObject( this ).notify( "Navigation", {
-        "entryId" : entryId
+        "state" : state
       } );
     }
 

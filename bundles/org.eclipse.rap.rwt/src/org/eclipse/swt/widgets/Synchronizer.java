@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2009 IBM Corporation and others.
+ * Copyright (c) 2000, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,18 +7,19 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     EclipseSource - adaptation for RAP
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-
-import org.eclipse.rap.rwt.internal.uicallback.UICallBackManager;
+import org.eclipse.rap.rwt.RWT;
+import org.eclipse.rap.rwt.internal.uicallback.ServerPushManager;
 import org.eclipse.rap.rwt.internal.util.SerializableLock;
-import org.eclipse.rap.rwt.lifecycle.UICallBack;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.internal.Compatibility;
 import org.eclipse.swt.internal.SerializableCompatibility;
- 
+
+
 /**
  * Instances of this class provide synchronization support
  * for displays. A default instance is created automatically
@@ -29,7 +30,7 @@ import org.eclipse.swt.internal.SerializableCompatibility;
  * needs to deal with this class. It is provided only to
  * allow applications which require non-standard
  * synchronization behavior to plug in the support they
- * require. <em>Subclasses which override the methods in 
+ * require. <em>Subclasses which override the methods in
  * this class must ensure that the superclass methods are
  * invoked in their implementations</em>
  * </p>
@@ -41,7 +42,7 @@ import org.eclipse.swt.internal.SerializableCompatibility;
  * @since 1.3
  */
 public class Synchronizer implements SerializableCompatibility {
-	
+
   Display display;
 	int messageCount;
 	RunnableLock [] messages;
@@ -59,13 +60,13 @@ public class Synchronizer implements SerializableCompatibility {
 
 /**
  * Constructs a new instance of this class.
- * 
+ *
  * @param display the display to create the synchronizer on
  */
 public Synchronizer (Display display) {
 	this.display = display;
 }
-	
+
 void addLast (RunnableLock lock) {
 	boolean wake = false;
 	synchronized (messageLock) {
@@ -76,11 +77,11 @@ void addLast (RunnableLock lock) {
 			messages = newMessages;
 		}
 		messages [messageCount++] = lock;
-// RAP [rst] Notify UICallBack mechanism when runnable was added to empty queue
+// RAP [rst] Notify server push mechanism when runnable was added to empty queue
 		if( messageCount == 1 ) {
-		  UICallBack.runNonUIThreadWithFakeContext( display, new Runnable() {
+		  RWT.getUISession( display ).exec( new Runnable() {
 		    public void run() {
-		      UICallBackManager.getInstance().setHasRunnables( true );
+		      ServerPushManager.getInstance().setHasRunnables( true );
 		    }
 		  } );
 		}
@@ -96,8 +97,8 @@ protected void runnableAdded( Runnable runnable ) {
 
 /**
  * Causes the <code>run()</code> method of the runnable to
- * be invoked by the user-interface thread at the next 
- * reasonable opportunity. The caller of this method continues 
+ * be invoked by the user-interface thread at the next
+ * reasonable opportunity. The caller of this method continues
  * to run in parallel, and is not notified when the
  * runnable has completed.
  *
@@ -134,7 +135,7 @@ void releaseSynchronizer () {
     }
     runnableLock = removeFirst();
   }
-  // END RAP 
+  // END RAP
 //	display = null;
 	messages = null;
 	messageLock = null;
@@ -150,11 +151,11 @@ RunnableLock removeFirst () {
 		if (messageCount == 0) {
 			if (messages.length > MESSAGE_LIMIT) messages = null;
 		}
-// RAP [rst] Notify UICallBack mechanism when last runnable has been removed
+// RAP [rst] Notify server push mechanism when last runnable has been removed
 		if( messageCount == 0 ) {
-		  UICallBack.runNonUIThreadWithFakeContext( display, new Runnable() {
+		  RWT.getUISession( display ).exec( new Runnable() {
 		    public void run() {
-		      UICallBackManager.getInstance().setHasRunnables( false );
+		      ServerPushManager.getInstance().setHasRunnables( false );
 		    }
 		  } );
 		}
@@ -194,7 +195,7 @@ boolean runAsyncMessages (boolean all) {
 
 /**
  * Causes the <code>run()</code> method of the runnable to
- * be invoked by the user-interface thread at the next 
+ * be invoked by the user-interface thread at the next
  * reasonable opportunity. The thread which calls this method
  * is suspended until the runnable completes.
  *

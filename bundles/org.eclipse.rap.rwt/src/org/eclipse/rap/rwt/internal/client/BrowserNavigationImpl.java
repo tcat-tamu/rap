@@ -16,20 +16,21 @@ import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readEventProper
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.client.service.BrowserHistory;
-import org.eclipse.rap.rwt.client.service.BrowserHistoryEvent;
-import org.eclipse.rap.rwt.client.service.BrowserHistoryListener;
+import org.eclipse.rap.rwt.client.service.BrowserNavigation;
+import org.eclipse.rap.rwt.client.service.BrowserNavigationEvent;
+import org.eclipse.rap.rwt.client.service.BrowserNavigationListener;
 import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.RequestParams;
+import org.eclipse.rap.rwt.internal.util.ParamCheck;
 import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
@@ -39,50 +40,45 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 
 
-public final class BrowserHistoryImpl
-  implements BrowserHistory, PhaseListener, UISessionListener
+public final class BrowserNavigationImpl
+  implements BrowserNavigation, PhaseListener, UISessionListener
 {
 
-  private final static String TYPE = "rwt.client.BrowserHistory";
+  private final static String TYPE = "rwt.client.BrowserNavigation";
   private final static String PROP_NAVIGATION_LISTENER = "Navigation";
   private final static String PROP_ENTRIES = "entries";
-  private final static String METHOD_ADD = "add";
-  private static final String EVENT_HISTORY_NAVIGATED_ENTRY_ID = "entryId";
+  private final static String METHOD_ADD_TO_HISTORY = "addToHistory";
+  private static final String EVENT_HISTORY_NAVIGATED_STATE = "state";
 
   private final Display display;
   private final List<HistoryEntry> entriesToAdd;
-  private final Collection<BrowserHistoryListener> listeners;
+  private final Collection<BrowserNavigationListener> listeners;
   private boolean hasNavigationListener;
 
-  public BrowserHistoryImpl() {
+  public BrowserNavigationImpl() {
     display = Display.getCurrent();
     entriesToAdd = new ArrayList<HistoryEntry>();
-    listeners = new LinkedList<BrowserHistoryListener>();
+    listeners = new LinkedHashSet<BrowserNavigationListener>();
     RWTFactory.getLifeCycleFactory().getLifeCycle().addPhaseListener( this );
     RWT.getUISession().addUISessionListener( this );
   }
 
-  //////////////////
-  // BrowserHistory
+  //////////
+  // History
 
-  public void createEntry( String id, String text ) {
-    if( id == null ) {
-      SWT.error( SWT.ERROR_NULL_ARGUMENT );
-    }
-    if( id.length() == 0 ) {
-      SWT.error( SWT.ERROR_INVALID_ARGUMENT );
-    }
-    entriesToAdd.add( new HistoryEntry( id, text ) );
+  public void pushState( String state, String text ) {
+    ParamCheck.notNullOrEmpty( state, "state" );
+    entriesToAdd.add( new HistoryEntry( state, text ) );
   }
 
-  public void addBrowserHistoryListener( BrowserHistoryListener listener ) {
+  public void addBrowserNavigationListener( BrowserNavigationListener listener ) {
     if( listener == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
     listeners.add( listener );
   }
 
-  public void removeBrowserHistoryListener( BrowserHistoryListener listener ) {
+  public void removeBrowserNavigationListener( BrowserNavigationListener listener ) {
     if( listener == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
@@ -135,19 +131,23 @@ public final class BrowserHistoryImpl
 
   private void processNavigationEvent() {
     if( ProtocolUtil.wasEventSent( TYPE, PROP_NAVIGATION_LISTENER ) ) {
-      String entryId = readEventPropertyValueAsString( TYPE,
-                                                       PROP_NAVIGATION_LISTENER,
-                                                       EVENT_HISTORY_NAVIGATED_ENTRY_ID );
-      BrowserHistoryEvent event = new BrowserHistoryEvent( this, entryId );
-      BrowserHistoryListener[] listeners = getListeners();
-      for( BrowserHistoryListener listener : listeners ) {
-        listener.navigated( event );
-      }
+      String state = readEventPropertyValueAsString( TYPE,
+                                                     PROP_NAVIGATION_LISTENER,
+                                                     EVENT_HISTORY_NAVIGATED_STATE );
+      BrowserNavigationEvent event = new BrowserNavigationEvent( this, state );
+      notifyListeners( event );
     }
   }
 
-  private BrowserHistoryListener[] getListeners() {
-    return listeners.toArray( new BrowserHistoryListener[ listeners.size() ] );
+  void notifyListeners( BrowserNavigationEvent event ) {
+    BrowserNavigationListener[] listeners = getListeners();
+    for( BrowserNavigationListener listener : listeners ) {
+      listener.navigated( event );
+    }
+  }
+
+  private BrowserNavigationListener[] getListeners() {
+    return listeners.toArray( new BrowserNavigationListener[ listeners.size() ] );
   }
 
   private void preserveNavigationListener() {
@@ -172,7 +172,7 @@ public final class BrowserHistoryImpl
       Map<String, Object> properties = new HashMap<String, Object>();
       properties.put( PROP_ENTRIES, entriesAsArray() );
       ProtocolMessageWriter protocolWriter = ContextProvider.getProtocolWriter();
-      protocolWriter.appendCall( TYPE, METHOD_ADD, properties );
+      protocolWriter.appendCall( TYPE, METHOD_ADD_TO_HISTORY, properties );
       entriesToAdd.clear();
     }
   }
@@ -181,8 +181,8 @@ public final class BrowserHistoryImpl
     HistoryEntry[] entries = getEntries();
     Object[][] result = new Object[ entries.length ][ 2 ];
     for( int i = 0; i < result.length; i++ ) {
-      result[ i ][ 0 ] = entries[ i ].id;
-      result[ i ][ 1 ] = entries[ i ].text;
+      result[ i ][ 0 ] = entries[ i ].state;
+      result[ i ][ 1 ] = entries[ i ].title;
     }
     return result;
   }
@@ -195,12 +195,12 @@ public final class BrowserHistoryImpl
   // Inner classes
 
   final class HistoryEntry {
-    final String id;
-    final String text;
+    final String state;
+    final String title;
 
-    HistoryEntry( String id, String text ) {
-      this.id = id;
-      this.text = text;
+    HistoryEntry( String state, String title ) {
+      this.state = state;
+      this.title = title;
     }
   }
 

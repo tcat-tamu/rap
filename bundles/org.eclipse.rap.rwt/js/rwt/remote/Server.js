@@ -17,7 +17,7 @@ var Timer = rwt.client.Timer;
 var Processor = rwt.protocol.MessageProcessor;
 var ErrorHandler = rwt.runtime.ErrorHandler;
 var EventUtil = org.eclipse.swt.EventUtil;
-var UICallBack = rwt.client.UICallBack;
+var ServerPush = rwt.client.ServerPush;
 var ClientDocument = rwt.widgets.base.ClientDocument;
 var Widget = rwt.widgets.base.Widget;
 
@@ -144,7 +144,7 @@ qx.Class.define( "rwt.remote.Server", {
         this._event = null;
       }
     },
-    
+
     sendDelayed : function( time ) {
       this._delayTimer.setInterval( time );
       this._delayTimer.start();
@@ -272,7 +272,7 @@ qx.Class.define( "rwt.remote.Server", {
             this._processDuration = new Date().getTime()-this._processDuration;
         }
         EventUtil.setSuspended( false );
-        UICallBack.getInstance().sendUICallBackRequest();
+        ServerPush.getInstance().sendUICallBackRequest();
         this.dispatchSimpleEvent( "received" );
       } catch( ex ) {
         ErrorHandler.processJavaScriptErrorInResponse( event.responseText, ex, event.target );
