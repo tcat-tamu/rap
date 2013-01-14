@@ -11,6 +11,8 @@
 
 package org.eclipse.rap.demo;
 
+import org.eclipse.rap.rwt.lifecycle.UICallBack;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.application.*;
 
 
@@ -19,6 +21,12 @@ public class DemoWorkbenchAdvisor extends WorkbenchAdvisor {
   public void initialize( IWorkbenchConfigurer configurer ) {
     getWorkbenchConfigurer().setSaveAndRestore( true );
     super.initialize( configurer );
+  }
+  
+  @Override
+  public void preStartup() {
+    UICallBack.activate( String.valueOf( this.hashCode() ));
+    super.preStartup();
   }
 
   public String getInitialWindowPerspectiveId() {
@@ -29,5 +37,11 @@ public class DemoWorkbenchAdvisor extends WorkbenchAdvisor {
     final IWorkbenchWindowConfigurer windowConfigurer )
   {
     return new DemoWorkbenchWindowAdvisor( windowConfigurer );
+  }
+  
+  @Override
+  public boolean preShutdown() {
+    UICallBack.deactivate( String.valueOf( this.hashCode() ));
+    return super.preShutdown();
   }
 }

@@ -110,6 +110,7 @@ import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.internal.StartupThreading.StartupRunnable;
 import org.eclipse.ui.internal.actions.CommandAction;
 import org.eclipse.ui.internal.dialogs.CustomizePerspectiveDialog;
+import org.eclipse.ui.internal.dnd.DragUtil;
 import org.eclipse.ui.internal.dnd.SwtUtil;
 import org.eclipse.ui.internal.handlers.ActionCommandMappingService;
 import org.eclipse.ui.internal.handlers.IActionCommandMappingService;
@@ -252,9 +253,8 @@ public class WorkbenchWindow extends ApplicationWindow implements
 	 */
 	private ListenerList genericPropertyListeners = new ListenerList();
 
-    // RAP [bm]: detached windows
-//  private ShellPool detachedWindowShells;
-    // RAPEND: [bm] 
+	//[ariddle] - added for view dragging
+    private ShellPool detachedWindowShells;
     
 	static final String TEXT_DELIMITERS = TextProcessor.getDefaultDelimiters() + "-"; //$NON-NLS-1$
 
@@ -427,9 +427,8 @@ public class WorkbenchWindow extends ApplicationWindow implements
 		return SWT.FLAT | SWT.WRAP | SWT.RIGHT | SWT.HORIZONTAL;
 	}
 
-    // RAP [bm]: not used
-//  private TrimDropTarget trimDropTarget;
-    // RAPEND: [bm] 
+	//[ariddle] - added for view dragging
+    private TrimDropTarget trimDropTarget;
 
 	private boolean coolBarVisible = true;
 
@@ -942,10 +941,10 @@ public class WorkbenchWindow extends ApplicationWindow implements
 	protected void configureShell(Shell shell) {
 		super.configureShell(shell);
 
-        // RAP [bm]: detached windows
-//      detachedWindowShells = new ShellPool(shell, SWT.TOOL | SWT.TITLE
+		//[ariddle] - added for view dragging
+//        detachedWindowShells = new ShellPool(shell, SWT.TOOL | SWT.TITLE
 //              | SWT.MAX | SWT.RESIZE | getDefaultOrientation());
-        // RAPEND: [bm] 
+        detachedWindowShells = new ShellPool(shell, SWT.NO_TRIM | getDefaultOrientation());
 
 		String title = getWindowConfigurer().basicGetTitle();
 		if (title != null) {
@@ -964,11 +963,10 @@ public class WorkbenchWindow extends ApplicationWindow implements
 		trackShellResize(shell);
 	}
 
-    // RAP [bm]: detached windows
-//  /* package */ShellPool getDetachedWindowPool() {
-//      return detachedWindowShells;
-//  }
-    // RAPEND: [bm] 
+	//[ariddle] - added for view dragging
+    /* package */ShellPool getDetachedWindowPool() {
+      return detachedWindowShells;
+    }
 
 	/*
 	 * (non-Javadoc)
@@ -1103,7 +1101,7 @@ public class WorkbenchWindow extends ApplicationWindow implements
 			topBar.setSimple(square);
 		}
 	}
-
+	
 	/**
 	 * Creates the default contents and layout of the shell.
 	 * 
@@ -1179,21 +1177,21 @@ public class WorkbenchWindow extends ApplicationWindow implements
 		createProgressIndicator(shell);
 
 		// RAP [bm] HeapStatus 
-//		if (getShowHeapStatus()) {
-//			createHeapStatus(shell);
-//		}
-		
-		// Insert any contributed trim into the layout
-		// Legacy (3.2) trim
-		trimMgr2 = new TrimBarManager2(this);
-		
-		// 3.3 Trim contributions
-		trimContributionMgr = new TrimContributionManager(this);
-		
-		// RAP [bm] DnD
-//		trimDropTarget = new TrimDropTarget(shell, this);
-//		DragUtil.addDragTarget(shell, trimDropTarget);
-//		DragUtil.addDragTarget(null, trimDropTarget);
+//      if (getShowHeapStatus()) {
+//          createHeapStatus(shell);
+//      }
+        
+        // Insert any contributed trim into the layout
+        // Legacy (3.2) trim
+        trimMgr2 = new TrimBarManager2(this);
+        
+        // 3.3 Trim contributions
+        trimContributionMgr = new TrimContributionManager(this);
+        
+      //[ariddle] - added for view dragging
+        trimDropTarget = new TrimDropTarget(shell, this);
+        DragUtil.addDragTarget(shell, trimDropTarget);
+        DragUtil.addDragTarget(null, trimDropTarget);
 
 		// Create the client composite area (where page content goes).
 		createPageComposite(shell);
@@ -1795,19 +1793,17 @@ public class WorkbenchWindow extends ApplicationWindow implements
             getActionBarAdvisor().dispose();
             getWindowAdvisor().dispose();
             
-            // RAP [bm]: detached windows
-//          detachedWindowShells.dispose();
-            // RAPEND: [bm] 
+          //[ariddle] - added for view dragging
+            detachedWindowShells.dispose();
 
             // Null out the progress region. Bug 64024.
             progressRegion = null;
             
-            // RAP [bm]: DnD
+          //[ariddle] - added for view dragging
 //          // Remove drop targets
-//          DragUtil.removeDragTarget(null, trimDropTarget);
-//          DragUtil.removeDragTarget(getShell(), trimDropTarget);
-//          trimDropTarget = null;
-            // RAPEND: [bm] 
+          DragUtil.removeDragTarget(null, trimDropTarget);
+          DragUtil.removeDragTarget(getShell(), trimDropTarget);
+          trimDropTarget = null;
 
             if (trimMgr2 != null) {
                 trimMgr2.dispose();
@@ -3264,15 +3260,17 @@ public class WorkbenchWindow extends ApplicationWindow implements
 			return;
 		}
 		// updateAll required in order to enable accelerators on pull-down menus
+		if (getMenuBarManager() != null)
 		getMenuBarManager().update(false);
 
 		try {
 			getShell().setLayoutDeferred(true);
+			if (getCoolBarManager2() != null)
 			getCoolBarManager2().update(false);
 		} finally {
 			getShell().setLayoutDeferred(false);
 		}
-		
+		if (getStatusLineManager() != null)
 		getStatusLineManager().update(false);
 	}
 
@@ -3989,7 +3987,9 @@ public class WorkbenchWindow extends ApplicationWindow implements
      */
     protected ICoolBarManager createCoolBarManager2(int style) {
         final ICoolBarManager2 coolBarManager = getActionBarPresentationFactory().createCoolBarManager();
-        coolBarManager.setOverrides(toolbarOverride);
+        if (coolBarManager != null) {
+          coolBarManager.setOverrides(toolbarOverride);
+        }
 		return coolBarManager;
     }
 
@@ -4003,7 +4003,9 @@ public class WorkbenchWindow extends ApplicationWindow implements
      */
     protected IToolBarManager createToolBarManager2(int style) {
         final IToolBarManager2 toolBarManager = getActionBarPresentationFactory().createToolBarManager();
+        if (toolBarManager != null) {
         toolBarManager.setOverrides(toolbarOverride);
+        }
 		return toolBarManager;
     }
     

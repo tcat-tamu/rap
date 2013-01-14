@@ -304,7 +304,7 @@ class ViewReference extends WorkbenchPartReference implements IViewReference {
 		PartPane pane = getPane();
 
 		// Create the pane's top-level control
-		pane.createControl(factory.page.getClientComposite());
+		pane.createControl(factory.getClientComposite());
 
 		String label = desc.getLabel(); // debugging only
 

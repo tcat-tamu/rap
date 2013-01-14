@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IKeyBindingService;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartReference;
@@ -130,7 +131,8 @@ public abstract class PartSite implements IWorkbenchPartSite {
 	private SubActionBars actionBars;
 
 // RAP [rh] unused code, since IKeyBindingService not implemented
-//	private KeyBindingService keyBindingService;
+	//[ariddle] - added for single sourcing
+	private KeyBindingService keyBindingService;
 
 	protected ArrayList menuExtenders;
 
@@ -443,17 +445,17 @@ public abstract class PartSite implements IWorkbenchPartSite {
 		selectionProvider = provider;
 	}
 
-// RAP [rh] IKeyBindingService not implemented	
-//	/*
-//	 * @see IWorkbenchPartSite#getKeyBindingService()
-//	 */
-//	public IKeyBindingService getKeyBindingService() {
-//		if (keyBindingService == null) {
-//			keyBindingService = new KeyBindingService(this);
-//		}
-//
-//		return keyBindingService;
-//	}
+	//[ariddle] - added for single sourcing
+	/*
+	 * @see IWorkbenchPartSite#getKeyBindingService()
+	 */
+	public IKeyBindingService getKeyBindingService() {
+		if (keyBindingService == null) {
+			keyBindingService = new KeyBindingService(this);
+		}
+
+		return keyBindingService;
+	}
 
 	protected String getInitialScopeId() {
 		return null;

@@ -140,8 +140,34 @@ qx.Class.define( "rwt.widgets.ScrolledComposite", {
     },
 
     _onChangeFocusedChild : function( evt ) {
-      var focusedChild = evt.getValue();
-      this.setBlockScrolling( !this._showFocusedControl && focusedChild !== this );
+      //[ariddle] - added parent check because _hasParent may not be set by now. - for RAP Help implementation
+      if ( this.getParent() != null ) {
+        var focusedChild = evt.getValue();
+        this.setBlockScrolling( !this._showFocusedControl && focusedChild !== this );
+      }
+      //var focusedChild = evt.getValue();
+      //this.setBlockScrolling( !this._showFocusedControl && focusedChild !== this );
+    },
+
+    _sendChanges : function() {
+      if( !org.eclipse.swt.EventUtil.getSuspended() && this.isCreated() ) {
+        var wm = org.eclipse.swt.WidgetManager.getInstance();
+        var server = rwt.remote.Server.getInstance();
+        var id = wm.findIdByWidget( this );
+        var scrollX = this._clientArea.getScrollLeft();
+        server.addParameter( id + ".horizontalBar.selection", scrollX );
+        var scrollY = this._clientArea.getScrollTop();
+        server.addParameter( id + ".verticalBar.selection", scrollY );
+        if( this._hasSelectionListener ) {
+          // Note : This is consistent with previous behavior of always firing events
+          // on both scrollbars in ScrolledCompositeLCA.java
+          server.getServerObject( this ).notify( "scrollBarSelected", {
+            "vertical" : true,
+            "horizontal" : true
+          } );
+        }
+        this._requestTimerRunning = false;
+      }
     }
 
   }

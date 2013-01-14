@@ -31,6 +31,7 @@ import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IPropertyListener;
 import org.eclipse.ui.ISaveablePart;
 import org.eclipse.ui.ISaveablesLifecycleListener;
@@ -170,9 +171,20 @@ public abstract class WorkbenchPartReference implements IWorkbenchPartReference,
 
     private static DisposeListener prematureDisposeListener = new DisposeListener() {
         public void widgetDisposed(DisposeEvent e) {
-// RAP[if] Check if platform is running to prevent bug 336852          
+// RAP[if] Check if platform is running to prevent bug 336852
+           //[ariddle] - changed to not make an assumption that it is always the workbench shell that we get notifications for.
+           //this is to support detached views which are not supported in RAP by default. 
+           
             if( Platform.isRunning() ) {
-                WorkbenchPlugin.log(new RuntimeException("Widget disposed too early!")); //$NON-NLS-1$
+               if (e.widget instanceof Control) {
+                  Shell shell = ((Control)e.widget).getShell();
+                  if (PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell().equals(shell)) {
+                     WorkbenchPlugin.log(new RuntimeException("Widget disposed too early!")); //$NON-NLS-1$
+                  }
+               }
+               else {
+                  WorkbenchPlugin.log(new RuntimeException("Widget disposed too early!")); //$NON-NLS-1$
+               }
             }
         }    
     };
@@ -678,8 +690,9 @@ public abstract class WorkbenchPartReference implements IWorkbenchPartReference,
     	// Disposing the pane disposes the part's widgets. The part's widgets need to be disposed before the part itself.
         if (pane != null) {
             // Remove the dispose listener since this is the correct place for the widgets to get disposed
-            Control targetControl = getPane().getControl(); 
-            if (targetControl != null) {
+            Control targetControl = getPane().getControl();
+            //[ariddle] - added dispose check
+            if (targetControl != null && !targetControl.isDisposed()) {
                 targetControl.removeDisposeListener(prematureDisposeListener);
             }
             pane.dispose();

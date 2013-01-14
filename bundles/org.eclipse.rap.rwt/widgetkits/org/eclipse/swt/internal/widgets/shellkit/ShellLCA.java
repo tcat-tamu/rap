@@ -136,6 +136,8 @@ public final class ShellLCA extends AbstractWidgetLCA {
     renderImage( shell );
     renderText( shell );
     renderAlpha( shell );
+    //[ariddle] - to expose shell open
+    renderOpen( shell );
     renderActiveShell( shell );
     renderMode( shell );
     renderMinimumSize( shell );
@@ -184,6 +186,17 @@ public final class ShellLCA extends AbstractWidgetLCA {
   /////////////////////////////////////////////
   // Methods to read and write the active shell
 
+  //[ariddle] - to expose shell open
+  private static void renderOpen( Shell shell ) {
+    Boolean newValue = Boolean.valueOf( shell.getVisible() );
+    Boolean defValue = Boolean.FALSE;
+    String prop = Props.VISIBLE;
+    if( WidgetLCAUtil.hasChanged( shell, prop, newValue, defValue ) && shell.getVisible() ) {
+      IClientObject clientObject = ClientObjectFactory.getClientObject( shell );
+      clientObject.set( "opened", true );
+    }
+  }
+  
   private static void renderActiveShell( Shell shell ) {
     Shell activeShell = shell.getDisplay().getActiveShell();
     boolean hasChanged = WidgetLCAUtil.hasChanged( shell, PROP_ACTIVE_SHELL, activeShell, null );

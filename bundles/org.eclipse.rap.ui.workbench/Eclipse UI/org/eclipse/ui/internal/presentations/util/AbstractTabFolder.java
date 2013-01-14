@@ -15,17 +15,15 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
-//import org.eclipse.swt.events.MouseAdapter;
-//import org.eclipse.swt.events.MouseEvent;
-//import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
-//import org.eclipse.swt.widgets.Event;
 import org.eclipse.ui.presentations.IStackPresentationSite;
+import org.eclipse.ui.presentations.PresentationUtil;
 
 /**
  */
@@ -62,12 +60,13 @@ public abstract class AbstractTabFolder {
 	};
 
     // RAP [bm]: DnD not supported
-//    private Listener dragListener = new Listener() {
-//        public void handleEvent(Event e) {
-//            Point globalPos = ((Control)e.widget).toDisplay(e.x, e.y);
-//            handleDragStarted(globalPos, e);
-//        }
-//    };
+	//[ariddle] - added for view dragging
+    private Listener dragListener = new Listener() {
+        public void handleEvent(Event e) {
+            Point globalPos = ((Control)e.widget).toDisplay(e.x, e.y);
+            handleDragStarted(globalPos, e);
+        }
+    };
 
 // RAP [rh] part activation via mouse listeners does not work reliably (see also DefaultTabFolder ctor)    	
 //	private MouseListener mouseListener = new MouseAdapter() {
@@ -305,7 +304,8 @@ public abstract class AbstractTabFolder {
 // RAP [rh] replace 'manual' double-click detection with default-selected    	
     	theControl.addListener(SWT.DefaultSelection, mouseListener);    	
         // RAP [bm]: 
-//        PresentationUtil.addDragListener(theControl, dragListener);
+    //[ariddle] - added for view dragging
+        PresentationUtil.addDragListener(theControl, dragListener);
         
         if (recursive && theControl instanceof Composite) {
             Composite composite = (Composite) theControl;
@@ -326,7 +326,8 @@ public abstract class AbstractTabFolder {
 // RAP [rh] replace 'manual' double-click detection with default-selected    	
     	theControl.removeListener(SWT.DefaultSelection, mouseListener);    	
         // RAP [bm]: 
-//        PresentationUtil.removeDragListener(theControl, dragListener);
+    //[ariddle] - added for view dragging
+        PresentationUtil.removeDragListener(theControl, dragListener);
         
         if (recursive && theControl instanceof Composite) {
             Composite composite = (Composite) theControl;
@@ -350,11 +351,12 @@ public abstract class AbstractTabFolder {
         fireEvent(TabFolderEvent.EVENT_SYSTEM_MENU, tab, displayPos);
     }
     
-// RAP [rh] unused code: MouseListener deactivated    
-//    protected void handleMouseDown(Point displayPos, MouseEvent e) {
-//        fireEvent(TabFolderEvent.EVENT_GIVE_FOCUS_TO_PART);
-//    }
-//
+// RAP [rh] unused code: MouseListener deactivated   
+  //[ariddle] - added for view dragging
+    protected void handleMouseDown(Point displayPos, MouseEvent e) {
+        fireEvent(TabFolderEvent.EVENT_GIVE_FOCUS_TO_PART);
+    }
+
 
 // RAP [rh] replaced mouse event with default-selected    
 //    protected void handleDoubleClick(Point displayPos, MouseEvent e) {
@@ -371,16 +373,17 @@ public abstract class AbstractTabFolder {
 		}
     }
 
-// RAP [rh] unused code: DnD code disabled    
-//    protected void handleDragStarted(Point displayPos, Event e) {
-//
-//        if (isOnBorder(displayPos)) {
-//            return;
-//        }
-//        
-//        AbstractTabItem tab = getItem(displayPos);
-//        fireEvent(TabFolderEvent.EVENT_DRAG_START, tab, displayPos);
-//    }
+// RAP [rh] unused code: DnD code disabled   
+  //[ariddle] - added for view dragging
+    protected void handleDragStarted(Point displayPos, Event e) {
+
+        if (isOnBorder(displayPos)) {
+            return;
+        }
+        
+        AbstractTabItem tab = getItem(displayPos);
+        fireEvent(TabFolderEvent.EVENT_DRAG_START, tab, displayPos);
+    }
 
     /**
      * Returns true iff the given point is on the border of the folder.

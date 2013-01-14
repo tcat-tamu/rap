@@ -13,6 +13,8 @@ package org.eclipse.swt.browser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.lifecycle.SimpleLifeCycle;
@@ -30,6 +32,7 @@ import org.eclipse.swt.internal.SWTEventListener;
 import org.eclipse.swt.internal.SerializableCompatibility;
 import org.eclipse.swt.internal.events.EventTypes;
 import org.eclipse.swt.internal.widgets.IBrowserAdapter;
+import org.eclipse.swt.internal.widgets.IBrowserAdapter.IBrowserScript;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -58,6 +61,7 @@ import org.eclipse.swt.widgets.TypedListener;
  */
 // TODO [rh] implement refresh method
 // TODO [rh] bring focus events to work
+// [ariddle] - Change browser to prevent hangs due to concurrent/stacked-up requests
 public class Browser extends Composite {
 
   private static final String FUNCTIONS_TO_CREATE
@@ -70,11 +74,12 @@ public class Browser extends Composite {
   private String url;
   private String html;
   private boolean urlChanged;
-  private String executeScript;
-  private Boolean executeResult;
-  private boolean executePending;
-  private Object evaluateResult;
-  private BrowserCallback browserCallback;
+  private final Queue<BrowserScript> executeQueue;
+//  private String executeScript;
+//  private Boolean executeResult;
+//  private boolean executePending;
+//  private Object evaluateResult;
+//  private BrowserCallback browserCallback;
   private transient IBrowserAdapter browserAdapter;
   private final List<BrowserFunction> functions;
 
@@ -113,6 +118,7 @@ public class Browser extends Composite {
     }
     html = "";
     url = "";
+    executeQueue = new ConcurrentLinkedQueue<BrowserScript>();
     functions = new ArrayList<BrowserFunction>();
     addDisposeListener( new BrowserDisposeListener() );
   }
@@ -207,6 +213,25 @@ public class Browser extends Composite {
     return result;
   }
 
+  protected BrowserScript internalExecute( String script, BrowserCallback callback ) {
+    checkWidget();
+    if( script == null ) {
+      SWT.error( SWT.ERROR_NULL_ARGUMENT );
+    }
+    BrowserScript browserScript = new BrowserScript( prepareScript( script ), callback );
+    executeQueue.add( browserScript );
+    if( callback == null ) {
+      while( browserScript.executeResult == null ) {
+        Display display = getDisplay();
+        if( !display.readAndDispatch() ) {
+          System.out.println( "Sleeping in Browser#execute()" );
+          display.sleep();
+        }
+      }
+    }
+    return browserScript;
+  }
+  
   /**
    * Execute the specified script.
    *
@@ -250,21 +275,23 @@ public class Browser extends Composite {
     if( script == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
-    boolean result = false;
-    if( executeScript == null ) {
-      executeScript = script;
-      executeResult = null;
-      while( executeResult == null ) {
-        Display display = getDisplay();
-        if( !display.readAndDispatch() )  {
-          display.sleep();
-        }
-      }
-      executeScript = null;
-      executePending = false;
-      result = executeResult.booleanValue();
-    }
-    return result;
+    //boolean result = false;
+    //if( executeScript == null ) {
+    //  executeScript = script;
+    //  executeResult = null;
+    //  while( executeResult == null ) {
+    //    Display display = getDisplay();
+    //    if( !display.readAndDispatch() )  {
+    //      display.sleep();
+    //    }
+    //  }
+    //  executeScript = null;
+    //  executePending = false;
+    //  result = executeResult.booleanValue();
+    //}
+    //return result;
+    BrowserScript browserScript = internalExecute( script, null );
+    return browserScript.executeResult.booleanValue();
   }
 
   /**
@@ -329,11 +356,14 @@ public class Browser extends Composite {
     if( script == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
-    boolean success = execute( prepareScript( script ) );
-    if( !success ) {
+    //boolean success = execute( prepareScript( script ) );
+    //if( !success ) {
+    BrowserScript browserScript = internalExecute( script, null );
+    if (!browserScript.executeResult.booleanValue() ) {
       throw createException();
     }
-    return evaluateResult;
+    //return evaluateResult;
+    return browserScript.evaluateResult;
   }
 
   /**
@@ -528,10 +558,16 @@ public class Browser extends Composite {
   }
 
   private void onDispose() {
-    executeResult = Boolean.FALSE;
-    evaluateResult = null;
-    executeScript = null;
-    executePending = false;
+    //executeResult = Boolean.FALSE;
+    //evaluateResult = null;
+    //executeScript = null;
+    //executePending = false;
+    BrowserScript browserScript = executeQueue.peek();
+    if( browserScript != null ) {
+      IBrowserAdapter adapter = getAdapter( IBrowserAdapter.class );
+      adapter.setExecuteResult( false, null );
+    }
+    executeQueue.clear();
   }
 
   //////////////////
@@ -566,31 +602,32 @@ public class Browser extends Composite {
     return buffer.toString();
   }
 
-  private void setExecuteResult( final boolean success, final Object result ) {
-    ProcessActionRunner.add( new Runnable() {
-      public void run() {
-        executeResult = Boolean.valueOf( success );
-        evaluateResult = result;
-        if( browserCallback != null ) {
-          if( success ) {
-            browserCallback.evaluationSucceeded( result );
-          } else {
-            browserCallback.evaluationFailed( createException() );
-          }
-          browserCallback = null;
-          executeScript = null;
-          executePending = false;
-        }
-      }
-    } );
-  }
+//  private void setExecuteResult( final boolean success, final Object result ) {
+//    ProcessActionRunner.add( new Runnable() {
+//      public void run() {
+//        executeResult = Boolean.valueOf( success );
+//        evaluateResult = result;
+//        if( browserCallback != null ) {
+//          if( success ) {
+//            browserCallback.evaluationSucceeded( result );
+//          } else {
+//            browserCallback.evaluationFailed( createException() );
+//          }
+//          browserCallback = null;
+//          executeScript = null;
+//          executePending = false;
+//        }
+//      }
+//    } );
+//  }
 
   private void evaluateNonBlocking( String script, BrowserCallback browserCallback ) {
     checkWidget();
-    if( executeScript == null ) {
-      this.browserCallback = browserCallback;
-      executeScript = prepareScript( script );
-    }
+//    if( executeScript == null ) {
+//      this.browserCallback = browserCallback;
+//      executeScript = prepareScript( script );
+//    }
+    internalExecute( script, browserCallback );
   }
 
   private static SWTException createException() {
@@ -615,24 +652,41 @@ public class Browser extends Composite {
     }
 
     public void sendProgressCompletedEvent() {
-      sendProgressChangedEvent();
+      Browser.this.sendProgressChangedEvent();
       Browser.this.sendProgressCompletedEvent();
     }
 
-    public String getExecuteScript() {
-      return executeScript;
+    //public String getExecuteScript() {
+    //  return executeScript;
+    public IBrowserScript getExecuteScript() {
+      return executeQueue.peek();
     }
 
     public void setExecuteResult( boolean success, Object result ) {
-      Browser.this.setExecuteResult( success, result );
-    }
-
-    public void setExecutePending( boolean executePending ) {
-      Browser.this.executePending = executePending;
-    }
-
-    public boolean getExecutePending() {
-      return executePending;
+//      Browser.this.setExecuteResult( success, result );
+//    }
+//
+//    public void setExecutePending( boolean executePending ) {
+//      Browser.this.executePending = executePending;
+//    }
+//
+//    public boolean getExecutePending() {
+//      return executePending;
+//    }
+      BrowserScript script = executeQueue.poll();
+      // check to make sure script exists in case the Browser was disposed
+      if( script != null ) {
+        script.executeResult = Boolean.valueOf( success );
+        script.evaluateResult = result;
+        script.executePending = false;
+        if( script.callback != null ) {
+          if ( success ) {
+            script.callback.evaluationSucceeded( result );
+          } else {
+            script.callback.evaluationFailed( createException() );
+          }
+        }
+      }
     }
 
     public BrowserFunction[] getBrowserFunctions() {
@@ -691,4 +745,29 @@ public class Browser extends Composite {
     }
   }
 
+  private static final class BrowserScript implements IBrowserScript {
+
+    boolean executePending;
+    String executeScript;
+    Boolean executeResult;
+    Object evaluateResult;
+    BrowserCallback callback;
+
+    public BrowserScript( String script, BrowserCallback callback ) {
+      executeScript = script;
+      this.callback = callback;
+    }
+
+    public String getScript() {
+      return executeScript;
+    }
+
+    public void setExecutePending( boolean pending ) {
+      executePending = pending;
+    }
+
+    public boolean getExecutePending() {
+      return executePending;
+    }
+  }
 }

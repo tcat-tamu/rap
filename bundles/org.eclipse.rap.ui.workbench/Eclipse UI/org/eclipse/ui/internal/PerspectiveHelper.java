@@ -22,12 +22,23 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.IWorkbenchPartReference;
+import org.eclipse.ui.IWorkbenchPreferenceConstants;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.internal.dnd.AbstractDropTarget;
+import org.eclipse.ui.internal.dnd.DragUtil;
+import org.eclipse.ui.internal.dnd.IDragOverListener;
+import org.eclipse.ui.internal.dnd.IDropTarget;
 import org.eclipse.ui.internal.misc.StringMatcher;
 import org.eclipse.ui.presentations.IStackPresentationSite;
 
@@ -42,8 +53,8 @@ import org.eclipse.ui.presentations.IStackPresentationSite;
  * behind to indicate where it goes should the part be added back.
  */
 public class PerspectiveHelper {
-// RAP [rh] unused code  
-//    private WorkbenchPage page;
+ //[ariddle] - added for view dragging
+    private WorkbenchPage page;
     
     protected Perspective perspective;
 
@@ -51,126 +62,125 @@ public class PerspectiveHelper {
 
     private ViewSashContainer mainLayout;
     
-	private PartStack maximizedStack;
+    private PartStack maximizedStack;
 
-	/**
-	 * If there is a ViewStack maximized on shutdown the id is
-	 * cached and restored into this field on 'restoreState'.
-	 * This is then used to bash the ViewStack's presentation state
-	 * into the correct value on activation (the startup life-cycle
-	 * is such that we have to use this 'latch' because the window
-	 * state isn't valid until the activate happens.
-	 */
-	private String maximizedStackId;
+    /**
+     * If there is a ViewStack maximized on shutdown the id is
+     * cached and restored into this field on 'restoreState'.
+     * This is then used to bash the ViewStack's presentation state
+     * into the correct value on activation (the startup life-cycle
+     * is such that we have to use this 'latch' because the window
+     * state isn't valid until the activate happens.
+     */
+    private String maximizedStackId;
 
-// RAP [rh] unused code	
-//    private ArrayList detachedWindowList = new ArrayList(1);
+  //[ariddle] - added for view dragging
+    private ArrayList detachedWindowList = new ArrayList(1);
 
     private ArrayList detachedPlaceHolderList = new ArrayList(1);
 
-	/**
-	 * Maps a stack's id to its current bounds
-	 * this is used to capture the current bounds of all
-	 * stacks -before- starting a maximize (since the
-	 * iterative 'minimize' calls cause the intial stack's
-	 * bounds to change.
-	 */
-	private Map boundsMap = new HashMap();
+    /**
+     * Maps a stack's id to its current bounds
+     * this is used to capture the current bounds of all
+     * stacks -before- starting a maximize (since the
+     * iterative 'minimize' calls cause the intial stack's
+     * bounds to change.
+     */
+    private Map boundsMap = new HashMap();
 
-    private boolean detachable = false;
+    private boolean detachable = true;
 
     protected boolean active = false;
 
     // key is the LayoutPart object, value is the PartDragDrop object
-    //private IPartDropListener partDropListener;
+//    private IPartDropListener partDropListener;
 
-// RAP [rh] unused code    
-//    private static final int MIN_DETACH_WIDTH = 150;
+  //[ariddle] - added for view dragging
+    private static final int MIN_DETACH_WIDTH = 150;
 
-//    private static final int MIN_DETACH_HEIGHT = 250;
+    private static final int MIN_DETACH_HEIGHT = 250;
 
-// RAP [rh] DnD not supported    
-//    protected ActualDropTarget dropTarget;
-//    
-//    private IDragOverListener dragTarget = new IDragOverListener() {
-//
-//        public IDropTarget drag(Control currentControl, Object draggedObject,
-//                Point position, final Rectangle dragRectangle) {
-//            
-//            if (!(draggedObject instanceof ViewPane || draggedObject instanceof ViewStack)) {
-//                return null;
-//            }
-//            final LayoutPart part = (LayoutPart) draggedObject;
-//
-//            if (part.getWorkbenchWindow() != page.getWorkbenchWindow()) {
-//                return null;
-//            }
-//
-//            if (dropTarget == null) {
-//                dropTarget = new ActualDropTarget(part, dragRectangle); 
-//            } else {
-//                dropTarget.setTarget(part, dragRectangle);
-//            }
-//            
-//            return dropTarget;
-//        }
-//
-//    };
-//
-//    private final class ActualDropTarget extends AbstractDropTarget {
-//        private LayoutPart part;
-//
-//        private Rectangle dragRectangle;
-//
-//        private ActualDropTarget(LayoutPart part, Rectangle dragRectangle) {
-//            super();
-//            setTarget(part, dragRectangle);
-//        }
-//
-//        /**
-//         * @param part
-//         * @param dragRectangle
-//         * @since 3.1
-//         */
-//        private void setTarget(LayoutPart part, Rectangle dragRectangle) {
-//            this.part = part;
-//            this.dragRectangle = dragRectangle;
-//        }
-//
-//        public void drop() {
-//
-//            Shell shell = part.getShell();
-//            if (shell.getData() instanceof DetachedWindow) {
-//                // only one tab folder in a detach window, so do window
-//                // move
-//                if (part instanceof ViewStack) {
-//                    shell.setLocation(dragRectangle.x,
-//                            dragRectangle.y);
-//                    return;
-//                }
-//                // if only one view in tab folder then do a window move
-//                ILayoutContainer container = part.getContainer();
-//                if (container instanceof ViewStack) {
-//                    if (((ViewStack) container).getItemCount() == 1) {
-//                        shell.setLocation(dragRectangle.x,
-//                                dragRectangle.y);
-//                        return;
-//                    }
-//                }
-//            }
-//
-//            // If layout is modified always zoom out.
-//            if (isZoomed()) {
-//				zoomOut();
-//			}
-//            // do a normal part detach
-//            detach(part, dragRectangle.x, dragRectangle.y);
-//        }
-//
-//        public Cursor getCursor() {
-//            return DragCursors.getCursor(DragCursors.OFFSCREEN);
-//        }
-//    }
+    protected ActualDropTarget dropTarget;
+    
+    private IDragOverListener dragTarget = new IDragOverListener() {
+
+        public IDropTarget drag(Control currentControl, Object draggedObject,
+                Point position, final Rectangle dragRectangle) {
+            
+            if (!(draggedObject instanceof ViewPane || draggedObject instanceof ViewStack)) {
+                return null;
+            }
+            final LayoutPart part = (LayoutPart) draggedObject;
+
+            if (part.getWorkbenchWindow() != page.getWorkbenchWindow()) {
+                return null;
+            }
+
+            if (dropTarget == null) {
+                dropTarget = new ActualDropTarget(part, dragRectangle); 
+            } else {
+                dropTarget.setTarget(part, dragRectangle);
+            }
+            
+            return dropTarget;
+        }
+
+    };
+
+    private final class ActualDropTarget extends AbstractDropTarget {
+        private LayoutPart part;
+
+        private Rectangle dragRectangle;
+
+        private ActualDropTarget(LayoutPart part, Rectangle dragRectangle) {
+            super();
+            setTarget(part, dragRectangle);
+        }
+
+        /**
+         * @param part
+         * @param dragRectangle
+         * @since 3.1
+         */
+        private void setTarget(LayoutPart part, Rectangle dragRectangle) {
+            this.part = part;
+            this.dragRectangle = dragRectangle;
+        }
+
+        public void drop() {
+
+            Shell shell = part.getShell();
+            if (shell.getData() instanceof DetachedWindow) {
+                // only one tab folder in a detach window, so do window
+                // move
+                if (part instanceof ViewStack) {
+                    shell.setLocation(dragRectangle.x,
+                            dragRectangle.y);
+                    return;
+                }
+                // if only one view in tab folder then do a window move
+                ILayoutContainer container = part.getContainer();
+                if (container instanceof ViewStack) {
+                    if (((ViewStack) container).getItemCount() == 1) {
+                        shell.setLocation(dragRectangle.x,
+                                dragRectangle.y);
+                        return;
+                    }
+                }
+            }
+
+            // If layout is modified always zoom out.
+            if (isZoomed()) {
+                zoomOut();
+            }
+            // do a normal part detach
+            detach(part, dragRectangle.x, dragRectangle.y);
+        }
+
+        public Cursor getCursor() {
+            return DragCursors.getCursor(DragCursors.OFFSCREEN);
+        }
+    }
 
     private class MatchingPart implements Comparable {
         String pid;
@@ -214,46 +224,44 @@ public class PerspectiveHelper {
      */
     public PerspectiveHelper(WorkbenchPage workbenchPage,
             ViewSashContainer mainLayout, Perspective perspective) {
-// RAP [rh] unused code      
-//        this.page = workbenchPage;
+     //[ariddle] - added for view dragging
+        this.page = workbenchPage;
         this.mainLayout = mainLayout;
         this.perspective = perspective;
         
-		// Views can be detached if the feature is enabled (true by default,
-		// use the plug-in customization file to disable), and if the platform
-		// supports detaching.
-         
-        // RAP [bm]: no detachable view
-//        final IPreferenceStore store = PlatformUI.getPreferenceStore();
-//        this.detachable = store.getBoolean(IWorkbenchPreferenceConstants.ENABLE_DETACHED_VIEWS);
+        // Views can be detached if the feature is enabled (true by default,
+        // use the plug-in customization file to disable), and if the platform
+        // supports detaching.
+      //[ariddle] - added for view dragging
+        final IPreferenceStore store = PlatformUI.getPreferenceStore();
+        this.detachable = store.getBoolean(IWorkbenchPreferenceConstants.ENABLE_DETACHED_VIEWS);
         this.detachable = false;
-        // RAPEND: [bm] 
 
         if (this.detachable) {
-			// Check if some arbitrary Composite supports reparenting. If it
-			// doesn't, views cannot be detached.
+            // Check if some arbitrary Composite supports reparenting. If it
+            // doesn't, views cannot be detached.
 
-			Composite client = workbenchPage.getClientComposite();
-			if (client == null) {
-				// The workbench page is not initialized. I don't think this can happen,
-				// but if it does, silently set detachable to false.
-				this.detachable = false;
-			} else {
-				Composite testChild = new Composite(client, SWT.NONE);
-				this.detachable = testChild.isReparentable();
-				testChild.dispose();
-			}
-		}
+            Composite client = workbenchPage.getClientComposite();
+            if (client == null) {
+                // The workbench page is not initialized. I don't think this can happen,
+                // but if it does, silently set detachable to false.
+                this.detachable = false;
+            } else {
+                Composite testChild = new Composite(client, SWT.NONE);
+                this.detachable = testChild.isReparentable();
+                testChild.dispose();
+            }
+        }
     }
 
     /**
-	 * Show the presentation.
-	 */
+     * Show the presentation.
+     */
     public void activate(Composite parent) {
 
         if (active) {
-			return;
-		}
+            return;
+        }
 
         parentWidget = parent;
 
@@ -269,42 +277,42 @@ public class PerspectiveHelper {
         mainLayout.createControl(parent);
         mainLayout.setActive(true);
 
-// RAP [rh] DetachedWindow not supported        
+      //[ariddle] - added for view dragging
 //        // Open the detached windows.
-//        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//            DetachedWindow dwindow = (DetachedWindow) detachedWindowList.get(i);
-//            dwindow.open();
-//        }
+        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+            DetachedWindow dwindow = (DetachedWindow) detachedWindowList.get(i);
+            dwindow.open();
+        }
 
-// RAP [rh] DnD not suuported        
-//        enableAllDrag();
+      //[ariddle] - added for view dragging
+        enableAllDrag();
 
         // Ensure that the maximized stack's presentation state is correct
         if (maximizedStackId != null) {
-        	LayoutPart part = findPart(maximizedStackId);
-        	if (part instanceof PartStack) {
-        		maximizedStack = (PartStack) part;
-            	maximizedStackId = null;
-        	}
+            LayoutPart part = findPart(maximizedStackId);
+            if (part instanceof PartStack) {
+                maximizedStack = (PartStack) part;
+                maximizedStackId = null;
+            }
         }
         
         // NOTE: we only handle ViewStacks here; Editor Stacks are handled by the
         // perspective
         if (maximizedStack instanceof ViewStack) {
-        	maximizedStack.setPresentationState(IStackPresentationSite.STATE_MAXIMIZED);            	
+            maximizedStack.setPresentationState(IStackPresentationSite.STATE_MAXIMIZED);                
         }
         
         active = true;
     }
 
-	/**
+    /**
      * Adds a part to the presentation. If a placeholder exists for the part
      * then swap the part in. Otherwise, add the part in the bottom right
      * corner of the presentation.
      */
     public void addPart(LayoutPart part) {
         
-    	// Look for a placeholder.
+        // Look for a placeholder.
         PartPlaceholder placeholder = null;
         LayoutPart testPart = null;
         String primaryId = part.getID();
@@ -317,15 +325,15 @@ public class PerspectiveHelper {
             secondaryId = ref.getSecondaryId();
         }
         if (secondaryId != null) {
-			testPart = findPart(primaryId, secondaryId);
-		} else {
-			testPart = findPart(primaryId);
-		}
+            testPart = findPart(primaryId, secondaryId);
+        } else {
+            testPart = findPart(primaryId);
+        }
 
         // validate the testPart
         if (testPart != null && testPart instanceof PartPlaceholder) {
-			placeholder = (PartPlaceholder) testPart;
-		}
+            placeholder = (PartPlaceholder) testPart;
+        }
 
         // If there is no placeholder do a simple add. Otherwise, replace the
         // placeholder if its not a pattern matching placholder
@@ -345,27 +353,27 @@ public class PerspectiveHelper {
         } else {
             ILayoutContainer container = placeholder.getContainer();
             if (container != null) {
-// RAP [rh] DetachedWindow not supported              
-//                if (container instanceof DetachedPlaceHolder) {
-//                    //Create a detached window add the part on it.
-//                    DetachedPlaceHolder holder = (DetachedPlaceHolder) container;
-//                    detachedPlaceHolderList.remove(holder);
-//                    container.remove(testPart);
-//                    DetachedWindow window = new DetachedWindow(page);
-//                    detachedWindowList.add(window);
-//                    window.create();
-//                    part.createControl(window.getShell());
-//                    // Open window.
-//                    window.getShell().setBounds(holder.getBounds());
-//                    window.open();
-//                    // add part to detached window.
-//                    ViewPane pane = (ViewPane) part;
-//                    window.add(pane);
-//                    LayoutPart otherChildren[] = holder.getChildren();
-//                    for (int i = 0; i < otherChildren.length; i++) {
-//						part.getContainer().add(otherChildren[i]);
-//					}
-//                } else 
+             //[ariddle] - added for view dragging
+                if (container instanceof DetachedPlaceHolder) {
+                    //Create a detached window add the part on it.
+                    DetachedPlaceHolder holder = (DetachedPlaceHolder) container;
+                    detachedPlaceHolderList.remove(holder);
+                    container.remove(testPart);
+                    DetachedWindow window = new DetachedWindow(page);
+                    detachedWindowList.add(window);
+                    window.create();
+                    part.createControl(window.getShell());
+                    // Open window.
+                    window.getShell().setBounds(holder.getBounds());
+                    window.open();
+                    // add part to detached window.
+                    ViewPane pane = (ViewPane) part;
+                    window.add(pane);
+                    LayoutPart otherChildren[] = holder.getChildren();
+                    for (int i = 0; i < otherChildren.length; i++) {
+                        part.getContainer().add(otherChildren[i]);
+                    }
+                } else 
               {
                     // show parent if necessary
                     if (container instanceof ContainerPlaceholder) {
@@ -392,14 +400,14 @@ public class PerspectiveHelper {
                     // see if we should replace the placeholder
                     if (placeholder.hasWildCard()) {
                         if (container instanceof PartSashContainer) {
-							((PartSashContainer) container)
+                            ((PartSashContainer) container)
                                     .addChildForPlaceholder(part, placeholder);
-						} else {
-							container.add(part);
-						}
+                        } else {
+                            container.add(part);
+                        }
                     } else {
-						container.replace(placeholder, part);
-					}
+                        container.replace(placeholder, part);
+                    }
                 }
             }
         }
@@ -411,18 +419,18 @@ public class PerspectiveHelper {
      * @param ref
      */
     public void attachPart(IViewReference ref) {
-		ViewPane pane = (ViewPane)((WorkbenchPartReference)ref).getPane();	
-		
-		// Restore any maximized part before re-attaching.
-		// Note that 'getMaximizedStack != null' implies 'useNewMinMax'
-		if (getMaximizedStack() != null) {
-			getMaximizedStack().setState(IStackPresentationSite.STATE_RESTORED);
-		}
-		
-		derefPart(pane);
-		addPart(pane);
-		bringPartToTop(pane);
-		pane.setFocus();
+        ViewPane pane = (ViewPane)((WorkbenchPartReference)ref).getPane();  
+        
+        // Restore any maximized part before re-attaching.
+        // Note that 'getMaximizedStack != null' implies 'useNewMinMax'
+        if (getMaximizedStack() != null) {
+            getMaximizedStack().setState(IStackPresentationSite.STATE_RESTORED);
+        }
+        
+        derefPart(pane);
+        addPart(pane);
+        bringPartToTop(pane);
+        pane.setFocus();
     }
 
     /**
@@ -457,29 +465,29 @@ public class PerspectiveHelper {
     public boolean isPartVisible(IWorkbenchPartReference partRef) {
         LayoutPart foundPart;
         if (partRef instanceof IViewReference) {
-			foundPart = findPart(partRef.getId(), ((IViewReference) partRef).getSecondaryId());
-		} else {
-			foundPart = findPart(partRef.getId());
-		}
+            foundPart = findPart(partRef.getId(), ((IViewReference) partRef).getSecondaryId());
+        } else {
+            foundPart = findPart(partRef.getId());
+        }
         if (foundPart == null) {
-			return false;
-		}
+            return false;
+        }
         if (foundPart instanceof PartPlaceholder) {
-			return false;
-		}
+            return false;
+        }
 
         ILayoutContainer container = foundPart.getContainer();
         
         if (container instanceof ContainerPlaceholder) {
-			return false;
-		}
+            return false;
+        }
 
         if (container instanceof ViewStack) {
             ViewStack folder = (ViewStack) container;
             PartPane visiblePart = folder.getSelection();
             if (visiblePart == null) {
-				return false;
-			}
+                return false;
+            }
             return partRef.equals(visiblePart.getPartReference());
         }
         return true;
@@ -496,19 +504,19 @@ public class PerspectiveHelper {
     public boolean willPartBeVisible(String partId, String secondaryId) {
         LayoutPart part = findPart(partId, secondaryId);
         if (part == null) {
-			return false;
-		}
+            return false;
+        }
         ILayoutContainer container = part.getContainer();
         if (container != null && container instanceof ContainerPlaceholder) {
-			container = (ILayoutContainer) ((ContainerPlaceholder) container)
+            container = (ILayoutContainer) ((ContainerPlaceholder) container)
                     .getRealContainer();
-		}
+        }
 
         if (container != null && container instanceof ViewStack) {
             ViewStack folder = (ViewStack) container;
             if (folder.getSelection() == null) {
-				return false;
-			}
+                return false;
+            }
             return part.getCompoundId().equals(
                     folder.getSelection().getCompoundId());
         }
@@ -523,23 +531,23 @@ public class PerspectiveHelper {
         PartPlaceholder[] results = collectPlaceholders(mainLayout
                 .getChildren());
 
-// RAP [rh] DetachedWindow not supported        
+      //[ariddle] - added for view dragging
 //        // Scan each detached window.
-//        if (detachable) {
-//            for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//                DetachedWindow win = (DetachedWindow) detachedWindowList.get(i);
-//                PartPlaceholder[] moreResults = collectPlaceholders(win
-//                        .getChildren());
-//                if (moreResults.length > 0) {
-//                    int newLength = results.length + moreResults.length;
-//                    PartPlaceholder[] newResults = new PartPlaceholder[newLength];
-//                    System.arraycopy(results, 0, newResults, 0, results.length);
-//                    System.arraycopy(moreResults, 0, newResults,
-//                            results.length, moreResults.length);
-//                    results = newResults;
-//                }
-//            }
-//        }
+        if (detachable) {
+            for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+                DetachedWindow win = (DetachedWindow) detachedWindowList.get(i);
+                PartPlaceholder[] moreResults = collectPlaceholders(win
+                        .getChildren());
+                if (moreResults.length > 0) {
+                    int newLength = results.length + moreResults.length;
+                    PartPlaceholder[] newResults = new PartPlaceholder[newLength];
+                    System.arraycopy(results, 0, newResults, 0, results.length);
+                    System.arraycopy(moreResults, 0, newResults,
+                            results.length, moreResults.length);
+                    results = newResults;
+                }
+            }
+        }
         return results;
     }
 
@@ -579,14 +587,14 @@ public class PerspectiveHelper {
         // Scan the main window.
         collectViewPanes(result, mainLayout.getChildren());
 
-// RAP [rh] DetachedWindow not supporte         
-//        // Scan each detached window.
-//        if (detachable) {
-//            for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//                DetachedWindow win = (DetachedWindow) detachedWindowList.get(i);
-//                collectViewPanes(result, win.getChildren());
-//            }
-//        }
+      //[ariddle] - added for view dragging
+        // Scan each detached window.
+        if (detachedWindowList != null) {
+            for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+                DetachedWindow win = (DetachedWindow) detachedWindowList.get(i);
+                collectViewPanes(result, win.getChildren());
+            }
+        }
     }
 
     /**
@@ -609,40 +617,40 @@ public class PerspectiveHelper {
      */
     public void deactivate() {
         if (!active) {
-			return;
-		}
+            return;
+        }
 
-// RAP [rh] DnD not supported        
-//        disableAllDrag();
+      //[ariddle] - added for view dragging
+        disableAllDrag();
 
         // Reparent all views to the main window
         Composite parent = mainLayout.getParent();
         Vector children = new Vector();
         collectViewPanes(children, mainLayout.getChildren());
 
-// RAP [rh] DetachedWindow not supported        
-//        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//            DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
-//            collectViewPanes(children, window.getChildren());
-//        }
+      //[ariddle] - added for view dragging
+        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+            DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
+            collectViewPanes(children, window.getChildren());
+        }
 
         // *** Do we even need to do this if detached windows not supported?
-        Enumeration itr = children.elements();
-        while (itr.hasMoreElements()) {
-            LayoutPart part = (LayoutPart) itr.nextElement();
-            part.reparent(parent);
-        }
+//        Enumeration itr = children.elements();
+//        while (itr.hasMoreElements()) {
+//            LayoutPart part = (LayoutPart) itr.nextElement();
+//            part.reparent(parent);
+//        }
         
         // Dispose main layout.
 
         mainLayout.setActive(false);
         
-// RAP [rh] DetachedWindow not supported        
-//        // Dispose the detached windows
-//        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//            DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
-//            window.close();
-//        }
+      //[ariddle] - added for view dragging
+        // Dispose the detached windows
+        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+            DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
+            window.close();
+        }
         
         active = false;
     }
@@ -666,30 +674,29 @@ public class PerspectiveHelper {
      * @param buf
      */
     public void describeLayout(StringBuffer buf) {
-
-// RAP [rh] DetachedWindow not supported      
-//        if (detachable) {
-//            if(detachedWindowList.size() != 0){
-//                buf.append("detachedWindows ("); //$NON-NLS-1$
-//          
-//	            for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//	                DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
-//	                LayoutPart[] children = window.getChildren();
-//	                if(children.length != 0){
-//	                    buf.append("dWindow ("); //$NON-NLS-1$
-//	                    for(int j = 0; j < children.length; j++){
-//	                        buf.append(((ViewPane)children[j]).getViewReference().getPartName());
-//	                        if(j < (children.length - 1)) {
-//								buf.append(", "); //$NON-NLS-1$
-//							}
-//	                    }
-//	                    buf.append(")"); //$NON-NLS-1$
-//	                }
-//	                
-//	            }
-//	            buf.append("), "); //$NON-NLS-1$
-//            }
-//        }
+     //[ariddle] - added for view dragging
+        if (detachable) {
+            if(detachedWindowList.size() != 0){
+                buf.append("detachedWindows ("); //$NON-NLS-1$
+          
+                for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+                    DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
+                    LayoutPart[] children = window.getChildren();
+                    if(children.length != 0){
+                        buf.append("dWindow ("); //$NON-NLS-1$
+                        for(int j = 0; j < children.length; j++){
+                            buf.append(((ViewPane)children[j]).getViewReference().getPartName());
+                            if(j < (children.length - 1)) {
+                                buf.append(", "); //$NON-NLS-1$
+                            }
+                        }
+                        buf.append(")"); //$NON-NLS-1$
+                    }
+                    
+                }
+                buf.append("), "); //$NON-NLS-1$
+            }
+        }
             
         getLayout().describeLayout(buf);
     }
@@ -700,41 +707,41 @@ public class PerspectiveHelper {
      */
     /* package */void derefPart(LayoutPart part) {
         if (part instanceof ViewPane) {
-        	IViewReference ref = ((ViewPane) part).getViewReference();
-        	if (perspective.isFastView(ref)) {
-        		// Special check: if it's a fast view then it's actual ViewStack
-        		// may only contain placeholders and the stack is represented in
-        		// the presentation by a container placeholder...make sure the
-        		// PartPlaceHolder for 'ref' is removed from the ViewStack
-        		String id = perspective.getFastViewManager().getIdForRef(ref);
-        		LayoutPart parentPart = findPart(id, null);
-        		if (parentPart instanceof ContainerPlaceholder) {
-        			ViewStack vs = (ViewStack) ((ContainerPlaceholder)parentPart).getRealContainer();
-        			LayoutPart[] kids = vs.getChildren();
-        			for (int i = 0; i < kids.length; i++) {
-						if (kids[i] instanceof PartPlaceholder) {
-							if (ref.getId().equals(kids[i].id))
-								vs.remove(kids[i]);
-						}
-					}
-        		}
-        		perspective.getFastViewManager().removeViewReference(ref, true, true);
-        	}
+            IViewReference ref = ((ViewPane) part).getViewReference();
+            if (perspective.isFastView(ref)) {
+                // Special check: if it's a fast view then it's actual ViewStack
+                // may only contain placeholders and the stack is represented in
+                // the presentation by a container placeholder...make sure the
+                // PartPlaceHolder for 'ref' is removed from the ViewStack
+                String id = perspective.getFastViewManager().getIdForRef(ref);
+                LayoutPart parentPart = findPart(id, null);
+                if (parentPart instanceof ContainerPlaceholder) {
+                    ViewStack vs = (ViewStack) ((ContainerPlaceholder)parentPart).getRealContainer();
+                    LayoutPart[] kids = vs.getChildren();
+                    for (int i = 0; i < kids.length; i++) {
+                        if (kids[i] instanceof PartPlaceholder) {
+                            if (ref.getId().equals(kids[i].id))
+                                vs.remove(kids[i]);
+                        }
+                    }
+                }
+                perspective.getFastViewManager().removeViewReference(ref, true, true);
+            }
         }
 
         // Get vital part stats before reparenting.
         ILayoutContainer oldContainer = part.getContainer();
         boolean wasDocked = part.isDocked();
-// RAP [rh] unused code        
-//        Shell oldShell = part.getShell();
+      //[ariddle] - added for view dragging
+        Shell oldShell = part.getShell();
 
         // Reparent the part back to the main window
         part.reparent(mainLayout.getParent());
 
         // Update container.
         if (oldContainer == null) {
-			return;
-		}
+            return;
+        }
 
         oldContainer.remove(part);
 
@@ -745,10 +752,10 @@ public class PerspectiveHelper {
                 // make sure one is at least visible
                 int childVisible = 0;
                 for (int i = 0; i < children.length; i++) {
-					if (children[i].getControl() != null) {
-						childVisible++;
-					}
-				}
+                    if (children[i].getControl() != null) {
+                        childVisible++;
+                    }
+                }
 
                 // none visible, then reprarent and remove container
                 if (oldContainer instanceof ViewStack) {
@@ -758,8 +765,8 @@ public class PerspectiveHelper {
                     boolean inTrim = false;
                     // Safety check...there may be no FastViewManager
                     if (perspective.getFastViewManager() != null)
-                    	inTrim = perspective.getFastViewManager().getFastViews(folder.getID()).size() > 0;
-                    	
+                        inTrim = perspective.getFastViewManager().getFastViews(folder.getID()).size() > 0;
+                        
                     if (childVisible == 0 && !inTrim) {
                         ILayoutContainer parentContainer = folder.getContainer();
                         hasChildren = folder.getChildren().length > 0;
@@ -795,184 +802,195 @@ public class PerspectiveHelper {
                     }
                 }
             }
-// RAP [rh] DetachedWindow not supported            
-//        } else if (!wasDocked) {
-//            if (children == null || children.length == 0) {
-//                // There are no more children in this container, so get rid of
-//                // it
-//                // Turn on redraw again just in case it was off.
-//                //oldShell.setRedraw(true);
-//                DetachedWindow w = (DetachedWindow)oldShell.getData();
-//                oldShell.close();
-//                detachedWindowList.remove(w);
-//            } else {
-//                // There are children. If none are visible hide detached
-//                // window.
-//                boolean allInvisible = true;
-//                for (int i = 0, length = children.length; i < length; i++) {
-//                    if (!(children[i] instanceof PartPlaceholder)) {
-//                        allInvisible = false;
-//                        break;
-//                    }
-//                }
-//                if (allInvisible) {
-//                    DetachedPlaceHolder placeholder = new DetachedPlaceHolder(
-//                            "", //$NON-NLS-1$
-//                            oldShell.getBounds());
-//                    for (int i = 0, length = children.length; i < length; i++) {
-//                        oldContainer.remove(children[i]);
-//                        children[i].setContainer(placeholder);
-//                        placeholder.add(children[i]);
-//                    }
-//                    detachedPlaceHolderList.add(placeholder);
-//                    DetachedWindow w = (DetachedWindow)oldShell.getData();
-//                    oldShell.close();
-//                    detachedWindowList.remove(w);
-//                }
-//            }
+        } else if (!wasDocked) { //[ariddle] - added for view dragging
+            if (children == null || children.length == 0) {
+                // There are no more children in this container, so get rid of
+                // it
+                // Turn on redraw again just in case it was off.
+                //oldShell.setRedraw(true);
+                DetachedWindow w = (DetachedWindow)oldShell.getData();
+                oldShell.close();
+                detachedWindowList.remove(w);
+            } else {
+                // There are children. If none are visible hide detached
+                // window.
+                boolean allInvisible = true;
+                for (int i = 0, length = children.length; i < length; i++) {
+                    if (!(children[i] instanceof PartPlaceholder)) {
+                        allInvisible = false;
+                        break;
+                    }
+                }
+                if (allInvisible) {
+                    DetachedPlaceHolder placeholder = new DetachedPlaceHolder(
+                            "", //$NON-NLS-1$
+                            oldShell.getBounds());
+                    for (int i = 0, length = children.length; i < length; i++) {
+                        oldContainer.remove(children[i]);
+                        children[i].setContainer(placeholder);
+                        placeholder.add(children[i]);
+                    }
+                    detachedPlaceHolderList.add(placeholder);
+                    DetachedWindow w = (DetachedWindow)oldShell.getData();
+                    oldShell.close();
+                    detachedWindowList.remove(w);
+                }
+            }
         }
 
     }
 
-// RAP [rh] DetachedWindow not supported    
-//    /**
-//     * Create a detached window containing a part.
-//     */
-//    private void detach(LayoutPart source, int x, int y) {
-//
-//        // Detaching is disabled on some platforms ..
-//        if (!detachable) {
-//			return;
-//		}
-//
-//        LayoutPart part = source.getPart();
-//        // Calculate detached window size.
-//        Point size = part.getSize();
-//        if (size.x == 0 || size.y == 0) {
-//            ILayoutContainer container = part.getContainer();
-//            if (container instanceof LayoutPart) {
-//                size = ((LayoutPart) container).getSize();
-//            }
-//        }
-//        int width = Math.max(size.x, MIN_DETACH_WIDTH);
-//        int height = Math.max(size.y, MIN_DETACH_HEIGHT);
-//
-//        // Create detached window.
-//        DetachedWindow window = new DetachedWindow(page);
-//        detachedWindowList.add(window);
-//
-//        // Open window.
-//        window.create();
-//        window.getShell().setBounds(x, y, width, height);
-//        window.open();
-//
-//        if (part instanceof ViewStack) {
-//            window.getShell().setRedraw(false);
-//            parentWidget.setRedraw(false);
-//            LayoutPart visiblePart = ((ViewStack) part).getSelection();
-//            LayoutPart children[] = ((ViewStack) part).getChildren();
-//            for (int i = 0; i < children.length; i++) {
-//                if (children[i] instanceof ViewPane) {
-//                    // remove the part from its current container
+  //[ariddle] - added for view dragging
+    /**
+     * Create a detached window containing a part.
+     */
+    private void detach(LayoutPart source, int x, int y) {
+
+        // Detaching is disabled on some platforms ..
+        if (!detachable) {
+            return;
+        }
+
+        LayoutPart part = source.getPart();
+        // Calculate detached window size.
+        Point size = part.getSize();
+        if (size.x == 0 || size.y == 0) {
+            ILayoutContainer container = part.getContainer();
+            if (container instanceof LayoutPart) {
+                size = ((LayoutPart) container).getSize();
+            }
+        }
+        int width = Math.max(size.x, MIN_DETACH_WIDTH);
+        int height = Math.max(size.y, MIN_DETACH_HEIGHT);
+
+        // Create detached window.
+        DetachedWindow window = new DetachedWindow(page);
+        detachedWindowList.add(window);
+
+        // Open window.
+        window.create();
+        window.getShell().setBounds(x, y, width, height);
+        window.open();
+
+        if (part instanceof ViewStack) {
+            window.getShell().setRedraw(false);
+            parentWidget.setRedraw(false);
+            LayoutPart visiblePart = ((ViewStack) part).getSelection();
+            LayoutPart children[] = ((ViewStack) part).getChildren();
+            for (int i = 0; i < children.length; i++) {
+                if (children[i] instanceof ViewPane) {
+                    // remove the part from its current container
 //                    derefPart(children[i]);
-//                    // add part to detached window.
-//                    ViewPane pane = (ViewPane) children[i];
-//                    window.add(pane);
-//                }
-//            }
-//            if (visiblePart != null) {
-//                bringPartToTop(visiblePart);
-//                visiblePart.setFocus();
-//            }
-//            window.getShell().setRedraw(true);
-//            parentWidget.setRedraw(true);
-//        } else {
-//            // remove the part from its current container
+                    // add part to detached window.
+                    ViewPane pane = (ViewPane) children[i];
+                    window.add(pane);
+                }
+            }
+            if (visiblePart != null) {
+                bringPartToTop(visiblePart);
+                visiblePart.setFocus();
+            }
+            window.getShell().setRedraw(true);
+            parentWidget.setRedraw(true);
+        } else {
+            // remove the part from its current container
 //            derefPart(part);
-//            // add part to detached window.
-//            ViewPane pane = (ViewPane) part;
-//            window.add(pane);
-//            part.setFocus();
-//        }
-//
-//    }
+            // add part to detached window.
+            ViewPane pane = (ViewPane) part;
+            window.add(pane);
+            part.setFocus();
+        }
+
+    }
     
-// RAP [rh] DetachedWindow not supported    
-//    /**
-//     * Detached a part from the mainLayout. Presently this does not use placeholders
-//     * since the current implementation is not robust enough to remember a view's position
-//     * in more than one root container. For now the view is simply derefed and will dock
-//     * in the default position when attachPart is called. 
-//     * 
-//     * By default parts detached this way are set to float on top of the workbench
-//     * without docking. It is assumed that people that want to drag a part back onto
-//     * the WorkbenchWindow will detach it via drag and drop. 
-//     * 
-//     * @param ref
-//     */
-//    public void detachPart(IViewReference ref) {
-//		ViewPane pane = (ViewPane)((WorkbenchPartReference)ref).getPane();
-//    	if (canDetach() && pane != null) {
-//    		if (getMaximizedStack() != null)
-//    			getMaximizedStack().setState(IStackPresentationSite.STATE_RESTORED);
-//    		
-//    		Rectangle bounds = pane.getParentBounds();
-//    	    detach(pane, bounds.x ,bounds.y);
-//    	}
-//    }
-//
-//    /**
-//     * Create a detached window containing a part.
-//     */
-//    public void addDetachedPart(LayoutPart part) {
-//        // Calculate detached window size.
-//        Rectangle bounds = parentWidget.getShell().getBounds();
-//        bounds.x = bounds.x + (bounds.width - 300) / 2;
-//        bounds.y = bounds.y + (bounds.height - 300) / 2;
-//        
-//        addDetachedPart(part, bounds);
-//    }
-//    
-//    public void addDetachedPart(LayoutPart part, Rectangle bounds) {
-//        // Detaching is disabled on some platforms ..
-//        if (!detachable) {
-//            addPart(part);
-//            return;
-//        }
-//        
-//        // Create detached window.
-//        DetachedWindow window = new DetachedWindow(page);
-//        detachedWindowList.add(window);
-//        window.create();
-//
-//        // add part to detached window.
-//        part.createControl(window.getShell());
-//        ViewPane pane = (ViewPane) part;
-//        window.add(pane);
-//
-//        // Open window.
-//        window.getShell().setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
-//        window.open();
-//
-//        part.setFocus();
-//        
-//    }
+  //[ariddle] - added for view dragging
+    /**
+     * Detached a part from the mainLayout. Presently this does not use placeholders
+     * since the current implementation is not robust enough to remember a view's position
+     * in more than one root container. For now the view is simply derefed and will dock
+     * in the default position when attachPart is called. 
+     * 
+     * By default parts detached this way are set to float on top of the workbench
+     * without docking. It is assumed that people that want to drag a part back onto
+     * the WorkbenchWindow will detach it via drag and drop. 
+     * 
+     * @param ref
+     */
+    public void detachPart(IViewReference ref) {
+        ViewPane pane = (ViewPane)((WorkbenchPartReference)ref).getPane();
+        if (canDetach() && pane != null) {
+            if (getMaximizedStack() != null)
+                getMaximizedStack().setState(IStackPresentationSite.STATE_RESTORED);
+            
+            Rectangle bounds = pane.getParentBounds();
+            detach(pane, bounds.x ,bounds.y);
+        }
+    }
 
-// RAP [rh] DnD not supported    
-//    /**
-//     * disableDragging.
-//     */
-//    private void disableAllDrag() {
-//        DragUtil.removeDragTarget(null, dragTarget);
-//    }
-//
-//    /**
-//     * enableDragging.
-//     */
-//    private void enableAllDrag() {
-//        DragUtil.addDragTarget(null, dragTarget);
-//    }
+  //[ariddle] - added for view dragging
+    /**
+     * Create a detached window containing a part.
+     */
+    public void addDetachedPart(LayoutPart part) {
+        // Calculate detached window size.
+        Rectangle bounds = parentWidget.getShell().getBounds();
+        bounds.x = bounds.x + (bounds.width - 300) / 2;
+        bounds.y = bounds.y + (bounds.height - 300) / 2;
+        
+        addDetachedPart(part, bounds);
+    }
+    
+  //[ariddle] - added for view dragging
+    public void addDetachedPart(LayoutPart part, Rectangle bounds) {
+        // Detaching is disabled on some platforms ..
+        if (!detachable) {
+            addPart(part);
+            return;
+        }
+        
+        // Create detached window.
+        DetachedWindow window = new DetachedWindow(page);
+        detachedWindowList.add(window);
+        window.create();
 
+        // add part to detached window.
+        part.createControl(window.getShell());
+        ViewPane pane = (ViewPane) part;
+        window.add(pane);
+
+        // Open window.
+        window.getShell().setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+        window.open();
+
+        part.setFocus();
+        
+    }
+    
+    public DetachedWindow createDetachedPartWindow() {
+       // Create detached window.
+       DetachedWindow window = new DetachedWindow(page);
+       detachedWindowList.add(window);
+       window.create();
+
+       return window;
+    }
+
+  //[ariddle] - added for view dragging
+    /**
+     * disableDragging.
+     */
+    private void disableAllDrag() {
+        DragUtil.removeDragTarget(null, dragTarget);
+    }
+
+  //[ariddle] - added for view dragging
+    /**
+     * enableDragging.
+     */
+    private void enableAllDrag() {
+        DragUtil.addDragTarget(null, dragTarget);
+    }
+  //[ariddle] - added for view dragging
     /**
      * Find the first part with a given ID in the presentation.
      * Wild cards now supported.
@@ -993,20 +1011,20 @@ public class PerspectiveHelper {
                 secondaryId, mainLayout.getChildren(), matchingParts)
                 : findPart(primaryId, mainLayout.getChildren(), matchingParts);
         if (part != null) {
-			return part;
-		}
+            return part;
+        }
 
-// RAP [rh] DetachedWIndow not supported        
-//        // check each detached windows.
-//        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//            DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
-//            part = (secondaryId != null) ? findPart(primaryId, secondaryId,
-//                    window.getChildren(), matchingParts) : findPart(primaryId,
-//                    window.getChildren(), matchingParts);
-//            if (part != null) {
-//				return part;
-//			}
-//        }
+      //[ariddle] - added for view dragging
+        // check each detached windows.
+        for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+            DetachedWindow window = (DetachedWindow) detachedWindowList.get(i);
+            part = (secondaryId != null) ? findPart(primaryId, secondaryId,
+                    window.getChildren(), matchingParts) : findPart(primaryId,
+                    window.getChildren(), matchingParts);
+            if (part != null) {
+                return part;
+            }
+        }
         for (int i = 0; i < detachedPlaceHolderList.size(); i++) {
             DetachedPlaceHolder holder = (DetachedPlaceHolder) detachedPlaceHolderList
                     .get(i);
@@ -1014,8 +1032,8 @@ public class PerspectiveHelper {
                     holder.getChildren(), matchingParts) : findPart(primaryId,
                     holder.getChildren(), matchingParts);
             if (part != null) {
-				return part;
-			}
+                return part;
+            }
         }
 
         // sort the matching parts
@@ -1024,8 +1042,8 @@ public class PerspectiveHelper {
             MatchingPart mostSignificantPart = (MatchingPart) matchingParts
                     .get(0);
             if (mostSignificantPart != null) {
-				return mostSignificantPart.part;
-			}
+                return mostSignificantPart.part;
+            }
         }
 
         // Not found.
@@ -1046,8 +1064,8 @@ public class PerspectiveHelper {
                     IViewReference ref = (IViewReference) pane
                             .getPartReference();
                     if (ref.getSecondaryId() != null) {
-						continue;
-					}
+                        continue;
+                    }
                 }
                 return part;
             }
@@ -1056,17 +1074,17 @@ public class PerspectiveHelper {
                     && ((PartPlaceholder) part).hasWildCard()) {
                 StringMatcher sm = new StringMatcher(part.getID(), true, false);
                 if (sm.match(id)) {
-					matchingParts
+                    matchingParts
                             .add(new MatchingPart(part.getID(), null, part));
-				}
+                }
             } else if (part instanceof EditorSashContainer) {
                 // Skip.
             } else if (part instanceof ILayoutContainer) {
                 part = findPart(id, ((ILayoutContainer) part).getChildren(),
                         matchingParts);
                 if (part != null) {
-					return part;
-				}
+                    return part;
+                }
             }
         }
         return null;
@@ -1086,8 +1104,8 @@ public class PerspectiveHelper {
                 LayoutPart testPart = findPart(primaryId, secondaryId,
                         ((ILayoutContainer) part).getChildren(), matchingParts);
                 if (testPart != null) {
-					return testPart;
-				}
+                    return testPart;
+                }
             }
             // check for view part equality
             if (part instanceof ViewPane) {
@@ -1096,8 +1114,8 @@ public class PerspectiveHelper {
                 if (ref.getId().equals(primaryId)
                         && ref.getSecondaryId() != null
                         && ref.getSecondaryId().equals(secondaryId)) {
-					return part;
-				}
+                    return part;
+                }
             }
             // check placeholders
             else if ((parts[i] instanceof PartPlaceholder)) {
@@ -1108,8 +1126,8 @@ public class PerspectiveHelper {
                 if (phSecondaryId == null) {
                     // but still need to check for wildcard case
                     if (id.equals(PartPlaceholder.WILD_CARD)) {
-						matchingParts.add(new MatchingPart(id, null, part));
-					}
+                        matchingParts.add(new MatchingPart(id, null, part));
+                    }
                     continue;
                 }
 
@@ -1148,10 +1166,10 @@ public class PerspectiveHelper {
     public boolean hasPlaceholder(String primaryId, String secondaryId) {
         LayoutPart testPart;
         if (secondaryId == null) {
-			testPart = findPart(primaryId);
-		} else {
-			testPart = findPart(primaryId, secondaryId);
-		}
+            testPart = findPart(primaryId);
+        } else {
+            testPart = findPart(primaryId, secondaryId);
+        }
         return (testPart != null && testPart instanceof PartPlaceholder);
     }
 
@@ -1181,26 +1199,26 @@ public class PerspectiveHelper {
     }
 
     /**
-	 * @return The currently maxmized stack (if any)
-	 */
-	public PartStack getMaximizedStack() {
-		return maximizedStack;
-	}
+     * @return The currently maxmized stack (if any)
+     */
+    public PartStack getMaximizedStack() {
+        return maximizedStack;
+    }
 
-	/**
-	 * Sets the currently maximized stack. Used for query
-	 * and 'unZoom' purposes in the 3.3 presentation.
-	 * 
-	 * @param stack The newly maximized stack
-	 */
-	public void setMaximizedStack(PartStack stack) {
-		if (stack == maximizedStack)
-			return;
-		
-		maximizedStack = stack;
-	}
-	
-	/**
+    /**
+     * Sets the currently maximized stack. Used for query
+     * and 'unZoom' purposes in the 3.3 presentation.
+     * 
+     * @param stack The newly maximized stack
+     */
+    public void setMaximizedStack(PartStack stack) {
+        if (stack == maximizedStack)
+            return;
+        
+        maximizedStack = stack;
+    }
+    
+    /**
      * Returns the ratio that should be used when docking the given source
      * part onto the given target
      * 
@@ -1222,7 +1240,7 @@ public class PerspectiveHelper {
      * conditions for this .. - we are zoomed. - the part is contained in the
      * main window. - the part is not the zoom part - the part is not a fast
      * view - the part and the zoom part are not in the same editor workbook
-	 * - the part and the zoom part are not in the same view stack.
+     * - the part and the zoom part are not in the same view stack.
      */
     public boolean partChangeAffectsZoom(LayoutPart pane) {
         return pane.isObscuredByZoom();
@@ -1246,8 +1264,8 @@ public class PerspectiveHelper {
             // If the parent is root we're done. Do not try to replace
             // it with placeholder.
             if (container == mainLayout) {
-				return;
-			}
+                return;
+            }
 
             // If the parent is empty replace it with a placeholder.
             LayoutPart[] children = container.getChildren();
@@ -1267,16 +1285,16 @@ public class PerspectiveHelper {
                     // what type of window are we in?
                     LayoutPart cPart = (LayoutPart) container;
                     //Window oldWindow = cPart.getWindow();
-// RAP [rh] DetachedWindow not supported                    
-//                    boolean wasDocked = cPart.isDocked();
-//                    Shell oldShell = cPart.getShell();
-//                    if (wasDocked) {
+                  //[ariddle] - added for view dragging
+                    boolean wasDocked = cPart.isDocked();
+                    Shell oldShell = cPart.getShell();
+                    if (wasDocked) {
                         
                         // PR 1GDFVBY: ViewStack not disposed when page
                         // closed.
                         if (container instanceof ViewStack) {
-							((ViewStack) container).dispose();
-						}
+                            ((ViewStack) container).dispose();
+                        }
                         
                         // replace the real container with a
                         // ContainerPlaceholder
@@ -1286,20 +1304,19 @@ public class PerspectiveHelper {
                         placeholder.setRealContainer(container);
                         parentContainer.replace(cPart, placeholder);
                         
-// RAP [rh] DetachedWindow not supported                    
-//                    } else {
-//                        DetachedPlaceHolder placeholder = new DetachedPlaceHolder(
-//                                "", oldShell.getBounds()); //$NON-NLS-1$
-//                        for (int i = 0, length = children.length; i < length; i++) {
-//                            children[i].getContainer().remove(children[i]);
-//                            children[i].setContainer(placeholder);
-//                            placeholder.add(children[i]);
-//                        }
-//                        detachedPlaceHolderList.add(placeholder);
-//                        DetachedWindow w = (DetachedWindow)oldShell.getData();
-//                        oldShell.close();
-//                        detachedWindowList.remove(w);
-//                    }
+                    } else { //[ariddle] - added for view dragging
+                        DetachedPlaceHolder placeholder = new DetachedPlaceHolder(
+                                "", oldShell.getBounds()); //$NON-NLS-1$
+                        for (int i = 0, length = children.length; i < length; i++) {
+                            children[i].getContainer().remove(children[i]);
+                            children[i].setContainer(placeholder);
+                            placeholder.add(children[i]);
+                        }
+                        detachedPlaceHolderList.add(placeholder);
+                        DetachedWindow w = (DetachedWindow)oldShell.getData();
+                        oldShell.close();
+                        detachedWindowList.remove(w);
+                    }
                 }
             }
         }
@@ -1354,25 +1371,24 @@ public class PerspectiveHelper {
                 .getChild(IWorkbenchConstants.TAG_MAIN_WINDOW);
         IStatus r = mainLayout.restoreState(childMem);
 
-//RAP [rh] DetachedWindow not supported        
-//        // Restore each floating window.
-//        if (detachable) {
-//            IMemento detachedWindows[] = memento
-//                    .getChildren(IWorkbenchConstants.TAG_DETACHED_WINDOW);
-//            for (int nX = 0; nX < detachedWindows.length; nX++) {
-//                DetachedWindow win = new DetachedWindow(page);
-//                detachedWindowList.add(win);
-//                win.restoreState(detachedWindows[nX]);
-//            }
-//            IMemento childrenMem[] = memento
-//                    .getChildren(IWorkbenchConstants.TAG_HIDDEN_WINDOW);
-//            for (int i = 0, length = childrenMem.length; i < length; i++) {
-//                DetachedPlaceHolder holder = new DetachedPlaceHolder(
-//                        "", new Rectangle(0, 0, 0, 0)); //$NON-NLS-1$
-//                holder.restoreState(childrenMem[i]);
-//                detachedPlaceHolderList.add(holder);
-//            }
-//        }
+        // Restore each floating window.
+        if (detachable) {
+            IMemento detachedWindows[] = memento
+                    .getChildren(IWorkbenchConstants.TAG_DETACHED_WINDOW);
+            for (int nX = 0; nX < detachedWindows.length; nX++) {
+                DetachedWindow win = new DetachedWindow(page);
+                detachedWindowList.add(win);
+                win.restoreState(detachedWindows[nX]);
+            }
+            IMemento childrenMem[] = memento
+                    .getChildren(IWorkbenchConstants.TAG_HIDDEN_WINDOW);
+            for (int i = 0, length = childrenMem.length; i < length; i++) {
+                DetachedPlaceHolder holder = new DetachedPlaceHolder(
+                        "", new Rectangle(0, 0, 0, 0)); //$NON-NLS-1$
+                holder.restoreState(childrenMem[i]);
+                detachedPlaceHolderList.add(holder);
+            }
+        }
         
         // Get the cached id of the currently maximized stack
         maximizedStackId = childMem.getString(IWorkbenchConstants.TAG_MAXIMIZED);
@@ -1389,34 +1405,34 @@ public class PerspectiveHelper {
                 .createChild(IWorkbenchConstants.TAG_MAIN_WINDOW);
         IStatus r = mainLayout.saveState(childMem);
 
-// RAP [rh] DetachedWindow not supported        
-//        if (detachable) {
-//            // Persist each detached window.
-//            for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
-//                DetachedWindow window = (DetachedWindow) detachedWindowList
-//                        .get(i);
-//                childMem = memento
-//                        .createChild(IWorkbenchConstants.TAG_DETACHED_WINDOW);
-//                window.saveState(childMem);
-//            }
-//            for (int i = 0, length = detachedPlaceHolderList.size(); i < length; i++) {
-//                DetachedPlaceHolder holder = (DetachedPlaceHolder) detachedPlaceHolderList
-//                        .get(i);
-//                childMem = memento
-//                        .createChild(IWorkbenchConstants.TAG_HIDDEN_WINDOW);
-//                holder.saveState(childMem);
-//            }
-//        }
+      //[ariddle] - added for view dragging
+        if (detachable) {
+            // Persist each detached window.
+            for (int i = 0, length = detachedWindowList.size(); i < length; i++) {
+                DetachedWindow window = (DetachedWindow) detachedWindowList
+                        .get(i);
+                childMem = memento
+                        .createChild(IWorkbenchConstants.TAG_DETACHED_WINDOW);
+                window.saveState(childMem);
+            }
+            for (int i = 0, length = detachedPlaceHolderList.size(); i < length; i++) {
+                DetachedPlaceHolder holder = (DetachedPlaceHolder) detachedPlaceHolderList
+                        .get(i);
+                childMem = memento
+                        .createChild(IWorkbenchConstants.TAG_HIDDEN_WINDOW);
+                holder.saveState(childMem);
+            }
+        }
         
         // Write out the id of the maximized (View) stack (if any)
         // NOTE: we only write this out if it's a ViewStack since the
         // Editor Area is handled by the perspective
         if (maximizedStack instanceof ViewStack) {
-        	childMem.putString(IWorkbenchConstants.TAG_MAXIMIZED, maximizedStack.getID());
+            childMem.putString(IWorkbenchConstants.TAG_MAXIMIZED, maximizedStack.getID());
         }
         else if (maximizedStackId != null) {
-        	// Maintain the cache if the perspective has never been activated
-        	childMem.putString(IWorkbenchConstants.TAG_MAXIMIZED, maximizedStackId);        	
+            // Maintain the cache if the perspective has never been activated
+            childMem.putString(IWorkbenchConstants.TAG_MAXIMIZED, maximizedStackId);            
         }
         
         return r;
@@ -1441,13 +1457,13 @@ public class PerspectiveHelper {
      * Zoom out.
      */
     public void zoomOut() {
-    	// New 3.3 behavior
-		if (Perspective.useNewMinMax(perspective)) {
-			 if (maximizedStack != null)
-				 maximizedStack.setState(IStackPresentationSite.STATE_RESTORED);
-			 return;
-		}
-		
+        // New 3.3 behavior
+        if (Perspective.useNewMinMax(perspective)) {
+             if (maximizedStack != null)
+                 maximizedStack.setState(IStackPresentationSite.STATE_RESTORED);
+             return;
+        }
+        
         LayoutPart zoomPart = mainLayout.getZoomedPart();
         if (zoomPart != null) {
             zoomPart.requestZoomOut();
@@ -1459,24 +1475,24 @@ public class PerspectiveHelper {
      * This is used when switching to the 3.3 presentation...
      */
     public void forceNoZoom() {
-    	// Ensure that nobody's zoomed
-    	zoomOut();
-    	
-    	// Now, walk the layout ensuring that nothing is minimized
-    	LayoutPart[] kids = mainLayout.getChildren();
-    	for (int i = 0; i < kids.length; i++) {
-			if (kids[i] instanceof ViewStack) {
-				((ViewStack)kids[i]).setMinimized(false);
-			}
-			else if (kids[i] instanceof EditorSashContainer) {
-				LayoutPart[] editorStacks = ((EditorSashContainer)kids[i]).getChildren();
-				for (int j = 0; j < editorStacks.length; j++) {
-					if (editorStacks[j] instanceof EditorStack) {
-						((EditorStack)editorStacks[j]).setMinimized(false);
-					}
-				}
-			}
-		}
+        // Ensure that nobody's zoomed
+        zoomOut();
+        
+        // Now, walk the layout ensuring that nothing is minimized
+        LayoutPart[] kids = mainLayout.getChildren();
+        for (int i = 0; i < kids.length; i++) {
+            if (kids[i] instanceof ViewStack) {
+                ((ViewStack)kids[i]).setMinimized(false);
+            }
+            else if (kids[i] instanceof EditorSashContainer) {
+                LayoutPart[] editorStacks = ((EditorSashContainer)kids[i]).getChildren();
+                for (int j = 0; j < editorStacks.length; j++) {
+                    if (editorStacks[j] instanceof EditorStack) {
+                        ((EditorStack)editorStacks[j]).setMinimized(false);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -1487,32 +1503,32 @@ public class PerspectiveHelper {
      * affect the current layout while being performed.
      */
     public void updateBoundsMap() {
-    	boundsMap.clear();
-    	
-    	// Walk the layout gathering the current bounds of each stack
-    	// and the editor area
-    	LayoutPart[] kids = mainLayout.getChildren();
-    	for (int i = 0; i < kids.length; i++) {
-			if (kids[i] instanceof ViewStack) {
-				ViewStack vs = (ViewStack)kids[i];
-				boundsMap.put(vs.getID(), vs.getBounds());
-			}
-			else if (kids[i] instanceof EditorSashContainer) {
-				EditorSashContainer esc = (EditorSashContainer)kids[i];
-				boundsMap.put(esc.getID(), esc.getBounds());
-			}
-		}
+        boundsMap.clear();
+        
+        // Walk the layout gathering the current bounds of each stack
+        // and the editor area
+        LayoutPart[] kids = mainLayout.getChildren();
+        for (int i = 0; i < kids.length; i++) {
+            if (kids[i] instanceof ViewStack) {
+                ViewStack vs = (ViewStack)kids[i];
+                boundsMap.put(vs.getID(), vs.getBounds());
+            }
+            else if (kids[i] instanceof EditorSashContainer) {
+                EditorSashContainer esc = (EditorSashContainer)kids[i];
+                boundsMap.put(esc.getID(), esc.getBounds());
+            }
+        }
     }
 
-	/**
-	 * Resets the bounds map so that it won't interfere with normal minimize
-	 * operayions
-	 */
-	public void resetBoundsMap() {
-		boundsMap.clear();
-	}
-	
-	public Rectangle getCachedBoundsFor(String id) {
-		return (Rectangle) boundsMap.get(id);
-	}
+    /**
+     * Resets the bounds map so that it won't interfere with normal minimize
+     * operayions
+     */
+    public void resetBoundsMap() {
+        boundsMap.clear();
+    }
+    
+    public Rectangle getCachedBoundsFor(String id) {
+        return (Rectangle) boundsMap.get(id);
+    }
 }

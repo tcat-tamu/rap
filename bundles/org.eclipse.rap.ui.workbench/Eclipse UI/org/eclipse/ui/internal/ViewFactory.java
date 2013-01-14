@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.dynamichelpers.IExtensionChangeHandler;
 import org.eclipse.core.runtime.dynamichelpers.IExtensionTracker;
 import org.eclipse.jface.util.SafeRunnable;
 import org.eclipse.osgi.util.NLS;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewReference;
@@ -54,6 +55,8 @@ public class ViewFactory implements IExtensionChangeHandler {
      * Separates a view's primary id from its secondary id in view key strings.
      */
     static final String ID_SEP = ":"; //$NON-NLS-1$
+
+   private Composite clientComposite;
 
     /**
      * Returns a string representing a view with the given id and (optional) secondary id,
@@ -417,6 +420,19 @@ public class ViewFactory implements IExtensionChangeHandler {
     public void addExtension(IExtensionTracker tracker,IExtension extension) {
         //Do nothing
     }
+
+   public Composite getClientComposite()
+   {
+      if (this.clientComposite != null) {
+         return this.clientComposite;
+      }
+      return page.getClientComposite();
+   }
+   
+   public void setClientComposite(Composite clientComposite)
+   {
+      this.clientComposite = clientComposite;
+   }
 
 }
 

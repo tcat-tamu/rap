@@ -21,17 +21,17 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
-//import org.eclipse.swt.graphics.Cursor;
-//import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IViewReference;
-//import org.eclipse.ui.internal.dnd.AbstractDropTarget;
-//import org.eclipse.ui.internal.dnd.DragUtil;
-//import org.eclipse.ui.internal.dnd.IDragOverListener;
-//import org.eclipse.ui.internal.dnd.IDropTarget;
+import org.eclipse.ui.internal.dnd.AbstractDropTarget;
+import org.eclipse.ui.internal.dnd.DragUtil;
+import org.eclipse.ui.internal.dnd.IDragOverListener;
+import org.eclipse.ui.internal.dnd.IDropTarget;
 import org.eclipse.ui.internal.dnd.SwtUtil;
 
 /**
@@ -42,8 +42,9 @@ import org.eclipse.ui.internal.dnd.SwtUtil;
  * the container.
  */
 // RAP [rh] IDragOverListener disabled due to missing DnD support
+//[ariddle] - added for view dragging
 public abstract class PartSashContainer extends LayoutPart implements
-        ILayoutContainer/*, IDragOverListener */{
+        ILayoutContainer, IDragOverListener {
 
     protected Composite parent;
 
@@ -63,8 +64,9 @@ public abstract class PartSashContainer extends LayoutPart implements
     /* Array of LayoutPart */
     protected ArrayList children = new ArrayList();
     
-// RAP [rh] unused code: SashContainerDropTarget is disabled    
-//    private SashContainerDropTarget dropTarget;
+// RAP [rh] unused code: SashContainerDropTarget is disabled
+  //[ariddle] - added for view dragging
+    private SashContainerDropTarget dropTarget;
 
     protected static class RelationshipInfo {
         protected LayoutPart part;
@@ -103,67 +105,68 @@ public abstract class PartSashContainer extends LayoutPart implements
         }
     }
 
-// RAP [rh] Disabled AbstractDropTarget due to missing DnD support    
-//    private class SashContainerDropTarget extends AbstractDropTarget {
-//        private int side;
-//
-//        private int cursor;
-//
-//        private LayoutPart targetPart;
-//
-//        private LayoutPart sourcePart;
-//
-//        public SashContainerDropTarget(LayoutPart sourcePart, int side, int cursor, LayoutPart targetPart) {
-//            this.setTarget(sourcePart, side, cursor, targetPart);
-//        }
-//        
-//        public void setTarget(LayoutPart sourcePart, int side, int cursor, LayoutPart targetPart) {
-//            this.side = side;
-//            this.targetPart = targetPart;
-//            this.sourcePart = sourcePart;
-//            this.cursor = cursor;
-//        }
-//
-//        public void drop() {
-//            if (side != SWT.NONE) {
-//                LayoutPart visiblePart = sourcePart;
-//
-//                if (sourcePart instanceof PartStack) {
-//                    visiblePart = getVisiblePart((PartStack) sourcePart);
-//                }
-//
-//                dropObject(getVisibleParts(sourcePart), visiblePart,
-//                        targetPart, side);
-//            }
-//        }
-//
-//        public Cursor getCursor() {
-//            return DragCursors.getCursor(DragCursors
-//                    .positionToDragCursor(cursor));
-//        }
-//
-//        public Rectangle getSnapRectangle() {
-//            Rectangle targetBounds;
-//
-//            if (targetPart != null) {
-//                targetBounds = DragUtil.getDisplayBounds(targetPart
-//                        .getControl());
-//            } else {
-//                targetBounds = DragUtil.getDisplayBounds(getParent());
-//            }
-//
-//            if (side == SWT.CENTER || side == SWT.NONE) {
-//                return targetBounds;
-//            }
-//
-//            int distance = Geometry.getDimension(targetBounds, !Geometry
-//                    .isHorizontal(side));
-//
-//            return Geometry.getExtrudedEdge(targetBounds,
-//                    (int) (distance * getDockingRatio(sourcePart, targetPart)),
-//                    side);
-//        }
-//    }
+// RAP [rh] Disabled AbstractDropTarget due to missing DnD support
+  //[ariddle] - added for view dragging
+    private class SashContainerDropTarget extends AbstractDropTarget {
+        private int side;
+
+        private int cursor;
+
+        private LayoutPart targetPart;
+
+        private LayoutPart sourcePart;
+
+        public SashContainerDropTarget(LayoutPart sourcePart, int side, int cursor, LayoutPart targetPart) {
+            this.setTarget(sourcePart, side, cursor, targetPart);
+        }
+        
+        public void setTarget(LayoutPart sourcePart, int side, int cursor, LayoutPart targetPart) {
+            this.side = side;
+            this.targetPart = targetPart;
+            this.sourcePart = sourcePart;
+            this.cursor = cursor;
+        }
+
+        public void drop() {
+            if (side != SWT.NONE) {
+                LayoutPart visiblePart = sourcePart;
+
+                if (sourcePart instanceof PartStack) {
+                    visiblePart = getVisiblePart((PartStack) sourcePart);
+                }
+
+                dropObject(getVisibleParts(sourcePart), visiblePart,
+                        targetPart, side);
+            }
+        }
+
+        public Cursor getCursor() {
+            return DragCursors.getCursor(DragCursors
+                    .positionToDragCursor(cursor));
+        }
+
+        public Rectangle getSnapRectangle() {
+            Rectangle targetBounds;
+
+            if (targetPart != null) {
+                targetBounds = DragUtil.getDisplayBounds(targetPart
+                        .getControl());
+            } else {
+                targetBounds = DragUtil.getDisplayBounds(getParent());
+            }
+
+            if (side == SWT.CENTER || side == SWT.NONE) {
+                return targetBounds;
+            }
+
+            int distance = Geometry.getDimension(targetBounds, !Geometry
+                    .isHorizontal(side));
+
+            return Geometry.getExtrudedEdge(targetBounds,
+                    (int) (distance * getDockingRatio(sourcePart, targetPart)),
+                    side);
+        }
+    }
 
     public PartSashContainer(String id, final WorkbenchPage page, Composite parentWidget) {
         super(id);
@@ -189,33 +192,34 @@ public abstract class PartSashContainer extends LayoutPart implements
     }
 
 // RAP [rh] unused code: was used by SashContainerDropTarget
-//    /**
-//     * Given an object associated with a drag (a PartPane or PartStack), this returns
-//     * the actual PartPanes being dragged.
-//     * 
-//     * @param pane
-//     * @return
-//     */
-//    private PartPane[] getVisibleParts(LayoutPart pane) {
-//        if (pane instanceof PartPane) {
-//            return new PartPane[] { (PartPane) pane };
-//        } else if (pane instanceof PartStack) {
-//            PartStack stack = (PartStack) pane;
-//
-//            LayoutPart[] children = stack.getChildren();
-//            ArrayList result = new ArrayList(children.length);
-//            for (int idx = 0; idx < children.length; idx++) {
-//                LayoutPart next = children[idx];
-//                if (next instanceof PartPane) {
-//                    result.add(next);
-//                }
-//            }
-//
-//            return (PartPane[]) result.toArray(new PartPane[result.size()]);
-//        }
-//
-//        return new PartPane[0];
-//    }
+  //[ariddle] - added for view dragging
+    /**
+     * Given an object associated with a drag (a PartPane or PartStack), this returns
+     * the actual PartPanes being dragged.
+     * 
+     * @param pane
+     * @return
+     */
+    private PartPane[] getVisibleParts(LayoutPart pane) {
+        if (pane instanceof PartPane) {
+            return new PartPane[] { (PartPane) pane };
+        } else if (pane instanceof PartStack) {
+            PartStack stack = (PartStack) pane;
+
+            LayoutPart[] children = stack.getChildren();
+            ArrayList result = new ArrayList(children.length);
+            for (int idx = 0; idx < children.length; idx++) {
+                LayoutPart next = children[idx];
+                if (next instanceof PartPane) {
+                    result.add(next);
+                }
+            }
+
+            return (PartPane[]) result.toArray(new PartPane[result.size()]);
+        }
+
+        return new PartPane[0];
+    }
 
     /**
      * Find the sashs around the specified part.
@@ -504,11 +508,12 @@ public abstract class PartSashContainer extends LayoutPart implements
             
             parent.addControlListener(resizeListener);
 
-// RAP [rh] DnD support missing            
-//            DragUtil.addDragTarget(parent, this);
-//            DragUtil.addDragTarget(parent.getShell(), this);
+// RAP [rh] DnD support missing
+          //[ariddle] - added for view dragging
+            DragUtil.addDragTarget(parent, this);
+            DragUtil.addDragTarget(parent.getShell(), this);
             
-            //ArrayList children = (ArrayList) this.children.clone();
+//            ArrayList children = (ArrayList) this.children.clone();
             for (int i = 0, length = children.size(); i < length; i++) {
                 LayoutPart child = (LayoutPart) children.get(i);
                 child.setContainer(this);
@@ -533,8 +538,9 @@ public abstract class PartSashContainer extends LayoutPart implements
             resizeSashes();
         } else {
 // RAP [rh] DnD support missing          
-//            DragUtil.removeDragTarget(parent, this);
-//            DragUtil.removeDragTarget(parent.getShell(), this);
+         //[ariddle] - added for view dragging
+            DragUtil.removeDragTarget(parent, this);
+            DragUtil.removeDragTarget(parent.getShell(), this);
 
             // remove all Listeners
             if (resizeListener != null && parent != null) {
@@ -998,166 +1004,168 @@ public abstract class PartSashContainer extends LayoutPart implements
     }
     
 // RAP [rh] Disabled implementation of IDragOverListener#drag()
-//    /* (non-Javadoc)
-//     * @see org.eclipse.ui.internal.dnd.IDragOverListener#drag(org.eclipse.swt.widgets.Control, java.lang.Object, org.eclipse.swt.graphics.Point, org.eclipse.swt.graphics.Rectangle)
-//     */
-//    public IDropTarget drag(Control currentControl, Object draggedObject,
-//            Point position, Rectangle dragRectangle) {
-//        if (!(draggedObject instanceof LayoutPart)) {
-//            return null;
-//        }
-//
-//        final LayoutPart sourcePart = (LayoutPart) draggedObject;
-//
-//        if (!isStackType(sourcePart) && !isPaneType(sourcePart)) {
-//            return null;
-//        }
-//
-//        boolean differentWindows = sourcePart.getWorkbenchWindow() != getWorkbenchWindow();
-//        boolean editorDropOK = ((sourcePart instanceof EditorPane) && 
-//        							sourcePart.getWorkbenchWindow().getWorkbench() == 
-//        							getWorkbenchWindow().getWorkbench());
-//        if (differentWindows && !editorDropOK) {
-//            return null;
-//        }
-//
-//        Rectangle containerBounds = DragUtil.getDisplayBounds(parent);
-//        LayoutPart targetPart = null;
-//        ILayoutContainer sourceContainer = isStackType(sourcePart) ? (ILayoutContainer) sourcePart
-//                : sourcePart.getContainer();
-//
-//        // If this container has no visible children
-//        if (getVisibleChildrenCount(this) == 0) {
-//            return createDropTarget(sourcePart, SWT.CENTER, SWT.CENTER, null);            
-//        }
-//        
-//        if (containerBounds.contains(position)) {
-//
-//            if (root != null) {
-//                targetPart = root.findPart(parent.toControl(position));
-//            }
-//
-//            if (targetPart != null) {
-//                final Control targetControl = targetPart.getControl();
-//
-//                final Rectangle targetBounds = DragUtil
-//                        .getDisplayBounds(targetControl);
-//
-//                int side = Geometry.getClosestSide(targetBounds, position);
-//                int distance = Geometry.getDistanceFromEdge(targetBounds, position, side);
-//               
-//                // is the source coming from a standalone part
-//                boolean standalone = (isStackType(sourcePart) 
-//                		&& ((PartStack) sourcePart).isStandalone()) 
-//                	|| (isPaneType(sourcePart) 
-//                			&& ((PartPane) sourcePart).getStack()!=null
-//                			&& ((PartPane) sourcePart).getStack().isStandalone());
-//                
-//                // Only allow dropping onto an existing stack from different windows
-//                if (differentWindows && targetPart instanceof EditorStack) {
-//                    IDropTarget target = targetPart.getDropTarget(draggedObject, position);
-//                   	return target;
-//                }
-//                
-//                // Reserve the 5 pixels around the edge of the part for the drop-on-edge cursor
-//                if (distance >= 5 && !standalone) {
-//                    // Otherwise, ask the part if it has any special meaning for this drop location
-//                    IDropTarget target = targetPart.getDropTarget(draggedObject, position);
-//                    if (target != null) {
-//                        return target;
-//                    }
-//                }
-//                
-//                if (distance > 30 && isStackType(targetPart) && !standalone) {
-//                    if (targetPart instanceof ILayoutContainer) {
-//                        ILayoutContainer targetContainer = (ILayoutContainer)targetPart;
-//                        if (targetContainer.allowsAdd(sourcePart)) {
-//                            side = SWT.CENTER;
-//                        }
-//                    }
-//                }
-//                
-//                // If the part doesn't want to override this drop location then drop on the edge
-//                
-//                // A "pointless drop" would be one that will put the dragged object back where it started.
-//                // Note that it should be perfectly valid to drag an object back to where it came from -- however,
-//                // the drop should be ignored.
-//
-//                boolean pointlessDrop = isZoomed();
-//
-//                if (sourcePart == targetPart) {
-//                    pointlessDrop = true;
-//                }
-//
-//                if ((sourceContainer != null)
-//                        && (sourceContainer == targetPart)
-//                        && getVisibleChildrenCount(sourceContainer) <= 1) {
-//                    pointlessDrop = true;
-//                }
-//
-//                if (side == SWT.CENTER
-//                        && sourcePart.getContainer() == targetPart) {
-//                    pointlessDrop = true;
-//                }
-//
-//                int cursor = side;
-//
-//                if (pointlessDrop) {
-//                    side = SWT.NONE;
-//                    cursor = SWT.CENTER;
-//                }
-//
-//                return createDropTarget(sourcePart, side, cursor, targetPart);
-//            }
-//        } else {
-//        	// We only allow dropping into a stack, not creating one
-//        	if (differentWindows)
-//        		return null;
-//        	
-//            int side = Geometry.getClosestSide(containerBounds, position);
-//
-//            boolean pointlessDrop = isZoomed();
-//
-//            if ((isStackType(sourcePart) && sourcePart.getContainer() == this)
-//                    || (sourcePart.getContainer() != null
-//                       && isPaneType(sourcePart) 
-//                       && getVisibleChildrenCount(sourcePart.getContainer()) <= 1) 
-//                       && ((LayoutPart)sourcePart.getContainer()).getContainer() == this) {
-//                if (root == null || getVisibleChildrenCount(this) <= 1) {
-//                    pointlessDrop = true;
-//                }
-//            }
-//
-//            int cursor = Geometry.getOppositeSide(side);
-//
-//            if (pointlessDrop) {
-//                side = SWT.NONE;
-//            }
-//
-//            return createDropTarget(sourcePart, side, cursor, null);
-//        }
-//
-//        return null;
-//    }
+  //[ariddle] - added for view dragging
+    /* (non-Javadoc)
+     * @see org.eclipse.ui.internal.dnd.IDragOverListener#drag(org.eclipse.swt.widgets.Control, java.lang.Object, org.eclipse.swt.graphics.Point, org.eclipse.swt.graphics.Rectangle)
+     */
+    public IDropTarget drag(Control currentControl, Object draggedObject,
+            Point position, Rectangle dragRectangle) {
+        if (!(draggedObject instanceof LayoutPart)) {
+            return null;
+        }
 
-// RAP [rh] DnD support missing    
-//    /**
-//     * @param sourcePart
-//     * @param targetPart
-//     * @param side
-//     * @param cursor
-//     * @return
-//     * @since 3.1
-//     */
-//    private SashContainerDropTarget createDropTarget(final LayoutPart sourcePart, int side, int cursor, LayoutPart targetPart) {
-//        if (dropTarget == null) {
-//            dropTarget = new SashContainerDropTarget(sourcePart, side, cursor,
-//                targetPart);
-//        } else {
-//            dropTarget.setTarget(sourcePart, side, cursor, targetPart);
-//        }
-//        return dropTarget;
-//    }
+        final LayoutPart sourcePart = (LayoutPart) draggedObject;
+
+        if (!isStackType(sourcePart) && !isPaneType(sourcePart)) {
+            return null;
+        }
+
+        boolean differentWindows = sourcePart.getWorkbenchWindow() != getWorkbenchWindow();
+        boolean editorDropOK = ((sourcePart instanceof EditorPane) && 
+        							sourcePart.getWorkbenchWindow().getWorkbench() == 
+        							getWorkbenchWindow().getWorkbench());
+        if (differentWindows && !editorDropOK) {
+            return null;
+        }
+
+        Rectangle containerBounds = DragUtil.getDisplayBounds(parent);
+        LayoutPart targetPart = null;
+        ILayoutContainer sourceContainer = isStackType(sourcePart) ? (ILayoutContainer) sourcePart
+                : sourcePart.getContainer();
+
+        // If this container has no visible children
+        if (getVisibleChildrenCount(this) == 0) {
+            return createDropTarget(sourcePart, SWT.CENTER, SWT.CENTER, null);            
+        }
+        
+        if (containerBounds.contains(position)) {
+
+            if (root != null) {
+                targetPart = root.findPart(parent.toControl(position));
+            }
+
+            if (targetPart != null) {
+                final Control targetControl = targetPart.getControl();
+
+                final Rectangle targetBounds = DragUtil
+                        .getDisplayBounds(targetControl);
+
+                int side = Geometry.getClosestSide(targetBounds, position);
+                int distance = Geometry.getDistanceFromEdge(targetBounds, position, side);
+               
+                // is the source coming from a standalone part
+                boolean standalone = (isStackType(sourcePart) 
+                		&& ((PartStack) sourcePart).isStandalone()) 
+                	|| (isPaneType(sourcePart) 
+                			&& ((PartPane) sourcePart).getStack()!=null
+                			&& ((PartPane) sourcePart).getStack().isStandalone());
+                
+                // Only allow dropping onto an existing stack from different windows
+                if (differentWindows && targetPart instanceof EditorStack) {
+                    IDropTarget target = targetPart.getDropTarget(draggedObject, position);
+                   	return target;
+                }
+                
+                // Reserve the 5 pixels around the edge of the part for the drop-on-edge cursor
+                if (distance >= 5 && !standalone) {
+                    // Otherwise, ask the part if it has any special meaning for this drop location
+                    IDropTarget target = targetPart.getDropTarget(draggedObject, position);
+                    if (target != null) {
+                        return target;
+                    }
+                }
+                
+                if (distance > 30 && isStackType(targetPart) && !standalone) {
+                    if (targetPart instanceof ILayoutContainer) {
+                        ILayoutContainer targetContainer = (ILayoutContainer)targetPart;
+                        if (targetContainer.allowsAdd(sourcePart)) {
+                            side = SWT.CENTER;
+                        }
+                    }
+                }
+                
+                // If the part doesn't want to override this drop location then drop on the edge
+                
+                // A "pointless drop" would be one that will put the dragged object back where it started.
+                // Note that it should be perfectly valid to drag an object back to where it came from -- however,
+                // the drop should be ignored.
+
+                boolean pointlessDrop = isZoomed();
+
+                if (sourcePart == targetPart) {
+                    pointlessDrop = true;
+                }
+
+                if ((sourceContainer != null)
+                        && (sourceContainer == targetPart)
+                        && getVisibleChildrenCount(sourceContainer) <= 1) {
+                    pointlessDrop = true;
+                }
+
+                if (side == SWT.CENTER
+                        && sourcePart.getContainer() == targetPart) {
+                    pointlessDrop = true;
+                }
+
+                int cursor = side;
+
+                if (pointlessDrop) {
+                    side = SWT.NONE;
+                    cursor = SWT.CENTER;
+                }
+
+                return createDropTarget(sourcePart, side, cursor, targetPart);
+            }
+        } else {
+        	// We only allow dropping into a stack, not creating one
+        	if (differentWindows)
+        		return null;
+        	
+            int side = Geometry.getClosestSide(containerBounds, position);
+
+            boolean pointlessDrop = isZoomed();
+
+            if ((isStackType(sourcePart) && sourcePart.getContainer() == this)
+                    || (sourcePart.getContainer() != null
+                       && isPaneType(sourcePart) 
+                       && getVisibleChildrenCount(sourcePart.getContainer()) <= 1) 
+                       && ((LayoutPart)sourcePart.getContainer()).getContainer() == this) {
+                if (root == null || getVisibleChildrenCount(this) <= 1) {
+                    pointlessDrop = true;
+                }
+            }
+
+            int cursor = Geometry.getOppositeSide(side);
+
+            if (pointlessDrop) {
+                side = SWT.NONE;
+            }
+
+            return createDropTarget(sourcePart, side, cursor, null);
+        }
+
+        return null;
+    }
+
+// RAP [rh] DnD support missing
+  //[ariddle] - added for view dragging
+    /**
+     * @param sourcePart
+     * @param targetPart
+     * @param side
+     * @param cursor
+     * @return
+     * @since 3.1
+     */
+    private SashContainerDropTarget createDropTarget(final LayoutPart sourcePart, int side, int cursor, LayoutPart targetPart) {
+        if (dropTarget == null) {
+            dropTarget = new SashContainerDropTarget(sourcePart, side, cursor,
+                targetPart);
+        } else {
+            dropTarget.setTarget(sourcePart, side, cursor, targetPart);
+        }
+        return dropTarget;
+    }
 
     /**
      * Returns true iff this PartSashContainer allows its parts to be stacked onto the given
