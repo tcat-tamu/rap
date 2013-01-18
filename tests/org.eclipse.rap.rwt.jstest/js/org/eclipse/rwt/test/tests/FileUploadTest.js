@@ -15,9 +15,9 @@
 
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -37,7 +37,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
       var shell = TestUtil.createShellByProtocol( "w2" );
       var widget = createFileUploadByProtocol( "w3", "w2" );
       var iframe = widget._iframe;
-       rwt.protocol.MessageProcessor.processOperation( {
+       rwt.remote.MessageProcessor.processOperation( {
         "target" : "w3",
         "action" : "destroy"
       } );
@@ -79,7 +79,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
         var shell = TestUtil.createShellByProtocol( "w2" );
         var widget = createFileUploadByProtocol( "w3", "w2" );
         setFileName( widget, "foo" );
-        rwt.protocol.MessageProcessor.processOperation( {
+        rwt.remote.MessageProcessor.processOperation( {
           "target" : "w3",
           "action" : "call",
           "method" : "submit",
@@ -295,7 +295,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
 
     testShowFocusIndicator : function() {
       var isChrome = rwt.client.Client.getBrowser() === "chrome";
-      var focusIndicator = org.eclipse.rwt.FocusIndicator.getInstance();
+      var focusIndicator = rwt.widgets.util.FocusIndicator.getInstance();
       if( focusIndicator._frame == null ) {
         focusIndicator._createFrame();
       }
@@ -344,7 +344,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
     },
 
     testSendValueChanged : function() {
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
+      var wm = rwt.remote.WidgetManager.getInstance();
       TestUtil.initRequestLog();
       var upload = createFileUpload();
       wm.add( upload, "w200", true );
@@ -357,7 +357,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
     },
 
     testDontSendFullPathValueSlash : function() {
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
+      var wm = rwt.remote.WidgetManager.getInstance();
       TestUtil.initRequestLog();
       var upload = createFileUpload();
       wm.add( upload, "w200", true );
@@ -370,7 +370,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
     },
 
     testDontSendFullPathValueBackSlash : function() {
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
+      var wm = rwt.remote.WidgetManager.getInstance();
       TestUtil.initRequestLog();
       var upload = createFileUpload();
       wm.add( upload, "w200", true );
@@ -434,7 +434,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.FileUploadTest", {
 // Helper
 
 var createFileUploadByProtocol = function( id, parentId ) {
-  rwt.protocol.MessageProcessor.processOperation( {
+  rwt.remote.MessageProcessor.processOperation( {
     "target" : id,
     "action" : "create",
     "type" : "rwt.widgets.FileUpload",
@@ -444,7 +444,7 @@ var createFileUploadByProtocol = function( id, parentId ) {
     }
   } );
   TestUtil.flush();
-  return rwt.protocol.ObjectRegistry.getObject( id );
+  return rwt.remote.ObjectRegistry.getObject( id );
 };
 
 var createFileUpload = function( noFlush ) {

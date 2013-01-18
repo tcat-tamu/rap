@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.List", {
+rwt.qx.Class.define( "rwt.widgets.List", {
   extend : rwt.widgets.base.BasicList,
 
   construct : function( multiSelection ) {
@@ -53,7 +53,7 @@ qx.Class.define( "rwt.widgets.List", {
       if( items.length > 0 && items[ 0 ].isCreated() ) {
         var itemHeight = this.getManager().getItemHeight( items[ 0 ] );
         if( itemHeight > 0 ) {
-          this._clientArea.setScrollTop( newIndex * itemHeight );
+          this.setVBarSelection( newIndex * itemHeight );
         }
       }
     },
@@ -77,6 +77,11 @@ qx.Class.define( "rwt.widgets.List", {
       this._applyTopIndex( this._topIndex );
     },
 
+    _updateScrollDimension : function() {
+      this.base( arguments );
+      this._applyTopIndex( this._topIndex );
+    },
+
     setHasSelectionListener : function( value ) {
       this._hasSelectionListener = value;
     },
@@ -86,8 +91,8 @@ qx.Class.define( "rwt.widgets.List", {
     },
 
     _onChangeLeadItem : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var wm = org.eclipse.swt.WidgetManager.getInstance();
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var wm = rwt.remote.WidgetManager.getInstance();
         var id = wm.findIdByWidget( this );
         var req = rwt.remote.Server.getInstance();
         var focusIndex = this._clientArea.indexOf( this.getManager().getLeadItem() );
@@ -96,10 +101,10 @@ qx.Class.define( "rwt.widgets.List", {
     },
 
     _onSelectionChange : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         this._sendSelectionChange();
         if( this._hasSelectionListener ) {
-          org.eclipse.swt.EventUtil.notifySelected( this );
+          rwt.remote.EventUtil.notifySelected( this );
         }
       }
       this._updateSelectedItemState();
@@ -112,19 +117,19 @@ qx.Class.define( "rwt.widgets.List", {
         var index = this._clientArea.indexOf( selectedItems[ i ] );
         selection.push( index );
       }
-      rwt.remote.Server.getInstance().getServerObject( this ).set( "selection", selection );
+      rwt.remote.Server.getInstance().getRemoteObject( this ).set( "selection", selection );
     },
 
     _onUserScroll : function( horizontal ) {
       var topIndex = this._isCreated ? this._getTopIndex() : 0;
       var server = rwt.remote.Server.getInstance();
-      var serverObject = server.getServerObject( this );
-      serverObject.set( "topIndex", topIndex );
+      var remoteObject = server.getRemoteObject( this );
+      remoteObject.set( "topIndex", topIndex );
     },
 
     _onDblClick : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() && this._hasDefaultSelectionListener ) {
-        org.eclipse.swt.EventUtil.notifyDefaultSelected( this );
+      if( !rwt.remote.EventUtil.getSuspended() && this._hasDefaultSelectionListener ) {
+        rwt.remote.EventUtil.notifyDefaultSelected( this );
       }
     },
 

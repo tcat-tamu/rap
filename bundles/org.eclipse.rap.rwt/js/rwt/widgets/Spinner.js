@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.Spinner", {
+rwt.qx.Class.define( "rwt.widgets.Spinner", {
   extend : rwt.widgets.base.Spinner,
 
   construct : function() {
@@ -121,9 +121,9 @@ qx.Class.define( "rwt.widgets.Spinner", {
     },
 
     _onChangeValue : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         var server = rwt.remote.Server.getInstance();
-        server.getServerObject( this ).set( "selection", this.getManager().getValue() );
+        server.getRemoteObject( this ).set( "selection", this.getManager().getValue() );
         if( this._hasSelectionListener ) {
           server.onNextSend( this._sendWidgetSelected, this );
           server.sendDelayed( 500 );
@@ -139,7 +139,7 @@ qx.Class.define( "rwt.widgets.Spinner", {
     },
 
     _onKeyDown : function( event ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         if(    event.getKeyIdentifier() == "Enter"
             && !event.isShiftPressed()
             && !event.isAltPressed()
@@ -160,11 +160,11 @@ qx.Class.define( "rwt.widgets.Spinner", {
     },
 
     _sendWidgetSelected : function() {
-      org.eclipse.swt.EventUtil.notifySelected( this );
+      rwt.remote.EventUtil.notifySelected( this );
     },
 
     _sendWidgetDefaultSelected : function() {
-      org.eclipse.swt.EventUtil.notifyDefaultSelected( this );
+      rwt.remote.EventUtil.notifyDefaultSelected( this );
     },
 
     /////////////////
@@ -192,7 +192,7 @@ qx.Class.define( "rwt.widgets.Spinner", {
       var result = floatValue.toFixed( digits );
       var separator = this.getDecimalSeparator();
       if( separator != "." ) {
-        var dot = rwt.util.String.escapeRegexpChars( "." );
+        var dot = rwt.util.Encoding.escapeRegexpChars( "." );
         result = result.replace( new RegExp( dot ), separator );
       }
       return result;
@@ -262,7 +262,7 @@ qx.Class.define( "rwt.widgets.Spinner", {
           var parseValue = strValue;
           var separator = this.getDecimalSeparator();
           if( this.getDigits() > 0 && separator != "." ) {
-            separator = rwt.util.String.escapeRegexpChars( separator );
+            separator = rwt.util.Encoding.escapeRegexpChars( separator );
             parseValue = strValue.replace( new RegExp( separator ), "." );
           }
           var value = parseFloat( parseValue );

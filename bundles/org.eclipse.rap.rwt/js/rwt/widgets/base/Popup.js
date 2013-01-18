@@ -14,7 +14,7 @@
 /**
  * @appearance popup
  */
-qx.Class.define("rwt.widgets.base.Popup",
+rwt.qx.Class.define("rwt.widgets.base.Popup",
 {
   extend : rwt.widgets.base.Parent,
 
@@ -216,8 +216,8 @@ qx.Class.define("rwt.widgets.base.Popup",
         }
       }
 
-      qx.ui.popup.PopupManager.getInstance().add(this);
-      qx.ui.popup.PopupManager.getInstance().update(this);
+      rwt.widgets.util.PopupManager.getInstance().add(this);
+      rwt.widgets.util.PopupManager.getInstance().update(this);
 
       this._showTimeStamp = (new Date()).valueOf();
       this.bringToFront();
@@ -235,7 +235,7 @@ qx.Class.define("rwt.widgets.base.Popup",
     {
       this.base(arguments);
 
-      qx.ui.popup.PopupManager.getInstance().remove(this);
+      rwt.widgets.util.PopupManager.getInstance().remove(this);
 
       this._hideTimeStamp = (new Date()).valueOf();
     },
@@ -260,8 +260,8 @@ qx.Class.define("rwt.widgets.base.Popup",
         var docWidth = doc.getClientWidth();
         var docHeight = doc.getClientHeight();
 
-        var scrollTop = qx.bom.Viewport.getScrollTop();
-        var scrollLeft = qx.bom.Viewport.getScrollLeft();
+        var scrollTop = rwt.html.Viewport.getScrollTop();
+        var scrollLeft = rwt.html.Viewport.getScrollLeft();
 
         var restrictToPageLeft = this.getRestrictToPageLeft() + scrollLeft;
         var restrictToPageRight = this.getRestrictToPageRight() - scrollLeft;
@@ -386,7 +386,7 @@ qx.Class.define("rwt.widgets.base.Popup",
 
     /**
      * Resets the zIndex of all registered popups and menus
-     * (getting the instances via the {@link qx.ui.popup.PopupManager} and
+     * (getting the instances via the {@link rwt.widgets.util.PopupManager} and
      * the {@link qx.ui.menu.Manager}) one higher than the defined minimum zIndex.
      *
      * @type member
@@ -394,14 +394,14 @@ qx.Class.define("rwt.widgets.base.Popup",
      */
     _sendTo : function()
     {
-      var vPopups = rwt.util.Object.getValues(qx.ui.popup.PopupManager.getInstance().getAll());
+      var vPopups = rwt.util.Objects.getValues(rwt.widgets.util.PopupManager.getInstance().getAll());
       var zIndexCompare = function(a, b) {
         return a.getZIndex() - b.getZIndex();
       };
-      if (org.eclipse.rwt.EventHandler.getMenuManager() != null)
+      if (rwt.event.EventHandler.getMenuManager() != null)
       {
-        var manager = org.eclipse.rwt.EventHandler.getMenuManager();
-        var vMenus = rwt.util.Object.getValues(manager.getAll());
+        var manager = rwt.event.EventHandler.getMenuManager();
+        var vMenus = rwt.util.Objects.getValues(manager.getAll());
         var vAll = vPopups.concat(vMenus).sort(zIndexCompare);
       }
       else
@@ -472,7 +472,7 @@ qx.Class.define("rwt.widgets.base.Popup",
 
       if (el)
       {
-       var elementPos = qx.bom.element.Location.get(el);
+       var elementPos = rwt.html.Location.get(el);
        this.setLocation(
          elementPos.left + (offsetX || 0),
          elementPos.top + (offsetY || 0)
@@ -513,7 +513,7 @@ qx.Class.define("rwt.widgets.base.Popup",
 
   destruct : function()
   {
-    qx.ui.popup.PopupManager.getInstance().remove(this);
+    rwt.widgets.util.PopupManager.getInstance().remove(this);
 
     this._disposeFields("_showTimeStamp", "_hideTimeStamp");
   }

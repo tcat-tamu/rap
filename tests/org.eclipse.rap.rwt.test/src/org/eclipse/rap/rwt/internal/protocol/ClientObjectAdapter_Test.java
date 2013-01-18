@@ -10,49 +10,53 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.protocol;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.eclipse.rap.rwt.testfixture.Fixture;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class ClientObjectAdapter_Test extends TestCase {
+public class ClientObjectAdapter_Test {
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
-  public void testNewId() {
-    String id1 = new ClientObjectAdapter().getId();
-    String id2 = new ClientObjectAdapter().getId();
+  @Test
+  public void testGetId_returnsIdWithCustomPrefix() {
+    ClientObjectAdapter adapter = new ClientObjectAdapter( "x" );
 
-    assertFalse( id1.equals( id2 ) );
+    String id = adapter.getId();
+
+    assertTrue( id.startsWith( "x" ) );
   }
 
-  public void testSameId() {
-    ClientObjectAdapter adapter = new ClientObjectAdapter();
+  @Test
+  public void testGetId_returnsStableId() {
+    ClientObjectAdapter adapter = new ClientObjectAdapter( "x" );
+
     String id1 = adapter.getId();
     String id2 = adapter.getId();
 
     assertEquals( id1, id2 );
   }
 
-  public void testPrefix() {
-    ClientObjectAdapter adapter = new ClientObjectAdapter();
-    String id1 = adapter.getId();
+  @Test
+  public void testGetId_differsForDifferentAdapters() {
+    String id1 = new ClientObjectAdapter( "x" ).getId();
+    String id2 = new ClientObjectAdapter( "x" ).getId();
 
-    assertTrue( id1.startsWith( "o" ) );
+    assertFalse( id2.equals( id1 ) );
   }
 
-  public void testCustomPrefix() {
-    ClientObjectAdapter adapter = new ClientObjectAdapter( "gl" );
-    String id1 = adapter.getId();
-
-    assertTrue( id1.startsWith( "gl" ) );
-  }
 }

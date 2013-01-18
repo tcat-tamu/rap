@@ -13,7 +13,7 @@
  * This class provides the client-side counterpart for
  * org.eclipse.swt.widget.Combo and org.eclipse.swt.custom.CCombo.
  */
-qx.Class.define( "rwt.widgets.Combo", {
+rwt.qx.Class.define( "rwt.widgets.Combo", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( isCCombo ) {
@@ -133,7 +133,7 @@ qx.Class.define( "rwt.widgets.Combo", {
     this._list.removeEventListener( "appear", this._onListAppear, this );
     // Solution taken from Qooxdoo implementation of ComboBox
     // in order to prevent memory leak and other problems.
-    if( this._list && !qx.core.Object.inGlobalDispose() ) {
+    if( this._list && !rwt.qx.Object.inGlobalDispose() ) {
       this._list.setParent( null );
     }
     this._disposeObjects( "_field",
@@ -144,8 +144,8 @@ qx.Class.define( "rwt.widgets.Combo", {
   },
 
   events : {
-    "itemsChanged" : "qx.event.type.Event",
-    "selectionChanged" : "qx.event.type.Event"
+    "itemsChanged" : "rwt.event.Event",
+    "selectionChanged" : "rwt.event.Event"
   },
 
   members : {
@@ -188,7 +188,7 @@ qx.Class.define( "rwt.widgets.Combo", {
 
     _onFocusIn : function( evt ) {
       if(    this._field.isCreated()
-          && !org.eclipse.swt.EventUtil.getSuspended() )
+          && !rwt.remote.EventUtil.getSuspended() )
       {
         this._handleSelectionChange();
       }
@@ -255,7 +255,7 @@ qx.Class.define( "rwt.widgets.Combo", {
         this._field._visualizeFocus();
       }
       if( !this._editable ) {
-        var focusIndicator = org.eclipse.rwt.FocusIndicator.getInstance();
+        var focusIndicator = rwt.widgets.util.FocusIndicator.getInstance();
         var cssSelector = this._ccombo ? "CCombo-FocusIndicator" : "Combo-FocusIndicator";
         focusIndicator.show( this, cssSelector, null );
       }
@@ -276,7 +276,7 @@ qx.Class.define( "rwt.widgets.Combo", {
         this._field._visualizeBlur();
       }
       if( !this._editable ) {
-        var focusIndicator = org.eclipse.rwt.FocusIndicator.getInstance();
+        var focusIndicator = rwt.widgets.util.FocusIndicator.getInstance();
         focusIndicator.hide( this );
       }
       this.removeState( "focused" );
@@ -294,12 +294,12 @@ qx.Class.define( "rwt.widgets.Combo", {
 
     _setListBounds : function() {
       if( this.getElement() ){
-        var elementPos = qx.bom.element.Location.get( this.getElement() );
+        var elementPos = rwt.html.Location.get( this.getElement() );
         var listLeft = elementPos.left;
         var comboTop = elementPos.top;
         var listTop = comboTop + this.getHeight();
-        var browserHeight = qx.html.Window.getInnerHeight( window );
-        var browserWidth = qx.html.Window.getInnerWidth( window );
+        var browserHeight = rwt.html.Window.getInnerHeight( window );
+        var browserWidth = rwt.html.Window.getInnerWidth( window );
         var itemsWidth = this._list.getPreferredWidth();
         var listWidth = Math.min( browserWidth - listLeft, itemsWidth );
         listWidth = Math.max( this.getWidth(), listWidth );
@@ -392,7 +392,7 @@ qx.Class.define( "rwt.widgets.Combo", {
         var fieldValue = value.getLabel().toString();
         this.setText( this._formatText( fieldValue ) );
         if( this._field.isCreated() ) {
-          if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+          if( !rwt.remote.EventUtil.getSuspended() ) {
             this._field.selectAll();
             this._handleSelectionChange();
           }
@@ -419,7 +419,7 @@ qx.Class.define( "rwt.widgets.Combo", {
     _formatText : function( value ) {
       var result = value;
       result = result.replace( /<[^>]+?>/g, "" );
-      result = qx.html.String.unescape( result );
+      result = rwt.util.Encoding.unescape( result );
       return result;
     },
 
@@ -480,7 +480,7 @@ qx.Class.define( "rwt.widgets.Combo", {
         this.setCapture( false );
       }
       if(    evt.getTarget() == this._field
-          && !org.eclipse.swt.EventUtil.getSuspended() )
+          && !rwt.remote.EventUtil.getSuspended() )
       {
         this._handleSelectionChange();
       } else if( this._dropped ) {
@@ -590,7 +590,7 @@ qx.Class.define( "rwt.widgets.Combo", {
           }
         break;
       }
-      if( this._field.isCreated() && !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( this._field.isCreated() && !rwt.remote.EventUtil.getSuspended() ) {
         this._handleSelectionChange();
       }
     },
@@ -633,7 +633,7 @@ qx.Class.define( "rwt.widgets.Combo", {
           evt.preventDefault();
         break;
       }
-      if( this._field.isCreated() && !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( this._field.isCreated() && !rwt.remote.EventUtil.getSuspended() ) {
         this._handleSelectionChange();
       }
       if( evt.getCharCode() !== 0 ) {
@@ -659,7 +659,7 @@ qx.Class.define( "rwt.widgets.Combo", {
         this._isModified = true;
         this._selected = null;
         this._resetListSelection();
-        if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+        if( !rwt.remote.EventUtil.getSuspended() ) {
           var req = rwt.remote.Server.getInstance();
           req.addEventListener( "send", this._onSend, this );
           if( this._hasModifyListener ) {
@@ -673,14 +673,14 @@ qx.Class.define( "rwt.widgets.Combo", {
     // Actions, connected with server communication
 
     _onTextBlur : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() && this._isModified ) {
+      if( !rwt.remote.EventUtil.getSuspended() && this._isModified ) {
         var req = rwt.remote.Server.getInstance();
         req.send();
       }
     },
 
     _onSend : function( evt ) {
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var id = widgetManager.findIdByWidget( this );
       var req = rwt.remote.Server.getInstance();
       req.addParameter( id + ".text", this._field.getComputedValue() );
@@ -691,20 +691,20 @@ qx.Class.define( "rwt.widgets.Combo", {
 
     _sendModifyText : function() {
       var server = rwt.remote.Server.getInstance();
-      server.getServerObject( this ).notify( "Modify" );
+      server.getRemoteObject( this ).notify( "Modify" );
       this._isModified = false;
     },
 
     _sendWidgetSelected : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var req = rwt.remote.Server.getInstance();
         var id = widgetManager.findIdByWidget( this );
         var list = this._list;
         var listItem = this._list.getSelectedItem();
         req.addParameter( id + ".selectionIndex", list.getItemIndex( listItem ) );
         if( this._hasSelectionListener ) {
-          org.eclipse.swt.EventUtil.notifySelected( this );
+          rwt.remote.EventUtil.notifySelected( this );
         }
         if( this._hasModifyListener ) {
           this._sendModifyText();
@@ -713,14 +713,14 @@ qx.Class.define( "rwt.widgets.Combo", {
     },
 
     _sendWidgetDefaultSelected : function() {
-      if( this._hasDefaultSelectionListener && !org.eclipse.swt.EventUtil.getSuspended() ) {
-        org.eclipse.swt.EventUtil.notifyDefaultSelected( this );
+      if( this._hasDefaultSelectionListener && !rwt.remote.EventUtil.getSuspended() ) {
+        rwt.remote.EventUtil.notifyDefaultSelected( this );
       }
     },
 
     _updateListVisibleRequestParam : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var req = rwt.remote.Server.getInstance();
         var id = widgetManager.findIdByWidget( this );
         req.addParameter( id + ".listVisible", this._list.getDisplay() );
@@ -747,7 +747,7 @@ qx.Class.define( "rwt.widgets.Combo", {
         length = 0;
       }
       if( this._selectionStart != start || this._selectionLength != length ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var id = widgetManager.findIdByWidget( this );
         var req = rwt.remote.Server.getInstance();
         this._selectionStart = start;

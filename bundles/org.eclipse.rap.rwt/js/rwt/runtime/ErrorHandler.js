@@ -11,7 +11,7 @@
 
 /*global console: false */
 
-qx.Class.define( "rwt.runtime.ErrorHandler", {
+rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
 
   statics : {
 
@@ -70,7 +70,7 @@ qx.Class.define( "rwt.runtime.ErrorHandler", {
       }
       var hrefAttr = "href=\"" + location + "\"";
       var html = content.replace( /\{HREF_URL\}/, hrefAttr );
-      html = rwt.protocol.EncodingUtil.replaceNewLines( html, "<br/>" );
+      html = rwt.util.Encoding.replaceNewLines( html, "<br/>" );
       if( freeze ) {
         this._freezeApplication();
       }
@@ -125,7 +125,7 @@ qx.Class.define( "rwt.runtime.ErrorHandler", {
       style.width = "100%";
       style.height = "100%";
       style.backgroundColor = "#808080";
-      org.eclipse.rwt.HtmlUtil.setOpacity( element, 0.2 );
+      rwt.html.Style.setOpacity( element, 0.2 );
       style.zIndex = 100000000;
       document.body.appendChild( element );
       return element;
@@ -175,8 +175,8 @@ qx.Class.define( "rwt.runtime.ErrorHandler", {
         var display = rwt.widgets.Display.getCurrent();
         display.setExitConfirmation( null );
         //qx.io.remote.RequestQueue.getInstance().setEnabled( false );
-        org.eclipse.rwt.EventHandler.detachEvents();
-        qx.core.Target.prototype.dispatchEvent = function() {};
+        rwt.event.EventHandler.detachEvents();
+        rwt.qx.Target.prototype.dispatchEvent = function() {};
         rwt.animation.Animation._stopLoop();
       } catch( ex ) {
         try {
@@ -191,8 +191,8 @@ qx.Class.define( "rwt.runtime.ErrorHandler", {
       var doc = rwt.widgets.base.ClientDocument.getInstance();
       doc.setSelectable( true );
       if( rwt.client.Client.isGecko() ) {
-        var EventHandlerUtil = org.eclipse.rwt.EventHandlerUtil;
-        qx.html.EventRegistration.removeEventListener( document.documentElement,
+        var EventHandlerUtil = rwt.event.EventHandlerUtil;
+        rwt.html.EventRegistration.removeEventListener( document.documentElement,
                                                        "mousedown",
                                                        EventHandlerUtil._ffMouseFixListener );
       }

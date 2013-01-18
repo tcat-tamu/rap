@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.Grid", {
+rwt.qx.Class.define( "rwt.widgets.Grid", {
 
   extend : rwt.widgets.base.Parent,
 
@@ -45,7 +45,7 @@ qx.Class.define( "rwt.widgets.Grid", {
     // Timer & Border
     this._mergeEventsTimer = new rwt.client.Timer( 50 );
     // Subwidgets
-    this._rowContainer = org.eclipse.rwt.GridUtil.createTreeRowContainer( argsMap );
+    this._rowContainer = rwt.widgets.util.GridUtil.createTreeRowContainer( argsMap );
     this._columns = {};
     this._horzScrollBar = new rwt.widgets.base.ScrollBar( true );
     this._vertScrollBar = new rwt.widgets.base.ScrollBar( false );
@@ -936,7 +936,7 @@ qx.Class.define( "rwt.widgets.Grid", {
     _sendSelectionChange : function( item ) {
       if( !this._inServerResponse() ) {
         var selection = this._getSelectionList();
-        rwt.remote.Server.getInstance().getServerObject( this ).set( "selection", selection );
+        rwt.remote.Server.getInstance().getRemoteObject( this ).set( "selection", selection );
         this._sendSelectionEvent( item, false, null );
       }
     },
@@ -944,7 +944,7 @@ qx.Class.define( "rwt.widgets.Grid", {
     _sendItemCheckedChange : function( item ) { // TODO [tb] : item events should be send by item
       if( !this._inServerResponse() ) {
         var req = rwt.remote.Server.getInstance();
-        var wm = org.eclipse.swt.WidgetManager.getInstance();
+        var wm = rwt.remote.WidgetManager.getInstance();
         var itemId = wm.findIdByWidget( item );
         req.addParameter( itemId + ".checked", item.isChecked() );
         this._sendSelectionEvent( item, false, "check" );
@@ -959,7 +959,7 @@ qx.Class.define( "rwt.widgets.Grid", {
         for( var i = 0; i < this._config.columnCount; i++ ) {
           sendArr[ i ] = arr[ i ] === true;
         }
-        server.getServerObject( item ).set( "cellChecked", sendArr );
+        server.getRemoteObject( item ).set( "cellChecked", sendArr );
         this._sendSelectionEvent( item, false, "check", cell );
       }
     },
@@ -967,15 +967,15 @@ qx.Class.define( "rwt.widgets.Grid", {
     _sendItemFocusChange : function() {
       if( !this._inServerResponse() ) {
         var req = rwt.remote.Server.getInstance();
-        var id = org.eclipse.swt.WidgetManager.getInstance().findIdByWidget( this );
+        var id = rwt.remote.WidgetManager.getInstance().findIdByWidget( this );
         req.addParameter( id + ".focusItem", this._getItemId( this._focusItem ) );
       }
     },
 
     _sendTopItemIndexChange : function() {
       var server = rwt.remote.Server.getInstance();
-      var serverObject = server.getServerObject( this );
-      serverObject.set( "topItemIndex", this._topItemIndex );
+      var remoteObject = server.getRemoteObject( this );
+      remoteObject.set( "topItemIndex", this._topItemIndex );
       if( this._hasSetDataListener || this._vertScrollBar.getHasSelectionListener() ) {
         this._startScrollBarChangesTimer( false );
       }
@@ -986,8 +986,8 @@ qx.Class.define( "rwt.widgets.Grid", {
       // but currently this is needed to sync the value with the
       // server when the scrollbars are hidden by the server.
       var server = rwt.remote.Server.getInstance();
-      var serverObject = server.getServerObject( this );
-      serverObject.set( "scrollLeft", this._horzScrollBar.getValue() );
+      var remoteObject = server.getRemoteObject( this );
+      remoteObject.set( "scrollLeft", this._horzScrollBar.getValue() );
       if( this._hasSetDataListener || this._horzScrollBar.getHasSelectionListener() ) {
         this._startScrollBarChangesTimer( true );
       }
@@ -1010,31 +1010,31 @@ qx.Class.define( "rwt.widgets.Grid", {
 
     _sendVerticalScrolled : function() {
       var server = rwt.remote.Server.getInstance();
-      server.getServerObject( this._vertScrollBar ).notify( "Selection" );
+      server.getRemoteObject( this._vertScrollBar ).notify( "Selection" );
     },
 
     _sendHorizontalScrolled : function() {
       var server = rwt.remote.Server.getInstance();
-      server.getServerObject( this._horzScrollBar ).notify( "Selection" );
+      server.getRemoteObject( this._horzScrollBar ).notify( "Selection" );
     },
 
     _sendSetData : function() {
       var server = rwt.remote.Server.getInstance();
-      server.getServerObject( this ).notify( "SetData" );
+      server.getRemoteObject( this ).notify( "SetData" );
     },
 
     _sendItemUpdate : function( item, event ) {
       if( !this._inServerResponse() ) {
         if( event.msg === "expanded" || event.msg === "collapsed" ) {
           var expanded = event.msg === "expanded";
-          rwt.remote.Server.getInstance().getServerObject( item ).set( "expanded", expanded );
+          rwt.remote.Server.getInstance().getRemoteObject( item ).set( "expanded", expanded );
           if( expanded && this._hasExpandListener ) {
-            rwt.remote.Server.getInstance().getServerObject( this ).notify( "Expand", {
-              "item" : rwt.protocol.ObjectRegistry.getId( item )
+            rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Expand", {
+              "item" : rwt.remote.ObjectRegistry.getId( item )
             } );
           } else if( !expanded && this._hasCollapseListener ) {
-            rwt.remote.Server.getInstance().getServerObject( this ).notify( "Collapse", {
-              "item" : rwt.protocol.ObjectRegistry.getId( item )
+            rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Collapse", {
+              "item" : rwt.remote.ObjectRegistry.getId( item )
             } );
           }
         }
@@ -1051,9 +1051,9 @@ qx.Class.define( "rwt.widgets.Grid", {
           "index" : !isNaN( index ) ? index : undefined
         };
         if( defaultSelected ) {
-          org.eclipse.swt.EventUtil.notifyDefaultSelected( this, properties );
+          rwt.remote.EventUtil.notifyDefaultSelected( this, properties );
         } else {
-          org.eclipse.swt.EventUtil.notifySelected( this, properties );
+          rwt.remote.EventUtil.notifySelected( this, properties );
         }
       }
     },
@@ -1065,7 +1065,7 @@ qx.Class.define( "rwt.widgets.Grid", {
       if( leftClick && mousedown && this.isFocusItem( item ) && this._selectionTimestamp != null ) {
         var stamp = new Date();
         var offset = event.getPageX();
-        var timeDiff = org.eclipse.swt.EventUtil.DOUBLE_CLICK_TIME;
+        var timeDiff = rwt.remote.EventUtil.DOUBLE_CLICK_TIME;
         var offsetDiff = 8;
         if (    stamp.getTime() - this._selectionTimestamp.getTime() < timeDiff
              && Math.abs( this._selectionOffsetX - offset ) < offsetDiff )
@@ -1091,7 +1091,7 @@ qx.Class.define( "rwt.widgets.Grid", {
     },
 
     _getItemId : function( item ) {
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
+      var wm = rwt.remote.WidgetManager.getInstance();
       var result;
       if( item.isCached() ) {
         result = wm.findIdByWidget( item );
@@ -1121,12 +1121,12 @@ qx.Class.define( "rwt.widgets.Grid", {
     },
 
     _multiSelectItem : function( event, item ) {
-      if( event instanceof qx.event.type.MouseEvent && event.isRightButtonPressed() ) {
+      if( event instanceof rwt.event.MouseEvent && event.isRightButtonPressed() ) {
         if( !this.isItemSelected( item ) ) {
           this._exclusiveSelectItem( item );
         }
       } else if( event.isCtrlPressed() ) {
-        if( event instanceof qx.event.type.KeyEvent && item != this._focusItem  ) {
+        if( event instanceof rwt.event.KeyEvent && item != this._focusItem  ) {
           this.setFocusItem( item );
         } else {
           this._ctrlSelectItem( item );
@@ -1362,7 +1362,7 @@ qx.Class.define( "rwt.widgets.Grid", {
     // helper
 
     _inServerResponse : function() {
-      return org.eclipse.swt.EventUtil.getSuspended();
+      return rwt.remote.EventUtil.getSuspended();
     },
 
     _isDragSource : function() {
@@ -1397,9 +1397,9 @@ qx.Class.define( "rwt.widgets.Grid", {
         var itemId = null;
         var columnIndex = -1;
         if( this._rowContainer.getHoverItem() ) {
-          var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+          var widgetManager = rwt.remote.WidgetManager.getInstance();
           itemId = widgetManager.findIdByWidget( this._rowContainer.getHoverItem() );
-          columnIndex = org.eclipse.rwt.GridUtil.getColumnByPageX( this, evt.getPageX() );
+          columnIndex = rwt.widgets.util.GridUtil.getColumnByPageX( this, evt.getPageX() );
         }
         this._cellToolTip.setCell( itemId, columnIndex );
       }

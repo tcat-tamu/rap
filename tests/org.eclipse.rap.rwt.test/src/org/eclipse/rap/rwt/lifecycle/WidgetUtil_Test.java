@@ -11,7 +11,10 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.lifecycle;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.testfixture.Fixture;
@@ -20,13 +23,30 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class WidgetUtil_Test extends TestCase {
+public class WidgetUtil_Test {
 
+  private Display display;
+  private Shell shell;
+
+  @Before
+  public void setUp() {
+    Fixture.setUp();
+    display = new Display();
+    shell = new Shell( display );
+  }
+
+  @After
+  public void tearDown() {
+    Fixture.tearDown();
+  }
+
+  @Test
   public void testFind() {
-    Display display = new Display();
-    Shell shell = new Shell( display );
     Composite composite = new Composite( shell, SWT.NONE );
     Button button = new Button( composite, SWT.PUSH );
     String shellId = WidgetUtil.getId( shell );
@@ -39,9 +59,8 @@ public class WidgetUtil_Test extends TestCase {
     assertNull( WidgetUtil.find( composite, shellId ) );
   }
 
+  @Test
   public void testGetVariant() {
-    Display display = new Display();
-    Shell shell = new Shell( display );
     String valid = "Foo_Bar_23_42";
     shell.setData( RWT.CUSTOM_VARIANT, valid );
     assertEquals( valid, WidgetUtil.getVariant( shell ) );
@@ -80,13 +99,15 @@ public class WidgetUtil_Test extends TestCase {
     }
   }
 
-  @Override
-  protected void setUp() throws Exception {
-    Fixture.setUp();
+  @Test
+  public void testInitializedForShell() {
+    Fixture.fakeNewRequest();
+    Fixture.fakeResponseWriter();
+    Composite shell = new Shell( display, SWT.NONE );
+
+    WidgetAdapter adapter = WidgetUtil.getAdapter( shell );
+
+    assertSame( shell.getAdapter( WidgetAdapter.class ), adapter );
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    Fixture.tearDown();
-  }
 }

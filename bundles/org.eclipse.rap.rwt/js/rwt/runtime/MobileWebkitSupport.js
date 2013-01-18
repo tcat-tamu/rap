@@ -13,7 +13,7 @@
 
 /*global alert:false, console:false */
 
-qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
+rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
 
   type : "static",
 
@@ -104,7 +104,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
       toolTip.setHideInterval( 15000 );
       toolTip.setMousePointerOffsetX( -35 );
       toolTip.setMousePointerOffsetY( -100 );
-      var manager = qx.ui.popup.ToolTipManager.getInstance();
+      var manager = rwt.widgets.util.ToolTipManager.getInstance();
       manager.handleMouseEvent = function( event ) {
         var type = event.getType();
         if( type === "mousedown" ) {
@@ -116,13 +116,13 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
     },
 
     _hideTabHighlight : function() {
-      qx.html.StyleSheet.createElement( " * { -webkit-tap-highlight-color: rgba(0,0,0,0); }" );
+      rwt.html.StyleSheet.createElement( " * { -webkit-tap-highlight-color: rgba(0,0,0,0); }" );
     },
 
     _bindListeners : function() {
-       this.__onTouchEvent = rwt.util.Function.bind( this._onTouchEvent, this );
-       this.__onGestureEvent = rwt.util.Function.bind( this._onGestureEvent, this );
-       this.__onOrientationEvent = rwt.util.Function.bind( this._onOrientationEvent, this );
+       this.__onTouchEvent = rwt.util.Functions.bind( this._onTouchEvent, this );
+       this.__onGestureEvent = rwt.util.Functions.bind( this._onGestureEvent, this );
+       this.__onOrientationEvent = rwt.util.Functions.bind( this._onOrientationEvent, this );
     },
 
     _registerListeners : function() {
@@ -150,7 +150,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
     },
 
     _registerFilter : function() {
-      var eventHandler = org.eclipse.rwt.EventHandler;
+      var eventHandler = rwt.event.EventHandler;
       eventHandler.setMouseEventFilter( this._filterMouseEvents, this );
     },
 
@@ -172,7 +172,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
 
     _onTouchEvent : function( domEvent ) {
       try {
-        if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+        if( !rwt.remote.EventUtil.getSuspended() ) {
           var type = domEvent.type;
           if( this._mouseEnabled ) {
             switch( type ) {
@@ -221,7 +221,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
     _handleTouchStart : function( domEvent ) {
       var touch = this._getTouch( domEvent );
       var target = domEvent.target;
-      var widgetTarget = org.eclipse.rwt.EventHandlerUtil.getOriginalTargetObject( target );
+      var widgetTarget = rwt.event.EventHandlerUtil.getOriginalTargetObject( target );
       var pos = [ touch.clientX, touch.clientY ];
       this._touchSession = {
        "type" : this._getSessionType( widgetTarget ),
@@ -393,7 +393,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
     },
 
     _isDraggableWidget : function ( widgetTarget ) {
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       // We find the nearest control because matching based on widgetTarget can produce too
       // generalized cases.
       var widget = widgetManager.findControl( widgetTarget );
@@ -421,7 +421,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
       var result = false;
       if( this._lastMouseClickTarget === target ) {
         var diff = ( ( new Date() ).getTime() ) - this._lastMouseClickTime;
-        result = diff < org.eclipse.swt.EventUtil.DOUBLE_CLICK_TIME;
+        result = diff < rwt.remote.EventUtil.DOUBLE_CLICK_TIME;
       }
       return result;
     },
@@ -502,7 +502,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
                             false, //altKey
                             false, //shiftKey
                             false, //metaKey
-                            qx.event.type.MouseEvent.buttons.left,
+                            rwt.event.MouseEvent.buttons.left,
                             null );
       event.originalEvent = originalEvent;
       target.dispatchEvent( event );
@@ -510,7 +510,7 @@ qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
 
     _postMouseEvent : function( type ) {
       if( type === "mouseup" ) {
-        qx.ui.popup.ToolTipManager.getInstance().setCurrentToolTip( null );
+        rwt.widgets.util.ToolTipManager.getInstance().setCurrentToolTip( null );
       }
     }
 

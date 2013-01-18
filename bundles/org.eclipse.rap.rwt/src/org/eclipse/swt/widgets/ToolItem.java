@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2011 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,7 @@
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -557,7 +557,7 @@ public class ToolItem extends Item {
     if( ( style & SWT.SEPARATOR ) == 0 ) {
       int frameHeight = getPadding().height + ( getBorderWidth() * 2 );
       if( !"".equals( getText() ) ) {
-        int charHeight = Graphics.getCharHeight( parent.getFont() );
+        int charHeight = TextSizeUtil.getCharHeight( parent.getFont() );
         height = Math.max( DEFAULT_HEIGHT, charHeight + frameHeight );
       }
       if( getImage() != null ) {
@@ -577,7 +577,7 @@ public class ToolItem extends Item {
     }
     if( hasText ) {
       Font font = parent.getFont();
-      result += Graphics.stringExtent( font, text ).x;
+      result += TextSizeUtil.stringExtent( font, text ).x;
     }
     if( hasText && hasImage ) {
       result += getSpacing();

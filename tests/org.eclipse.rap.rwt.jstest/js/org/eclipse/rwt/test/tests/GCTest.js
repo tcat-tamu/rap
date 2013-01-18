@@ -9,8 +9,8 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -21,7 +21,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       canvas.addToDocument();
       TestUtil.flush();
       assertTrue( canvas.isCreated() );
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       var context = gc._context;
       assertNotNull( context );
       assertEquals( "function", typeof context.beginPath );
@@ -45,7 +45,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       TestUtil.flush();
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
 
       assertIdentical( gc, gc._canvas.rwtObject );
       assertIdentical( gc, gc._textCanvas.rwtObject );
@@ -54,12 +54,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
 
     testCreateGCByProtocol : function() {
       this._createGCByProtocol();
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var shell = ObjectManager.getObject( "w2" );
       var canvas = ObjectManager.getObject( "w3" );
       var gc = ObjectManager.getObject( "w4" );
       assertTrue( canvas instanceof rwt.widgets.Composite );
-      assertTrue( gc instanceof org.eclipse.swt.graphics.GC );
+      assertTrue( gc instanceof rwt.widgets.GC );
       assertIdentical( shell, canvas.getParent() );
       assertIdentical( canvas, gc._control );
       assertTrue( canvas.getUserData( "isControl") );
@@ -72,15 +72,15 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       this._createGCByProtocol();
       TestUtil.flush();
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var shell = ObjectManager.getObject( "w2" );
       var canvas = ObjectManager.getObject( "w3" );
       var gc = ObjectManager.getObject( "w4" );
-      assertTrue( gc instanceof org.eclipse.swt.graphics.GC );
+      assertTrue( gc instanceof rwt.widgets.GC );
       var node = canvas._getTargetNode();
       assertTrue( node.childNodes.length > 1 );
 
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w4",
         "action" : "destroy"
@@ -99,8 +99,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
 //      "default" : function() {},
 //      "mshtml" : function() {
 //        var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-//        var graphicsUtil = org.eclipse.rwt.GraphicsUtil;
-//        var border = new org.eclipse.rwt.Border( 3, "rounded", "#FF00F0", [ 0, 1, 2, 3 ] );
+//        var graphicsUtil = rwt.graphics.GraphicsUtil;
+//        var border = new rwt.html.Border( 3, "rounded", "#FF00F0", [ 0, 1, 2, 3 ] );
 //        var parent = new rwt.widgets.Composite();
 //        parent.addToDocument();
 //        var canvas = new rwt.widgets.Composite();
@@ -130,7 +130,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       assertFalse( canvas.isCreated() );
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       assertNotNull( gc );
       assertNotNull( gc._canvas );
       var context = gc._context;
@@ -155,7 +155,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       assertTrue( canvas.isCreated() );
       var node = canvas._getTargetNode();
       assertIdentical( node.childNodes[ 0 ], widget.getElement() );
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       assertIdentical( node.childNodes[ 0 ], gc._canvas );
       assertIdentical( node.childNodes[ 1 ], gc._textCanvas );
       assertIdentical( node.childNodes[ 2 ], widget.getElement() );
@@ -169,7 +169,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       TestUtil.flush();
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       this._setProperty( gc, "strokeStyle", [ 1, 2, 3 ] );
       this._setProperty( gc, "fillStyle", [ 4, 5, 6 ] );
       this._setProperty( gc, "globalAlpha", 0.128 );
@@ -177,8 +177,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       this._setProperty( gc, "lineCap", "round" );
       this._setProperty( gc, "lineJoin", "bevel" );
       this._setProperty( gc, "font", [ [ "Arial" ], 16, true, true ] );
-      assertEquals( [ 1, 2, 3 ], rwt.util.ColorUtil.stringToRgb( gc._context.strokeStyle ) );
-      assertEquals( [ 4, 5, 6 ], rwt.util.ColorUtil.stringToRgb( gc._context.fillStyle ) );
+      assertEquals( [ 1, 2, 3 ], rwt.util.Colors.stringToRgb( gc._context.strokeStyle ) );
+      assertEquals( [ 4, 5, 6 ], rwt.util.Colors.stringToRgb( gc._context.fillStyle ) );
       assertEquals( 128, Math.round( gc._context.globalAlpha * 1000 ) );
       assertEquals( 4, gc._context.lineWidth );
       assertEquals( "round", gc._context.lineCap );
@@ -190,8 +190,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       gc.init( 300, 300,
                [ [ "Arial" ], 10, false, false ],
                [ 255, 255, 255, 255 ], [ 0, 0, 0, 255 ] );
-      assertEquals( [ 0, 0, 0 ], rwt.util.ColorUtil.stringToRgb( gc._context.strokeStyle ) );
-      assertEquals( [ 255, 255, 255 ], rwt.util.ColorUtil.stringToRgb( gc._context.fillStyle ) );
+      assertEquals( [ 0, 0, 0 ], rwt.util.Colors.stringToRgb( gc._context.strokeStyle ) );
+      assertEquals( [ 255, 255, 255 ], rwt.util.Colors.stringToRgb( gc._context.fillStyle ) );
       assertEquals( 1, gc._context.globalAlpha );
       assertEquals( 1, gc._context.lineWidth );
       assertEquals( "butt", gc._context.lineCap );
@@ -207,7 +207,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       TestUtil.flush();
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       this._setProperty( gc, "strokeStyle", [ 1,2,3, 255 ] );
       this._setProperty( gc, "fillStyle", [ 4, 5, 6, 255 ] );
       this._setProperty( gc, "globalAlpha", 0.128 );
@@ -219,16 +219,16 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       // Do not use "init" as setting the dimension clears the stack
       gc._context.clearRect( 0, 0, 300, 300 );
       gc._initFields( [ [ "Arial" ], 10, false, false ], [ 255, 255, 255, 255 ], [ 0, 0, 0, 255 ] );
-      assertEquals( [ 0, 0, 0 ], rwt.util.ColorUtil.stringToRgb( gc._context.strokeStyle ) );
-      assertEquals( [ 255, 255, 255 ], rwt.util.ColorUtil.stringToRgb( gc._context.fillStyle ) );
+      assertEquals( [ 0, 0, 0 ], rwt.util.Colors.stringToRgb( gc._context.strokeStyle ) );
+      assertEquals( [ 255, 255, 255 ], rwt.util.Colors.stringToRgb( gc._context.fillStyle ) );
       assertEquals( 1, gc._context.globalAlpha );
       assertEquals( 1, gc._context.lineWidth );
       assertEquals( "butt", gc._context.lineCap );
       assertEquals( "miter", gc._context.lineJoin );
       assertEquals( "10px Arial", gc._context.font );
       gc._context.restore();
-      assertEquals( [ 1, 2, 3 ], rwt.util.ColorUtil.stringToRgb( gc._context.strokeStyle ) );
-      assertEquals( [ 4, 5, 6 ], rwt.util.ColorUtil.stringToRgb( gc._context.fillStyle ) );
+      assertEquals( [ 1, 2, 3 ], rwt.util.Colors.stringToRgb( gc._context.strokeStyle ) );
+      assertEquals( [ 4, 5, 6 ], rwt.util.Colors.stringToRgb( gc._context.fillStyle ) );
       assertEquals( 128, Math.round( gc._context.globalAlpha * 1000 ) );
       assertEquals( 4, gc._context.lineWidth );
       assertEquals( "round", gc._context.lineCap );
@@ -245,7 +245,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       TestUtil.flush();
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       gc.init( 300, 300,
                [ [ "Arial" ], 10, false, false ],
                [ 255, 255, 255, 255 ], [ 0, 0, 0, 255 ] );
@@ -257,8 +257,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       assertEquals( 40, parseInt( textNode.style.left, 10 ) );
       assertEquals( 50, parseInt( textNode.style.top, 10 ) );
       assertTrue( textNode.style.font.indexOf( "Arial" ) != -1 );
-      assertEquals( [ 0, 0, 0 ], rwt.util.ColorUtil.stringToRgb( textNode.style.color ) );
-      assertEquals( [ 255, 255, 255 ], rwt.util.ColorUtil.stringToRgb( textNode.style.backgroundColor ) );
+      assertEquals( [ 0, 0, 0 ], rwt.util.Colors.stringToRgb( textNode.style.color ) );
+      assertEquals( [ 255, 255, 255 ], rwt.util.Colors.stringToRgb( textNode.style.backgroundColor ) );
       gc.init( 300, 300,
                [ [ "Arial" ], 10, false, false ],
                [ 255, 255, 255 ], [ 0, 0, 0 ] );
@@ -295,8 +295,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
       assertEquals( expected, gc._escapeText( text, false, false, false ) );
 
       gc.dispose();
-      rwt.protocol.ObjectRegistry.getObject( "w2" ).destroy();
-      rwt.protocol.ObjectRegistry.getObject( "w3" ).destroy();
+      rwt.remote.ObjectRegistry.getObject( "w2" ).destroy();
+      rwt.remote.ObjectRegistry.getObject( "w3" ).destroy();
     },
 
     /////////
@@ -305,7 +305,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
     _createGCByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -323,7 +323,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCTest", {
           "parent" : "w3"
         }
       } );
-      return rwt.protocol.ObjectRegistry.getObject( "w4" );
+      return rwt.remote.ObjectRegistry.getObject( "w4" );
     },
 
     _setProperty : function( gc, property, value ) {

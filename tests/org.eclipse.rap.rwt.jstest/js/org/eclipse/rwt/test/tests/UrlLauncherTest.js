@@ -11,16 +11,16 @@
 
 (function(){
 
-var ObjectRegistry = rwt.protocol.ObjectRegistry;
+var ObjectRegistry = rwt.remote.ObjectRegistry;
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 
 var launcher;
 var logger;
 var iframe;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.UrlLauncherTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.UrlLauncherTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 

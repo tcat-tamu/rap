@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.FileUpload", {
+rwt.qx.Class.define( "rwt.widgets.FileUpload", {
 
   extend : rwt.widgets.Button,
 
@@ -22,7 +22,7 @@ qx.Class.define( "rwt.widgets.FileUpload", {
     this._inputElement = null;
     this._iframe = null;
     this._cursor = "";
-    this.__onValueChange = rwt.util.Function.bind( this._onValueChange, this );
+    this.__onValueChange = rwt.util.Functions.bind( this._onValueChange, this );
     this.setEnableElementFocus( false );
     this._createIframeWidget();
   },
@@ -91,7 +91,7 @@ qx.Class.define( "rwt.widgets.FileUpload", {
       this._inputElement.setAttribute( "size", "1" );
       this._inputElement.style.cursor = this._cursor;
       this._inputElement.onchange = this.__onValueChange;
-      org.eclipse.rwt.HtmlUtil.setOpacity( this._inputElement, 0 );
+      rwt.html.Style.setOpacity( this._inputElement, 0 );
       this._formElement.appendChild( this._inputElement );
     },
 
@@ -109,9 +109,9 @@ qx.Class.define( "rwt.widgets.FileUpload", {
     _onValueChange : function( event ) {
       // TODO [tb] : implement setHasValueChangedListener?
       var fileName = this._formatFileName( this._getFileName() );
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         var req = rwt.remote.Server.getInstance();
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var id = widgetManager.findIdByWidget( this );
         req.addParameter( id + ".fileName", fileName );
         req.send();
@@ -246,8 +246,8 @@ qx.Class.define( "rwt.widgets.FileUpload", {
 
     // NOTE : key-handling interferes with native keyboard control. This
     //        disables the "pressed" state, but is still the lesser evil.
-    _onKeyDown : rwt.util.Function.returnTrue,
-    _onKeyUp : rwt.util.Function.returnTrue,
+    _onKeyDown : rwt.util.Functions.returnTrue,
+    _onKeyUp : rwt.util.Functions.returnTrue,
 
     // NOTE : In chrome (windows?), the input-element needs to be focused using
     //        tabulator for keyboard control to work. To minimize confusion,
@@ -261,7 +261,7 @@ qx.Class.define( "rwt.widgets.FileUpload", {
     _showFocusIndicator : function( allow ) {
       var isChrome = rwt.client.Client.getBrowser() === "chrome";
       if( !isChrome || allow ) {
-        var focusIndicator = org.eclipse.rwt.FocusIndicator.getInstance();
+        var focusIndicator = rwt.widgets.util.FocusIndicator.getInstance();
         var node =   this.getCellNode( 2 ) != null
                    ? this.getCellNode( 2 )
                    : this.getCellNode( 1 );

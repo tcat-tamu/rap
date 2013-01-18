@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright: 2004, 2010 1&1 Internet AG, Germany, http://www.1und1.de,
+ *  Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
  *                        and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -14,7 +14,7 @@
 /**
  * @appearance tab-view-bar
  */
-qx.Class.define("rwt.widgets.base.TabFolderBar",
+rwt.qx.Class.define("rwt.widgets.base.TabFolderBar",
 {
   extend : rwt.widgets.base.BoxLayout,
 
@@ -33,7 +33,7 @@ qx.Class.define("rwt.widgets.base.TabFolderBar",
 
     this.initZIndex();
     this.initHeight();
-    this._manager = new qx.ui.selection.RadioManager();
+    this._manager = new rwt.widgets.util.RadioManager();
   },
 
 
@@ -72,7 +72,7 @@ qx.Class.define("rwt.widgets.base.TabFolderBar",
      * Get the selection manager.
      *
      * @type member
-     * @return {qx.ui.selection.RadioManager} the selection manager of the bar.
+     * @return {rwt.widgets.util.RadioManager} the selection manager of the bar.
      */
     getManager : function() {
       return this._manager;

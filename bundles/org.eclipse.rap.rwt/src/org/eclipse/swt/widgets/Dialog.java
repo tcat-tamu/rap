@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,10 +11,11 @@
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+
 import org.eclipse.rap.rwt.Adaptable;
-import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.lifecycle.SimpleLifeCycle;
+import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.internal.widgets.IDialogAdapter;
 import org.eclipse.rap.rwt.widgets.DialogCallback;
 import org.eclipse.swt.SWT;
@@ -131,7 +132,7 @@ public abstract class Dialog implements Adaptable, SerializableCompatibility {
     checkParent( parent );
     this.parent = parent;
     this.style = style;
-    this.title = "";
+    title = "";
   }
 
   /**
@@ -234,7 +235,7 @@ public abstract class Dialog implements Adaptable, SerializableCompatibility {
   }
 
   protected void checkOperationMode() {
-    if( RWT.getLifeCycle() instanceof SimpleLifeCycle ) {
+    if( getApplicationContext().getLifeCycleFactory().getLifeCycle() instanceof SimpleLifeCycle ) {
       throw new UnsupportedOperationException( "Method not supported in JEE_COMPATIBILITY mode." );
     }
   }
@@ -251,7 +252,7 @@ public abstract class Dialog implements Adaptable, SerializableCompatibility {
 
   static int convertHorizontalDLUsToPixels( Control control, int dlus ) {
     Font dialogFont = control.getFont();
-    float charWidth = Graphics.getAvgCharWidth( dialogFont );
+    float charWidth = TextSizeUtil.getAvgCharWidth( dialogFont );
     float width = charWidth * dlus + HORIZONTAL_DIALOG_UNIT_PER_CHAR / 2;
     return ( int )( width / HORIZONTAL_DIALOG_UNIT_PER_CHAR );
   }

@@ -11,12 +11,12 @@
 
 (function(){
 
-var Processor = rwt.protocol.MessageProcessor;
-var ObjectManager = rwt.protocol.ObjectRegistry;
+var Processor = rwt.remote.MessageProcessor;
+var ObjectManager = rwt.remote.ObjectRegistry;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.JavaScriptExecutorTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.JavaScriptExecutorTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 

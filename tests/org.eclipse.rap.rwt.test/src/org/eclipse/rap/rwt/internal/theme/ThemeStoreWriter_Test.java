@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,17 +10,20 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.theme;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.testfixture.Fixture;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class ThemeStoreWriter_Test extends TestCase {
+public class ThemeStoreWriter_Test {
   private static final String THEME_WRITE_IMAGES = "themeWriteImages";
   private static final String THEME_WRITE_COLORS = "themeWriteColors";
   private static final String THEME_WRITE_SHADOW = "themeWriteShadow";
@@ -32,7 +35,19 @@ public class ThemeStoreWriter_Test extends TestCase {
   // static field used for performance improvements of test initialization
   private static Map<String,Theme> themes;
 
-  public void testSetCurrentThemeId() throws Exception {
+  @Before
+  public void setUp() throws Exception {
+    Fixture.setUp();
+    initializeThemesOnFirstSetUp();
+  }
+
+  @After
+  public void tearDown() {
+    Fixture.tearDown();
+  }
+
+  @Test
+  public void testSetCurrentThemeId() {
     ThemeCssElement element = new ThemeCssElement( "Button" );
     element.addProperty( "color" );
     element.addProperty( "background-image" );
@@ -57,7 +72,8 @@ public class ThemeStoreWriter_Test extends TestCase {
     assertTrue( output.contains( expected ) );
   }
 
-  public void testWriteAnimations() throws Exception {
+  @Test
+  public void testWriteAnimations() {
     ThemeCssElement element = new ThemeCssElement( "Menu" );
     element.addProperty( "animation" );
     Theme theme = getTheme( THEME_ANIMATIONS );
@@ -77,7 +93,8 @@ public class ThemeStoreWriter_Test extends TestCase {
     assertTrue( output.contains( expected ) );
   }
 
-  public void testWriteVerticalGradient() throws Exception {
+  @Test
+  public void testWriteVerticalGradient() {
     ThemeCssElement element = new ThemeCssElement( "Button" );
     element.addProperty( "background-image" );
     Theme theme = getTheme( THEME_WRITE_VERTICAL_GRADIENT );
@@ -98,7 +115,8 @@ public class ThemeStoreWriter_Test extends TestCase {
     assertTrue( output.contains( expected ) );
   }
 
-  public void testWriteHorizontalGradient() throws Exception {
+  @Test
+  public void testWriteHorizontalGradient() {
     ThemeCssElement element = new ThemeCssElement( "Button" );
     element.addProperty( "background-image" );
     Theme theme = getTheme( THEME_WRITE_HORIZONTAL_GRADIENT );
@@ -119,7 +137,8 @@ public class ThemeStoreWriter_Test extends TestCase {
     assertTrue( output.contains( expected ) );
   }
 
-  public void testWriteShadow() throws Exception {
+  @Test
+  public void testWriteShadow() {
     ThemeCssElement element = new ThemeCssElement( "Shell" );
     element.addProperty( "box-shadow" );
     Theme theme = getTheme( THEME_WRITE_SHADOW );
@@ -136,7 +155,8 @@ public class ThemeStoreWriter_Test extends TestCase {
     assertTrue( output.contains( expected ) );
   }
 
-  public void testWriteColors() throws Exception {
+  @Test
+  public void testWriteColors() {
     ThemeCssElement element = new ThemeCssElement( "Button" );
     element.addProperty( "color" );
     element.addProperty( "background-color" );
@@ -158,7 +178,8 @@ public class ThemeStoreWriter_Test extends TestCase {
     assertTrue( output.contains( expected ) );
   }
 
-  public void testWriteImages() throws Exception {
+  @Test
+  public void testWriteImages() {
     ThemeCssElement element = new ThemeCssElement( "Button" );
     element.addProperty( "background-image" );
     Theme theme = getTheme( THEME_WRITE_IMAGES );
@@ -181,17 +202,6 @@ public class ThemeStoreWriter_Test extends TestCase {
       + "\"background-image\": [ [ [ \".special\" ], \"154e1724\" ], [ [], \"c84ae54c.png\" ] ]\n"
       + "}";
     assertTrue( output.contains( expected ) );
-  }
-
-  @Override
-  protected void setUp() throws Exception {
-    Fixture.setUp();
-    initializeThemesOnFirstSetUp();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    Fixture.tearDown();
   }
 
   private void initializeThemesOnFirstSetUp() throws Exception {
@@ -267,7 +277,7 @@ public class ThemeStoreWriter_Test extends TestCase {
 
   private void registerTheme( String themeId, String cssCode ) throws IOException {
     Theme theme = ThemeTestUtil.createTheme( themeId, cssCode, ThemeTestUtil.RESOURCE_LOADER );
-    theme.initialize( RWTFactory.getThemeManager().getAllThemeableWidgets() );
+    theme.initialize( getApplicationContext().getThemeManager().getAllThemeableWidgets() );
     themes.put( themeId, theme );
   }
 

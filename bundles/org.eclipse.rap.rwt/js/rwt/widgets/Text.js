@@ -11,7 +11,7 @@
 
 (function(){
 
-qx.Class.define( "rwt.widgets.Text", {
+rwt.qx.Class.define( "rwt.widgets.Text", {
 
   extend : rwt.widgets.base.BasicText,
 
@@ -23,7 +23,7 @@ qx.Class.define( "rwt.widgets.Text", {
       this._inputOverflow = "auto";
       this.setAppearance( "text-area" );
       this.setAllowStretchY( true );
-      this.__oninput = rwt.util.Function.bindEvent( this._oninputDomTextarea, this );
+      this.__oninput = rwt.util.Functions.bindEvent( this._oninputDomTextarea, this );
     }
     this._hasDefaultSelectionListener = false;
     this._hasModifyListener = false;
@@ -90,7 +90,7 @@ qx.Class.define( "rwt.widgets.Text", {
     hasSelectionListener : function() {
       // Emulate SWT (on Windows) where a default button takes precedence over
       // a SelectionListener on a text field when both are on the same shell.
-      var shell = rwt.protocol.AdapterUtil.getShell( this );
+      var shell = rwt.remote.HandlerUtil.getShell( this );
       var defButton = shell ? shell.getDefaultButton() : null;
       // TODO [rst] On GTK, the SelectionListener is also off when the default
       //      button is invisible or disabled. Check with Windows and repair.
@@ -152,9 +152,9 @@ qx.Class.define( "rwt.widgets.Text", {
 
     _handleSelectionChange : function( start, length ) {
       this.base( arguments, start, length );
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        org.eclipse.swt.WidgetUtil.setPropertyParam( this, "selectionStart", start );
-        org.eclipse.swt.WidgetUtil.setPropertyParam( this, "selectionLength", length );
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        rwt.widgets.util.WidgetUtil.setPropertyParam( this, "selectionStart", start );
+        rwt.widgets.util.WidgetUtil.setPropertyParam( this, "selectionLength", length );
       }
     },
 
@@ -165,13 +165,13 @@ qx.Class.define( "rwt.widgets.Text", {
         server.sendDelayed( 500 );
         server.onNextSend( this._onSend, this );
       }
-      server.getServerObject( this ).set( "text", this.getComputedValue() );
+      server.getRemoteObject( this ).set( "text", this.getComputedValue() );
       this._detectSelectionChange();
     },
 
     _onSend : function() {
       if( this._modifyScheduled ) {
-        rwt.remote.Server.getInstance().getServerObject( this ).notify( "Modify", null, true );
+        rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Modify", null, true );
         this._modifyScheduled = false;
       }
     },
@@ -180,7 +180,7 @@ qx.Class.define( "rwt.widgets.Text", {
      * Sends a widget default selected event to the server.
      */
     _sendWidgetDefaultSelected : function( detail ) {
-      org.eclipse.swt.EventUtil.notifyDefaultSelected( this, 0, 0, 0, 0, detail );
+      rwt.remote.EventUtil.notifyDefaultSelected( this, 0, 0, 0, 0, detail );
     },
 
     ///////////////////
@@ -408,7 +408,7 @@ qx.Class.define( "rwt.widgets.Text", {
     _applyValue : function( newValue, oldValue ) {
       this.base( arguments, newValue, oldValue );
       this._updateMessageVisibility();
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         this._handleModification();
       }
     },
@@ -469,7 +469,7 @@ qx.Class.define( "rwt.widgets.Text", {
           var styleMap = this._getMessageStyle();
           style.color = styleMap.textColor || "";
           style.left = styleMap.paddingLeft + "px";
-          org.eclipse.rwt.HtmlUtil.setTextShadow( this._messageElement, styleMap.textShadow );
+          rwt.html.Style.setTextShadow( this._messageElement, styleMap.textShadow );
           this._getTargetNode().insertBefore( this._messageElement, this._inputElement );
         }
         if( this._messageElement ) {

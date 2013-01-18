@@ -15,15 +15,15 @@
  * This is the main widget, all visible objects in the application extend this.
  *
  * @appearance widget
- * @state selected Set by {@link qx.ui.selection.SelectionManager#renderItemSelectionState}
- * @state anchor Set by {@link qx.ui.selection.SelectionManager#renderItemAnchorState}
- * @state lead Set by {@link qx.ui.selection.SelectionManager#renderItemLeadState}
+ * @state selected Set by {@link rwt.widgets.util.SelectionManager#renderItemSelectionState}
+ * @state anchor Set by {@link rwt.widgets.util.SelectionManager#renderItemAnchorState}
+ * @state lead Set by {@link rwt.widgets.util.SelectionManager#renderItemLeadState}
  *
- * @state disabled Set by {@link qx.core.Object#enabled}
+ * @state disabled Set by {@link rwt.qx.Object#enabled}
  * @state focused Set by {@link #focused}
  */
-qx.Class.define( "rwt.widgets.base.Widget", {
-  extend : qx.core.Target,
+rwt.qx.Class.define( "rwt.widgets.base.Widget", {
+  extend : rwt.qx.Target,
   type : "abstract",
 
   construct : function() {
@@ -34,44 +34,44 @@ qx.Class.define( "rwt.widgets.base.Widget", {
   },
 
   events: {
-    "beforeAppear"    : "qx.event.type.Event",
-    "appear"          : "qx.event.type.Event",
-    "beforeDisappear" : "qx.event.type.Event",
-    "disappear"       : "qx.event.type.Event",
-    "insertDom"       : "qx.event.type.Event",
-    "create"          : "qx.event.type.Event",
-    "execute"         : "qx.event.type.Event",
-    "flush"           : "qx.event.type.DataEvent",
+    "beforeAppear"    : "rwt.event.Event",
+    "appear"          : "rwt.event.Event",
+    "beforeDisappear" : "rwt.event.Event",
+    "disappear"       : "rwt.event.Event",
+    "insertDom"       : "rwt.event.Event",
+    "create"          : "rwt.event.Event",
+    "execute"         : "rwt.event.Event",
+    "flush"           : "rwt.event.DataEvent",
 
-    /** (Fired by {@link org.eclipse.rwt.EventHandler}) */
-    "mouseover"       : "qx.event.type.MouseEvent",
-    "mousemove"       : "qx.event.type.MouseEvent",
-    "mouseout"        : "qx.event.type.MouseEvent",
-    "mousedown"       : "qx.event.type.MouseEvent",
-    "mouseup"         : "qx.event.type.MouseEvent",
-    "mousewheel"      : "qx.event.type.MouseEvent",
-    "click"           : "qx.event.type.MouseEvent",
-    "dblclick"        : "qx.event.type.MouseEvent",
-    "contextmenu"     : "qx.event.type.MouseEvent",
-    "elementOver"     : "qx.event.type.MouseEvent",
-    "elementOut"      : "qx.event.type.MouseEvent",
-    "keydown"         : "qx.event.type.KeyEvent",
-    "keypress"        : "qx.event.type.KeyEvent",
-    "keyup"           : "qx.event.type.KeyEvent",
+    /** (Fired by {@link rwt.event.EventHandler}) */
+    "mouseover"       : "rwt.event.MouseEvent",
+    "mousemove"       : "rwt.event.MouseEvent",
+    "mouseout"        : "rwt.event.MouseEvent",
+    "mousedown"       : "rwt.event.MouseEvent",
+    "mouseup"         : "rwt.event.MouseEvent",
+    "mousewheel"      : "rwt.event.MouseEvent",
+    "click"           : "rwt.event.MouseEvent",
+    "dblclick"        : "rwt.event.MouseEvent",
+    "contextmenu"     : "rwt.event.MouseEvent",
+    "elementOver"     : "rwt.event.MouseEvent",
+    "elementOut"      : "rwt.event.MouseEvent",
+    "keydown"         : "rwt.event.KeyEvent",
+    "keypress"        : "rwt.event.KeyEvent",
+    "keyup"           : "rwt.event.KeyEvent",
 
     /** (Fired by {@link rwt.widgets.base.Parent}) */
-    "focusout"        : "qx.event.type.FocusEvent",
-    "focusin"         : "qx.event.type.FocusEvent",
-    "blur"            : "qx.event.type.FocusEvent",
-    "focus"           : "qx.event.type.FocusEvent",
+    "focusout"        : "rwt.event.FocusEvent",
+    "focusin"         : "rwt.event.FocusEvent",
+    "blur"            : "rwt.event.FocusEvent",
+    "focus"           : "rwt.event.FocusEvent",
 
-    /** (Fired by {@link qx.event.handler.DragAndDropHandler}) */
-    "dragdrop"        : "qx.event.type.DragEvent",
-    "dragout"         : "qx.event.type.DragEvent",
-    "dragover"        : "qx.event.type.DragEvent",
-    "dragmove"        : "qx.event.type.DragEvent",
-    "dragstart"       : "qx.event.type.DragEvent",
-    "dragend"         : "qx.event.type.DragEvent"
+    /** (Fired by {@link rwt.event.DragAndDropHandler}) */
+    "dragdrop"        : "rwt.event.DragEvent",
+    "dragout"         : "rwt.event.DragEvent",
+    "dragover"        : "rwt.event.DragEvent",
+    "dragmove"        : "rwt.event.DragEvent",
+    "dragstart"       : "rwt.event.DragEvent",
+    "dragend"         : "rwt.event.DragEvent"
   },
 
   statics : {
@@ -122,7 +122,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     _autoFlushHelper : function() {
       try {
         rwt.widgets.base.Widget._autoFlushTimeout = null;
-        if( !qx.core.Object.inGlobalDispose() ) {
+        if( !rwt.qx.Object.inGlobalDispose() ) {
           rwt.widgets.base.Widget.flushGlobalQueues();
         }
       }catch( ex ) {
@@ -164,7 +164,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
 
     removeFromGlobalWidgetQueue : function(vWidget) {
       if (vWidget._isInGlobalWidgetQueue) {
-        rwt.util.Array.remove(rwt.widgets.base.Widget._globalWidgetQueue, vWidget);
+        rwt.util.Arrays.remove(rwt.widgets.base.Widget._globalWidgetQueue, vWidget);
         delete vWidget._isInGlobalWidgetQueue;
       }
     },
@@ -195,7 +195,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
 
     removeFromGlobalElementQueue : function(vWidget) {
       if (vWidget._isInGlobalElementQueue) {
-        rwt.util.Array.remove(rwt.widgets.base.Widget._globalElementQueue, vWidget);
+        rwt.util.Arrays.remove(rwt.widgets.base.Widget._globalElementQueue, vWidget);
         delete vWidget._isInGlobalElementQueue;
       }
     },
@@ -226,7 +226,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
 
     removeFromGlobalStateQueue : function(vWidget) {
       if (vWidget._isInGlobalStateQueue) {
-        rwt.util.Array.remove(rwt.widgets.base.Widget._globalStateQueue, vWidget);
+        rwt.util.Arrays.remove(rwt.widgets.base.Widget._globalStateQueue, vWidget);
         delete vWidget._isInGlobalStateQueue;
       }
     },
@@ -237,7 +237,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       // the queue may change while doing the flush so we work on a copy of
       // the queue and loop while the queue has any entries.
       while(Widget._globalStateQueue.length > 0) {
-        var queue = rwt.util.Array.copy(Widget._globalStateQueue);
+        var queue = rwt.util.Arrays.copy(Widget._globalStateQueue);
         Widget._globalStateQueue = [];
         for (var i=0, l=queue.length; i<l; i++) {
           var widget = queue[i];
@@ -261,7 +261,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
 
     removeFromGlobalJobQueue : function(vWidget) {
       if (vWidget._isInGlobalJobQueue) {
-        rwt.util.Array.remove(rwt.widgets.base.Widget._globalJobQueue, vWidget);
+        rwt.util.Arrays.remove(rwt.widgets.base.Widget._globalJobQueue, vWidget);
         delete vWidget._isInGlobalJobQueue;
       }
     },
@@ -293,7 +293,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
 
     removeFromGlobalLayoutQueue : function(vParent) {
       if (vParent._isInGlobalLayoutQueue) {
-        rwt.util.Array.remove(rwt.widgets.base.Widget._globalLayoutQueue, vParent);
+        rwt.util.Arrays.remove(rwt.widgets.base.Widget._globalLayoutQueue, vParent);
         delete vParent._isInGlobalLayoutQueue;
       }
     },
@@ -394,7 +394,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
         delete vLazyQueues[vKey];
       }
       // reset queue if it is empty. This frees some browser memory
-      if (rwt.util.Object.isEmpty(vLazyQueues)) {
+      if (rwt.util.Objects.isEmpty(vLazyQueues)) {
         rwt.widgets.base.Widget._lazyGlobalDisplayQueues = {};
       }
       // Reset display queue flag for widgets in fastQueue
@@ -556,7 +556,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       ];
       for (var i=0, l=a.length, p, b, t; i<l; i++) {
         p = a[i];
-        b = "_computed" + rwt.util.String.toFirstUp(p);
+        b = "_computed" + rwt.util.Strings.toFirstUp(p);
         t = b + "Type";
         statics.layoutPropertyTypes[p] = {
           dataType    : t,
@@ -577,7 +577,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     disableScrolling : function( widget ) {
       var el = widget._getTargetNode();
       if( el ) {
-        qx.html.Scroll.disableScrolling(el);
+        rwt.html.Scroll.disableScrolling(el);
       } else {
         widget.addEventListener( "appear", this._blockScrollingOnAppear, widget );
       }
@@ -586,7 +586,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     enableScrolling : function( widget ) {
       var el = widget._getTargetNode();
       if( el ) {
-        qx.html.Scroll.enableScrolling( el );
+        rwt.html.Scroll.enableScrolling( el );
       } else {
         widget.removeEventListener( "appear", this._blockScrollingOnAppear, widget );
       }
@@ -1542,16 +1542,16 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     // CHILDREN HANDLING
 
     // NOTE: Implemented in Parent.js
-    getChildren : rwt.util.Function.returnNull,
-    getChildrenLength : rwt.util.Function.returnZero,
-    hasChildren : rwt.util.Function.returnFalse,
-    isEmpty : rwt.util.Function.returnTrue,
-    indexOf : rwt.util.Function.returnNegativeIndex,
-    contains : rwt.util.Function.returnFalse,
-    getVisibleChildren : rwt.util.Function.returnNull,
-    getVisibleChildrenLength : rwt.util.Function.returnZero,
-    hasVisibleChildren : rwt.util.Function.returnFalse,
-    isVisibleEmpty : rwt.util.Function.returnTrue,
+    getChildren : rwt.util.Functions.returnNull,
+    getChildrenLength : rwt.util.Functions.returnZero,
+    hasChildren : rwt.util.Functions.returnFalse,
+    isEmpty : rwt.util.Functions.returnTrue,
+    indexOf : rwt.util.Functions.returnNegativeIndex,
+    contains : rwt.util.Functions.returnFalse,
+    getVisibleChildren : rwt.util.Functions.returnNull,
+    getVisibleChildrenLength : rwt.util.Functions.returnZero,
+    hasVisibleChildren : rwt.util.Functions.returnFalse,
+    isVisibleEmpty : rwt.util.Functions.returnTrue,
 
     /////////////////
     //  CORE MODIFIER
@@ -1592,7 +1592,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
         this._cachedInnerHeight = null;
         this._cachedOuterHeight = null;
         // Finally remove from children array
-        rwt.util.Array.removeAt(old.getChildren(), vOldIndex);
+        rwt.util.Arrays.removeAt(old.getChildren(), vOldIndex);
         // Invalidate visible children cache
         old._invalidateVisibleChildren();
         // Remove child from old parent's children queue
@@ -1609,7 +1609,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       if (value) {
         this._hasParent = true;
         if (typeof this._insertIndex == "number") {
-          rwt.util.Array.insertAt(value.getChildren(), this, this._insertIndex);
+          rwt.util.Arrays.insertAt(value.getChildren(), this, this._insertIndex);
           delete this._insertIndex;
         } else {
           value.getChildren().push(this);
@@ -1617,7 +1617,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       } else {
         this._hasParent = false;
       }
-      qx.core.Property.refresh(this);
+      rwt.qx.Property.refresh(this);
       return this._handleDisplayable("parent");
     },
 
@@ -1679,10 +1679,10 @@ qx.Class.define( "rwt.widgets.base.Widget", {
           rwt.widgets.base.Widget.addToGlobalElementQueue(this);
         }
         rwt.widgets.base.Widget.addToGlobalStateQueue( this );
-        if(!rwt.util.Object.isEmpty(this._jobQueue ) ) {
+        if(!rwt.util.Objects.isEmpty(this._jobQueue ) ) {
           rwt.widgets.base.Widget.addToGlobalJobQueue( this );
         }
-        if( !rwt.util.Object.isEmpty( this._childrenQueue ) ) {
+        if( !rwt.util.Objects.isEmpty( this._childrenQueue ) ) {
           rwt.widgets.base.Widget.addToGlobalLayoutQueue( this );
         }
         // displayable end
@@ -1718,9 +1718,9 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       return true;
     },
 
-    addToCustomQueues : rwt.util.Function.returnTrue,
-    removeFromCustomQueues : rwt.util.Function.returnTrue,
-    _handleDisplayableCustom : rwt.util.Function.returnTrue,
+    addToCustomQueues : rwt.util.Functions.returnTrue,
+    removeFromCustomQueues : rwt.util.Functions.returnTrue,
+    _handleDisplayableCustom : rwt.util.Functions.returnTrue,
 
     _computeDisplayable : function() {
       return this.getDisplay() && this.getParent() && this.getParent()._isDisplayable ? true : false;
@@ -1752,14 +1752,14 @@ qx.Class.define( "rwt.widgets.base.Widget", {
           this._innerStyle.height = height;
         }
       },
-      "default" : rwt.util.Function.returnTrue
+      "default" : rwt.util.Functions.returnTrue
     } ),
 
     _beforeDisappear : function() {
       // Remove any hover/pressed styles
       this.removeState("over");
 
-      if (qx.Class.isDefined("rwt.widgets.base.Button"))
+      if (rwt.qx.Class.isDefined("rwt.widgets.base.Button"))
       {
         this.removeState("pressed");
         this.removeState("abandoned");
@@ -1930,7 +1930,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       // 1. Pre checks
       var vQueue = this._jobQueue;
       var vParent = this.getParent();
-      if (!vParent || rwt.util.Object.isEmpty(vQueue)) {
+      if (!vParent || rwt.util.Objects.isEmpty(vQueue)) {
         return;
       }
       var vLayoutImpl = this instanceof rwt.widgets.base.Parent ? this.getLayoutImpl() : null;
@@ -2047,8 +2047,8 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     ////////////////////////////////////////////
     // METHODS TO GIVE THE LAYOUTERS INFORMATION
 
-    _isWidthEssential : rwt.util.Function.returnTrue,
-    _isHeightEssential : rwt.util.Function.returnTrue,
+    _isWidthEssential : rwt.util.Functions.returnTrue,
+    _isHeightEssential : rwt.util.Functions.returnTrue,
 
     _computeBoxWidthFallback : function() {
       return 0;
@@ -2060,12 +2060,12 @@ qx.Class.define( "rwt.widgets.base.Widget", {
 
     _computeBoxWidth : function() {
       var vLayoutImpl = this.getParent().getLayoutImpl();
-      return Math.max(0, rwt.util.Number.limit(vLayoutImpl.computeChildBoxWidth(this), this.getMinWidthValue(), this.getMaxWidthValue()));
+      return Math.max(0, rwt.util.Numbers.limit(vLayoutImpl.computeChildBoxWidth(this), this.getMinWidthValue(), this.getMaxWidthValue()));
     },
 
     _computeBoxHeight : function() {
       var vLayoutImpl = this.getParent().getLayoutImpl();
-      return Math.max(0, rwt.util.Number.limit(vLayoutImpl.computeChildBoxHeight(this), this.getMinHeightValue(), this.getMaxHeightValue()));
+      return Math.max(0, rwt.util.Numbers.limit(vLayoutImpl.computeChildBoxHeight(this), this.getMinHeightValue(), this.getMaxHeightValue()));
     },
 
     _computeOuterWidth : function() {
@@ -2180,7 +2180,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     // RECOMPUTE RANGES
 
     _recomputeRangeX : rwt.util.Variant.select("qx.client", {
-      "mshtml|opera|webkit" : function() {
+      "mshtml|newmshtml|opera|webkit" : function() {
         if (this._computedLeftTypeNull || this._computedRightTypeNull) {
           return false;
         }
@@ -2193,7 +2193,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     } ),
 
     _recomputeRangeY : rwt.util.Variant.select("qx.client", {
-      "mshtml|opera|webkit" : function() {
+      "mshtml|newmshtml|opera|webkit" : function() {
         if (this._computedTopTypeNull || this._computedBottomTypeNull) {
           return false;
         }
@@ -2209,7 +2209,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     // RECOMPUTE STRETCHING
 
     _recomputeStretchingX : rwt.util.Variant.select("qx.client", {
-      "mshtml|opera|webkit" : function() {
+      "mshtml|newmshtml|opera|webkit" : function() {
         if (this.getAllowStretchX() && this._computedWidthTypeNull) {
           this._computedWidthValue = null;
           this.addToLayoutChanges("width");
@@ -2226,7 +2226,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     } ),
 
     _recomputeStretchingY : rwt.util.Variant.select("qx.client", {
-      "mshtml|opera|webkit" : function() {
+      "mshtml|newmshtml|opera|webkit" : function() {
         if (this.getAllowStretchY() && this._computedHeightTypeNull) {
           this._computedHeightValue = null;
           this.addToLayoutChanges("height");
@@ -2893,8 +2893,8 @@ qx.Class.define( "rwt.widgets.base.Widget", {
      */
     _styleFromMap : function( data ) {
       this._prepareStyleMap( data );
-      var styler = qx.core.Property.$$method.style;
-      var unstyler = qx.core.Property.$$method.unstyle;
+      var styler = rwt.qx.Property.$$method.style;
+      var unstyler = rwt.qx.Property.$$method.unstyle;
       var value;
       for( var prop in data ) {
         value = data[prop];
@@ -2907,7 +2907,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     },
 
     _unstyleFromArray : function(data) {
-      var unstyler = qx.core.Property.$$method.unstyle;
+      var unstyler = rwt.qx.Property.$$method.unstyle;
       for (var i=0, l=data.length; i<l; i++) {
         this[unstyler[data[i]]]();
       }
@@ -2919,7 +2919,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
           var width = map.border.getWidthTop();
           var color = map.border.getColorTop();
           var radii = [ 0, 0, 0, 0 ];
-          map.border = new org.eclipse.rwt.Border( width, "rounded", color, radii );
+          map.border = new rwt.html.Border( width, "rounded", color, radii );
         }
       },
       "default" : function( map ) {
@@ -2966,7 +2966,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       "mshtml" : function(vStates) {},
       "default" : function(vStates) {
         if (vStates.focused) {
-          if (!qx.event.handler.FocusHandler.mouseFocus && !this.getHideFocus()) {
+          if (!rwt.widgets.util.FocusHandler.mouseFocus && !this.getHideFocus()) {
             this.setStyleProperty("outline", "1px dotted");
           }
         } else {
@@ -3188,7 +3188,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
         this.addState("disabled");
         // Also reset some states to be sure a pressed/hovered button gets reset
         this.removeState("over");
-        if (qx.Class.isDefined("rwt.widgets.base.Button")) {
+        if (rwt.qx.Class.isDefined("rwt.widgets.base.Button")) {
           this.removeState("abandoned");
           this.removeState("pressed");
         }
@@ -3226,7 +3226,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       return null;
     },
 
-    _ontabfocus : rwt.util.Function.returnTrue,
+    _ontabfocus : rwt.util.Functions.returnTrue,
 
     _applyFocused : function(value, old) {
       if (!this.isCreated()) {
@@ -3254,7 +3254,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       // Need no implementation for others then mshtml, because
       // all these browsers support css outlines and do not
       // have an attribute "hideFocus" as IE.
-      "default" : rwt.util.Function.returnTrue
+      "default" : rwt.util.Functions.returnTrue
     } ),
 
     _visualizeBlur : function() {
@@ -3270,7 +3270,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     },
 
     _visualizeFocus : function() {
-      var FocusHandler = qx.event.handler.FocusHandler;
+      var FocusHandler = rwt.widgets.util.FocusHandler;
       if (!FocusHandler.mouseFocus && !FocusHandler.blockFocus && this.getEnableElementFocus()) {
         try {
           this.getElement().focus();
@@ -3280,12 +3280,12 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     },
 
     focus : function() {
-      delete qx.event.handler.FocusHandler.mouseFocus;
+      delete rwt.widgets.util.FocusHandler.mouseFocus;
       this.setFocused(true);
     },
 
     blur : function() {
-      delete qx.event.handler.FocusHandler.mouseFocus;
+      delete rwt.widgets.util.FocusHandler.mouseFocus;
       this.setFocused(false);
     },
 
@@ -3293,7 +3293,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     // CAPTURING SUPPORT
 
     _applyCapture : function(value, old) {
-      var vMgr = org.eclipse.rwt.EventHandler;
+      var vMgr = rwt.event.EventHandler;
       if (old) {
         vMgr.setCaptureWidget(null);
       }
@@ -3418,7 +3418,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
      * inclusive, where 1 means totally opaque and 0 invisible.
      */
     _applyOpacity : function( value, old ) {
-      org.eclipse.rwt.HtmlUtil.setOpacity( this, value );
+      rwt.html.Style.setOpacity( this, value );
     },
 
     /////////////////
@@ -3524,7 +3524,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     // BACKGROUND IMAGE SUPPORT
 
     _applyBackgroundImage : function(value, old) {
-      var imageMgr = qx.io.image.Manager.getInstance();
+      var imageMgr = rwt.html.ImageManager.getInstance();
       if (old) {
         imageMgr.hide(old);
       }
@@ -3712,7 +3712,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     },
 
     _applyBackgroundGradient : function( value, oldValue ) {
-      org.eclipse.rwt.HtmlUtil.setBackgroundGradient( this, value );
+      rwt.html.Style.setBackgroundGradient( this, value );
       if( value === null ) {
         this.setStyleProperty( "backgroundImage", this.getStyleProperty( "backgroundImage" ) );
         this.setStyleProperty( "backgroundColor", this.getStyleProperty( "backgroundColor" ) );
@@ -3720,11 +3720,11 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     },
 
     _applyShadow : function( value, oldValue ) {
-      org.eclipse.rwt.HtmlUtil.setBoxShadow( this, value );
+      rwt.html.Style.setBoxShadow( this, value );
     },
 
     _applyTextShadow : function( value, oldValue ) {
-      org.eclipse.rwt.HtmlUtil.setTextShadow( this, value );
+      rwt.html.Style.setTextShadow( this, value );
     },
 
     _styleBackgroundColor : function( value ) {
@@ -3771,7 +3771,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
     _prepareGraphicsSupport : ( function() {
       var result;
       if( rwt.client.Client.supportsCss3() ) {
-        result = rwt.util.Function.returnTrue;
+        result = rwt.util.Functions.returnTrue;
       } else {
         result = function() {
           if( !this._targetNodeEnabled && !this._isCreated ) {
@@ -3824,7 +3824,7 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       if( value ) {
         value.renderWidget( this );
       } else {
-        org.eclipse.rwt.Border.resetWidget( this );
+        rwt.html.Border.resetWidget( this );
       }
       // RAP: Fix for Bug 301709, 380878
       this._outerFrame = this._computeOuterFrame();
@@ -3979,12 +3979,12 @@ qx.Class.define( "rwt.widgets.base.Widget", {
 
     getOffsetLeft : function() {
       this._visualPropertyCheck();
-      return qx.html.Offset.getLeft(this.getElement());
+      return rwt.html.Offset.getLeft(this.getElement());
     },
 
     getOffsetTop : function() {
       this._visualPropertyCheck();
-      return qx.html.Offset.getTop(this.getElement());
+      return rwt.html.Offset.getTop(this.getElement());
     },
 
     getScrollLeft : function() {
@@ -4048,14 +4048,14 @@ qx.Class.define( "rwt.widgets.base.Widget", {
       if (!this._isCreated || !this._isDisplayable) {
         return false;
       }
-      return qx.html.ScrollIntoView.scrollX(this.getElement(), alignLeft);
+      return rwt.html.ScrollIntoView.scrollX(this.getElement(), alignLeft);
     },
 
     scrollIntoViewY : function(alignTop) {
       if (!this._isCreated || !this._isDisplayable) {
         return false;
       }
-      return qx.html.ScrollIntoView.scrollY(this.getElement(), alignTop);
+      return rwt.html.ScrollIntoView.scrollY(this.getElement(), alignTop);
     },
 
     ////////////////////////

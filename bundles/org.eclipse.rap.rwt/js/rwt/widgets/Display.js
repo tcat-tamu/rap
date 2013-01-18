@@ -13,7 +13,7 @@ namespace( "rwt.widgets" );
 
 rwt.widgets.Display = function( properties ) {
   this._document = rwt.widgets.base.ClientDocument.getInstance();
-  this._request = rwt.remote.Server.getInstance();
+  this._server = rwt.remote.Server.getInstance();
   this._exitConfirmation = null;
   this._initialized = false;
   if( rwt.widgets.Display._current !== undefined ) {
@@ -27,6 +27,13 @@ rwt.widgets.Display.getCurrent = function() {
   return rwt.widgets.Display._current;
 };
 
+
+rwt.widgets.Display._onAppearFocus = function( evt ) {
+  var widget = this;
+  widget.focus();
+  widget.removeEventListener( "appear", rwt.widgets.Display._onAppearFocus, widget );
+};
+
 rwt.widgets.Display.prototype = {
 
   applyObjectId : function() {
@@ -36,24 +43,24 @@ rwt.widgets.Display.prototype = {
   },
 
   init : function() {
-    this._request.getMessageWriter().appendHead( "rwt_initialize", true );
+    this._server.getMessageWriter().appendHead( "rwt_initialize", true );
     this._appendWindowSize();
     this._appendSystemDPI();
     this._appendColorDepth();
     this._appendInitialHistoryEvent();
     this._appendTimezoneOffset();
     this._attachListener();
-    this._request.send();
+    this._server.send();
     this._initialized = true;
   },
 
   allowEvent : function() {
     // NOTE : in the future might need a parameter if there are multiple types of cancelable events
-    org.eclipse.rwt.KeyEventSupport.getInstance().allowEvent();
+    rwt.remote.KeyEventSupport.getInstance().allowEvent();
   },
 
   cancelEvent : function() {
-    org.eclipse.rwt.KeyEventSupport.getInstance().cancelEvent();
+    rwt.remote.KeyEventSupport.getInstance().cancelEvent();
   },
 
   beep : function() {
@@ -70,7 +77,12 @@ rwt.widgets.Display.prototype = {
   },
 
   setFocusControl : function( widgetId ) {
-    org.eclipse.swt.WidgetManager.getInstance().focus( widgetId );
+    var widget = rwt.remote.ObjectRegistry.getObject( widgetId );
+    if( widget.isSeeable() ) {
+      widget.focus();
+    } else {
+      widget.addEventListener( "appear", rwt.widgets.Display._onAppearFocus, widget );
+    }
   },
   
   //[ariddle] - added to support metrics gathering
@@ -106,8 +118,8 @@ rwt.widgets.Display.prototype = {
   _attachListener : function() {
     this._document.addEventListener( "windowresize", this._onResize, this );
     this._document.addEventListener( "keypress", this._onKeyPress, this );
-    this._request.addEventListener( "send", this._onSend, this );
-    org.eclipse.rwt.KeyEventSupport.getInstance(); // adds global KeyListener
+    this._server.addEventListener( "send", this._onSend, this );
+    rwt.remote.KeyEventSupport.getInstance(); // adds global KeyListener
     rwt.runtime.System.getInstance().addEventListener( "beforeunload", this._onBeforeUnload, this );
     rwt.runtime.System.getInstance().addEventListener( "unload", this._onUnload, this );
   },
@@ -115,8 +127,8 @@ rwt.widgets.Display.prototype = {
   _onResize : function( evt ) {
     this._appendWindowSize();
     // Fix for bug 315230
-    if( this._request.getRequestCounter() != null ) {
-      this._request.send();
+    if( this._server.getRequestCounter() != null ) {
+      this._server.send();
     }
   },
 
@@ -128,10 +140,10 @@ rwt.widgets.Display.prototype = {
 
   _onSend : function( evt ) {
     // TODO [tb] : This will attach the cursorLocation as the last operation, but should be first
-    var pageX = qx.event.type.MouseEvent.getPageX();
-    var pageY = qx.event.type.MouseEvent.getPageY();
+    var pageX = rwt.event.MouseEvent.getPageX();
+    var pageY = rwt.event.MouseEvent.getPageY();
     var location = [ pageX, pageY ];
-    rwt.remote.Server.getInstance().getServerObject( this ).set( "cursorLocation", location );
+    rwt.remote.Server.getInstance().getRemoteObject( this ).set( "cursorLocation", location );
   },
 
   _onBeforeUnload : function( event ) {
@@ -144,22 +156,22 @@ rwt.widgets.Display.prototype = {
   _onUnload : function() {
     this._document.removeEventListener( "windowresize", this._onResize, this );
     this._document.removeEventListener( "keypress", this._onKeyPress, this );
-    this._request.removeEventListener( "send", this._onSend, this );
+    this._server.removeEventListener( "send", this._onSend, this );
   },
 
   ///////////////////
   // client to server
 
   _appendWindowSize : function() {
-    var width = qx.html.Window.getInnerWidth( window );
-    var height = qx.html.Window.getInnerHeight( window );
+    var width = rwt.html.Window.getInnerWidth( window );
+    var height = rwt.html.Window.getInnerHeight( window );
     var bounds = [ 0, 0, width, height ];
-    rwt.remote.Server.getInstance().getServerObject( this ).set( "bounds", bounds );
+    rwt.remote.Server.getInstance().getRemoteObject( this ).set( "bounds", bounds );
   },
 
   _appendSystemDPI : function() {
     var dpi = this.getDPI();
-    rwt.remote.Server.getInstance().getServerObject( this ).set( "dpi", dpi );
+    rwt.remote.Server.getInstance().getRemoteObject( this ).set( "dpi", dpi );
   },
 
   _appendColorDepth : function() {
@@ -171,7 +183,7 @@ rwt.widgets.Display.prototype = {
       // Firefox detects 24bit and 32bit as 24bit, but 32bit is more likely
       depth = depth == 24 ? 32 : depth;
     }
-    rwt.remote.Server.getInstance().getServerObject( this ).set( "colorDepth", depth );
+    rwt.remote.Server.getInstance().getRemoteObject( this ).set( "colorDepth", depth );
   },
 
   _appendInitialHistoryEvent : function() {
@@ -181,10 +193,10 @@ rwt.widgets.Display.prototype = {
       var history = rwt.client.BrowserNavigation.getInstance();
       // TODO: Temporary workaround for 388835
       var type = "rwt.client.BrowserNavigation";
-      rwt.protocol.ObjectRegistry.add( type,
+      rwt.remote.ObjectRegistry.add( type,
                                        history,
-                                       rwt.protocol.AdapterRegistry.getAdapter( type ) );
-      server.getServerObject( history ).notify( "Navigation", {
+                                       rwt.remote.HandlerRegistry.getHandler( type ) );
+      server.getRemoteObject( history ).notify( "Navigation", {
         "state" : state.substr( 1 )
       } );
     }
@@ -211,8 +223,8 @@ rwt.widgets.Display.prototype = {
 
   _appendTimezoneOffset : function() {
     // NOTE : using ObjectRegistry implicitly registers the ClientInfo service
-    var clientObject = rwt.protocol.ObjectRegistry.getObject( "rwt.client.ClientInfo" );
-    var remoteObject = rwt.remote.Server.getInstance().getServerObject( clientObject );
+    var clientObject = rwt.remote.ObjectRegistry.getObject( "rwt.client.ClientInfo" );
+    var remoteObject = rwt.remote.Server.getInstance().getRemoteObject( clientObject );
     remoteObject.set( "timezoneOffset", clientObject.getTimezoneOffset() );
   }
 

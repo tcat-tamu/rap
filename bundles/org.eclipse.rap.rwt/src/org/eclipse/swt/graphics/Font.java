@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2011 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,8 +11,8 @@
  ******************************************************************************/
 package org.eclipse.swt.graphics;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
 import org.eclipse.swt.SWTException;
@@ -21,16 +21,8 @@ import org.eclipse.swt.SWTException;
 /**
  * Instances of this class manage resources that define how text looks when it
  * is displayed.
- * <p>
- * To create fonts, it is recommended to use one of the <code>getFont</code>
- * methods in class <code>Graphics</code> by providing a name, size and style
- * information or a <code>FontData</code> object which encapsulates this data.
- * </p>
- * 
+ *
  * @see FontData
- * @see Graphics
- * @see org.eclipse.rap.rwt.graphics.Graphics#getFont(FontData)
- * @see org.eclipse.rap.rwt.graphics.Graphics#getFont(String, int, int)
  * @since 1.0
  */
 public final class Font extends Resource {
@@ -48,12 +40,6 @@ public final class Font extends Resource {
    * which describes the desired font's appearance.
    * <p>
    * You must dispose the font when it is no longer required.
-   * </p>
-   * 
-   * <p><strong>Note</strong>, this constructor is provided for convenience when
-   * single-sourcing code with SWT. For RWT, the recommended way to create fonts
-   * is to use one of the <code>getFont</code> methods in class
-   * <code>Graphics</code>.
    * </p>
    *
    * @param device the device to create the font on
@@ -83,12 +69,6 @@ public final class Font extends Resource {
    * appearance.
    * <p>
    * You must dispose the font when it is no longer required.
-   * </p>
-   *
-   * <p><strong>Note</strong>, this constructor is provided for convenience when
-   * single-sourcing code with SWT. For RWT, the recommended way to create fonts
-   * is to use one of the <code>getFont</code> methods in class
-   * <code>Graphics</code>.
    * </p>
    *
    * @param device the device to create the font on
@@ -181,6 +161,7 @@ public final class Font extends Resource {
     return new FontData[] { fontData };
   }
 
+  @Override
   public boolean equals( Object object ) {
     boolean result;
     if( object == this ) {
@@ -194,6 +175,7 @@ public final class Font extends Resource {
     return result;
   }
 
+  @Override
   public int hashCode() {
     return internalFontData.hashCode() * 7;
   }
@@ -204,6 +186,7 @@ public final class Font extends Resource {
    *
    * @return a string representation of the receiver
    */
+  @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
     buffer.append( "Font {" );
@@ -228,6 +211,7 @@ public final class Font extends Resource {
   }
 
   private static FontData findFontData( FontData fontData ) {
-    return RWTFactory.getFontDataFactory().findFontData( fontData );
+    return getApplicationContext().getFontDataFactory().findFontData( fontData );
   }
+
 }

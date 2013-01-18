@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.ScrollBar", {
+rwt.qx.Class.define( "rwt.widgets.base.ScrollBar", {
 
   extend : rwt.widgets.base.AbstractSlider,
 
@@ -46,7 +46,7 @@ qx.Class.define( "rwt.widgets.base.ScrollBar", {
   },
 
   events: {
-    "changeValue" : "qx.event.type.Event"
+    "changeValue" : "rwt.event.Event"
   },
 
   members : {

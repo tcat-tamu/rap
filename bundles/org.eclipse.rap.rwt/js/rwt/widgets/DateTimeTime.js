@@ -10,18 +10,18 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.DateTimeTime", {
+rwt.qx.Class.define( "rwt.widgets.DateTimeTime", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( style ) {
     this.base( arguments );
-    this.setOverflow( qx.constant.Style.OVERFLOW_HIDDEN );
+    this.setOverflow( "hidden" );
     this.setAppearance( "datetime-time" );
 
     // Get styles
-    this._short = rwt.util.String.contains( style, "short" );
-    this._medium = rwt.util.String.contains( style, "medium" );
-    this._long = rwt.util.String.contains( style, "long" );
+    this._short = rwt.util.Strings.contains( style, "short" );
+    this._medium = rwt.util.Strings.contains( style, "medium" );
+    this._long = rwt.util.Strings.contains( style, "long" );
 
     // Has selection listener
     this._hasSelectionListener = false;
@@ -361,8 +361,8 @@ qx.Class.define( "rwt.widgets.DateTimeTime", {
     },
 
     _sendChanges : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var req = rwt.remote.Server.getInstance();
         var id = widgetManager.findIdByWidget( this );
         req.addParameter( id + ".hours",
@@ -379,7 +379,7 @@ qx.Class.define( "rwt.widgets.DateTimeTime", {
 
     _onInterval : function() {
       this._requestTimer.stop();
-      org.eclipse.swt.EventUtil.notifySelected( this );
+      rwt.remote.EventUtil.notifySelected( this );
     },
 
     setHours : function( value ) {

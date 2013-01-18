@@ -23,5 +23,19 @@
 
   <artifactId>org.eclipse.rap.equinox.target.feature</artifactId>
   <packaging>eclipse-feature</packaging>
+  
+  <repositories>
+    <repository>
+      <id>base-platform-repository</id>
+      <layout>p2</layout>
+      <url>${base-platform-repository}</url>
+    </repository>
+    <repository>
+      <id>base-platform-repository-with-ICU-bundle</id>
+      <layout>p2</layout>
+      <!-- This repository is required in order to pull in the base ICU bundle -->
+      <url>http://build.eclipse.org/rt/rap/base-platforms/2.0/M4/runtime-base</url>
+    </repository>
+  </repositories>
 
 </project>

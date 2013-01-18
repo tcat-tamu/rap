@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,15 +8,15 @@
  * Contributors:
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
-qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
+  extend : rwt.qx.Object,
 
   members : {
 
     testCreateDateTimeTimeByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -26,7 +26,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
           "parent" : "w2"
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertTrue( widget instanceof rwt.widgets.DateTimeTime );
       assertIdentical( shell, widget.getParent() );
@@ -42,7 +42,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
     testSetHoursByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -53,7 +53,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
           "hours" : 3
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertEquals( 3, widget._hoursTextField.getText() );
       shell.destroy();
@@ -63,7 +63,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
     testSetMinutesByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -74,7 +74,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
           "minutes" : 33
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertEquals( 33, widget._minutesTextField.getText() );
       shell.destroy();
@@ -84,7 +84,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
     testSetSecondsByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -95,7 +95,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
           "seconds" : 22
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertEquals( 22, widget._secondsTextField.getText() );
       shell.destroy();
@@ -105,7 +105,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
     testSetSubWidgetsBoundsByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -116,7 +116,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
           "subWidgetsBounds" : [ [ 8, 3, 5, 24, 18 ], [ 11, 27, 5, 6, 18 ] ]
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertEquals( 3, widget._hoursTextField.getLeft() );
       assertEquals( 5, widget._hoursTextField.getTop() );
@@ -133,7 +133,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
     testSetHasSelectionListenerByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -144,7 +144,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
         }
       } );
       TestUtil.protocolListen( "w3", { "Selection" : true } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertTrue( widget._hasSelectionListener );
       shell.destroy();
@@ -234,8 +234,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeTimeTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var style = "medium";
       var dateTime = new rwt.widgets.DateTimeTime( style );
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
-      widgetManager.add( dateTime, "w3", true );
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
+      widgetManager.add( dateTime, "w3", true, rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.DateTime" ) );
       dateTime.setSpace( 3, 115, 3, 20 );
       dateTime.addToDocument();
       TestUtil.flush();

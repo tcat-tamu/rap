@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,9 +15,9 @@ var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 
 var shell;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ControlDecoratorTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ControlDecoratorTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -42,9 +42,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ControlDecoratorTest", {
     testSetTextByProtocol : function() {
       var widget = this._createControlDecoratorByProtocol( "w3", "w2", [ "LEFT", "CENTER" ] );
 
-      TestUtil.protocolSet( "w3", { "text" : "foo && <> \" bar" } );
+      TestUtil.protocolSet( "w3", { "text" : "foo\n && <> \" bar" } );
 
-      assertEquals( "foo &amp;&amp; &lt;&gt; &quot; bar", widget._text );
+      assertEquals( "foo<br/> &amp;&amp; &lt;&gt; &quot; bar", widget._text );
       shell.destroy();
       widget.destroy();
     },
@@ -110,10 +110,10 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ControlDecoratorTest", {
       TestUtil.fakeMouseEventDOM(
           widget.getElement(),
           "dblclick",
-          qx.event.type.MouseEvent.buttons.left,
+          rwt.event.MouseEvent.buttons.left,
           0,
           0,
-          qx.event.type.DomEvent.SHIFT_MASK
+          rwt.event.DomEvent.SHIFT_MASK
        );
 
       var message = TestUtil.getLastMessage();
@@ -135,7 +135,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ControlDecoratorTest", {
     },
 
     _createControlDecoratorByProtocol : function( id, parentId, style ) {
-      rwt.protocol.MessageProcessor.processOperation( {
+      rwt.remote.MessageProcessor.processOperation( {
         "target" : id,
         "action" : "create",
         "type" : "rwt.widgets.ControlDecorator",
@@ -145,7 +145,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ControlDecoratorTest", {
         }
       } );
       TestUtil.flush();
-      return rwt.protocol.ObjectRegistry.getObject( id );
+      return rwt.remote.ObjectRegistry.getObject( id );
     }
 
   }

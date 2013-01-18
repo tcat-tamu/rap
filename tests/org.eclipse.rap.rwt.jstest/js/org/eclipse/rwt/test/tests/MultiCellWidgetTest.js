@@ -8,9 +8,9 @@
  * Contributors:
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
-qx.Class.define( "org.eclipse.rwt.test.tests.MultiCellWidgetTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MultiCellWidgetTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   construct : function() {
     this.base( arguments );
@@ -378,12 +378,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.MultiCellWidgetTest", {
 
     testFont : function() {
       var widget = this.createDefaultWidget();
-      widget.setFont( new qx.ui.core.Font( 10, [ "monospace" ] ) );
+      widget.setFont( new rwt.html.Font( 10, [ "monospace" ] ) );
       this.initWidget( widget, true );
       var style = widget._getTargetNode().lastChild.style;
       assertEquals( '10px', style.fontSize );
       assertTrue( style.fontFamily.search( 'monospace' ) != -1 );
-      widget.setFont( new qx.ui.core.Font( 12, [ "serif" ] ) );
+      widget.setFont( new rwt.html.Font( 12, [ "serif" ] ) );
       assertEquals( '12px', style.fontSize );
       assertTrue( style.fontFamily.search( 'serif' ) != -1 );
       this.disposeWidget( widget );
@@ -394,12 +394,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.MultiCellWidgetTest", {
       widget.setTextColor( "#FF0000" );
       this.initWidget( widget, true );
       var style = widget._getTargetNode().style;
-      var rgb = rwt.util.ColorUtil.stringToRgb( style.color );
+      var rgb = rwt.util.Colors.stringToRgb( style.color );
       assertEquals( 255, rgb[ 0 ] );
       assertEquals( 0, rgb[ 1 ] );
       assertEquals( 0 , rgb[ 2 ] );
       widget.setTextColor( "#00FF00" );
-      rgb = rwt.util.ColorUtil.stringToRgb( style.color );
+      rgb = rwt.util.Colors.stringToRgb( style.color );
       assertEquals( 0, rgb[ 0 ] );
       assertEquals( 255, rgb[ 1 ] );
       assertEquals( 0 , rgb[ 2 ] );

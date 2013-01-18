@@ -12,12 +12,12 @@
 (function(){
 
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-var MessageProcessor = rwt.protocol.MessageProcessor;
-var ObjectRegistry = rwt.protocol.ObjectRegistry;
+var MessageProcessor = rwt.remote.MessageProcessor;
+var ObjectRegistry = rwt.remote.ObjectRegistry;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -124,7 +124,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     testSetDefaultButton : function() {
       var shell = this._protocolCreateShell();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var button = new rwt.widgets.Button( "push" );
       widgetManager.add( button, "wButton", true );
       this._protocolSet( {
@@ -138,7 +138,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     testSetDefaultButtonToNull : function() {
       var shell = this._protocolCreateShell();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var button = new rwt.widgets.Button( "push" );
       widgetManager.add( button, "wButton", true );
       this._protocolSet( {
@@ -156,7 +156,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     testSetDefaultButtonBeforeCreate : function() {
       var shell = this._protocolCreateShell();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       this._protocolSet( {
         "defaultButton" : "wButton"
       } );
@@ -170,7 +170,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     testSetActiveControl : function() {
       var shell = this._protocolCreateShell();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var button = new rwt.widgets.Button( "push" );
       widgetManager.add( button, "wButton", true );
       this._protocolSet( {
@@ -184,7 +184,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     testSetActiveControlBeforeCreate : function() {
       var shell = this._protocolCreateShell();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       this._protocolSet( {
         "activeControl" : "wButton"
       } );
@@ -198,7 +198,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     testSetDefaultButtonAsActiveControlBeforeCreate : function() {
       var shell = this._protocolCreateShell();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       this._protocolSet( {
         "defaultButton" : "wButton",
         "activeControl" : "wButton"
@@ -240,7 +240,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     testSetMenu : function() {
       var shell = this._protocolCreateShell();
       var menu = new rwt.widgets.Menu();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       widgetManager.add( menu, "wMenu", true );
       this._protocolSet( {
         "menu" : "wMenu"
@@ -254,7 +254,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     testSetMenuBeforeCreate : function() {
       var shell = this._protocolCreateShell();
       var menu = new rwt.widgets.Menu();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       this._protocolSet( {
         "menu" : "wMenu"
       } );
@@ -289,7 +289,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     testSetChildren : function() {
       var shell = this._protocolCreateShell();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var button1 = new rwt.widgets.Button( "push" );
       widgetManager.add( button1, "w11", true );
       var button2 = new rwt.widgets.Button( "push" );
@@ -526,7 +526,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyFocusIn : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "FocusIn" : true } );
       shell.open();
@@ -534,7 +534,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
       otherShell.open();
       TestUtil.flush();
       otherShell.setFocused( true );
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       shell.setFocused( true );
 
@@ -545,7 +545,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyFocusOut : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "FocusOut" : true } );
       shell.open();
@@ -553,7 +553,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
       otherShell.open();
       TestUtil.flush();
       shell.setFocused( true );
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       otherShell.setFocused( true );
 
@@ -591,12 +591,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyMouseDown : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "MouseDown" : true } );
       this._protocolSet( { "visibility" : true } );
       TestUtil.flush();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       TestUtil.click( shell, 10, 20 );
 
@@ -612,12 +612,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyMouseUp : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "MouseUp" : true } );
       this._protocolSet( { "visibility" : true } );
       TestUtil.flush();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       TestUtil.ctrlClick( shell );
 
@@ -633,12 +633,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyMouseDoubleClick : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "MouseDoubleClick" : true } );
       this._protocolSet( { "visibility" : true } );
       TestUtil.flush();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       TestUtil.doubleClick( shell );
 
@@ -654,14 +654,14 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyMouseDoubleClickWithAllListeners : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "MouseDown" : true } );
       this._protocolListen( { "MouseDoubleClick" : true } );
       this._protocolListen( { "MouseUp" : true } );
       this._protocolSet( { "visibility" : true } );
       TestUtil.flush();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       TestUtil.doubleClick( shell );
 
@@ -703,12 +703,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyMenuDetect : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "MenuDetect" : true } );
       this._protocolSet( { "visibility" : true } );
       TestUtil.flush();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       TestUtil.press( shell, "Apps", false, 0 );
 
@@ -726,12 +726,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     testNotifyHelp : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = this._protocolCreateShell();
       this._protocolListen( { "Help" : true } );
       this._protocolSet( { "visibility" : true } );
       TestUtil.flush();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       TestUtil.press( shell, "F1", false, 0 );
 
@@ -744,7 +744,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     testDisposeShell : function() {
       var shell = this._protocolCreateShell();
       shell.setVisibility( true );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "destroy"
@@ -779,14 +779,14 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
 
     _disposeShell : function( id ) {
       TestUtil.flush(); // appear to call _beforeDisappear later
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var shell = widgetManager.findWidgetById( id ? id : "w3" );
       shell.getWindowManager().setActiveWindow( null ); // remove shell without setting another
       widgetManager.dispose( id ? id : "w3" );
     },
 
     _protocolCreateShell : function( id, parentId ) {
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       var props = {
         "style" : [ "BORDER", "APPLICATION_MODAL", "ON_TOP", "TITLE", "TOOL", "SHEET", "MIN" ]
       };
@@ -799,13 +799,13 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
         "type" : "rwt.widgets.Shell",
         "properties" : props
       } );
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var result = widgetManager.findWidgetById( id ? id : "w3" );
       return result;
     },
 
     _protocolSet : function( properties ) {
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "set",
@@ -814,7 +814,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     _protocolCall : function( targetId, method ) {
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : targetId,
         "action" : "call",
@@ -824,7 +824,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellProtocolIntegrationTest", {
     },
 
     _protocolListen : function( properties ) {
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "listen",

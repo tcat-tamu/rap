@@ -9,8 +9,8 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.PerformanceTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.PerformanceTest", {
+  extend : rwt.qx.Object,
   
   members : {
     
@@ -43,13 +43,13 @@ qx.Class.define( "org.eclipse.rwt.test.tests.PerformanceTest", {
 
     // NOTE: Values need to change due to potential setter optimizations.
     _syncEval : function( iterations ) {
-      var evalText1 = "var wm = org.eclipse.swt.WidgetManager.getInstance();";
+      var evalText1 = "var wm = rwt.remote.WidgetManager.getInstance();";
       evalText1 += "var w = wm.findWidgetById( \"dummyId\" );";
       evalText1 += "w.setTextColor( \"#c20017\" );";
       evalText1 += "w.setLeft( 100 );";
       evalText1 += "w.setTop( 100 );";
       evalText1 += "w.setLabel( \"foo\" );";
-      var evalText2 = "var wm = org.eclipse.swt.WidgetManager.getInstance();";
+      var evalText2 = "var wm = rwt.remote.WidgetManager.getInstance();";
       evalText2 += "var w = wm.findWidgetById( \"dummyId\" );";
       evalText2 += "w.setTextColor( \"#000000\" );";
       evalText2 += "w.setLeft( 200 );";
@@ -80,8 +80,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.PerformanceTest", {
       };
       var startTime = ( new Date() ).getTime();
       for( var i = 0; i < iterations; i++ ) {
-        rwt.protocol.MessageProcessor.processSet( "dummyId", details1 );
-        rwt.protocol.MessageProcessor.processSet( "dummyId", details2 );
+        rwt.remote.MessageProcessor.processSet( "dummyId", details1 );
+        rwt.remote.MessageProcessor.processSet( "dummyId", details2 );
       }
       var endTime = ( new Date() ).getTime();
       return endTime - startTime;
@@ -89,10 +89,10 @@ qx.Class.define( "org.eclipse.rwt.test.tests.PerformanceTest", {
 
     // NOTE: Values need to change due to potential setter optimizations.
     _syncMixed : function( iterations ) {
-      var evalProc1 = "rwt.protocol.MessageProcessor.processSet( \"dummyId\",";
+      var evalProc1 = "rwt.remote.MessageProcessor.processSet( \"dummyId\",";
       evalProc1 += "{ \"textColor\" : \"#c20017\",\"left\" : 100,\"top\" : 100,\"label\" : \"foo\"\ }";
       evalProc1 += ");"
-      var evalProc2 = "rwt.protocol.MessageProcessor.processSet( \"dummyId\",";
+      var evalProc2 = "rwt.remote.MessageProcessor.processSet( \"dummyId\",";
       evalProc2 += "{ \"textColor\" : \"#000000\",\"left\" : 200,\"top\" : 200,\"label\" : \"bar\"\ }";
       evalProc2 += ");"
       var startTime = ( new Date() ).getTime();
@@ -109,9 +109,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.PerformanceTest", {
 
     _createDummyTarget : function( fakeProperties ) {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
-      var registry = rwt.protocol.AdapterRegistry;
-      var processor = rwt.protocol.MessageProcessor;
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
+      var registry = rwt.remote.HandlerRegistry;
+      var processor = rwt.remote.MessageProcessor;
       var dummy = new rwt.widgets.base.Atom();
       dummy.setLocation( 30, 10 );
       dummy.setDimension( 10, 10 );

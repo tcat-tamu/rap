@@ -16,7 +16,7 @@
  *
  * @appearance image
  */
-qx.Class.define("rwt.widgets.base.Image",
+rwt.qx.Class.define("rwt.widgets.base.Image",
 {
   extend : rwt.widgets.base.Terminator,
 
@@ -73,7 +73,7 @@ qx.Class.define("rwt.widgets.base.Image",
 
   events : {
     /** Fires if an image could not be preloaded  */
-    "error" : "qx.event.type.Event"
+    "error" : "rwt.event.Event"
   },
 
 
@@ -155,7 +155,7 @@ qx.Class.define("rwt.widgets.base.Image",
     /** The assigned preloader instance of the image. */
     preloader :
     {
-      check : "qx.io.image.Preloader",
+      check : "rwt.html.ImagePreloader",
       apply : "_applyPreloader",
       nullable : true
     },
@@ -217,7 +217,7 @@ qx.Class.define("rwt.widgets.base.Image",
     */
 
     /**
-     * Registers an image at the image manager (qx.io.image.Manager) and increases the
+     * Registers an image at the image manager (rwt.html.ImageManager) and increases the
      * visible counter
      *
      * @type member
@@ -228,7 +228,7 @@ qx.Class.define("rwt.widgets.base.Image",
       var source = this.getSource();
       if (source)
       {
-        qx.io.image.Manager.getInstance().show(source);
+        rwt.html.ImageManager.getInstance().show(source);
         this._registeredAsVisible = true;
       }
 
@@ -237,7 +237,7 @@ qx.Class.define("rwt.widgets.base.Image",
 
 
     /**
-     * Registers an image at the image manager (qx.io.image.Manager) and reduces the
+     * Registers an image at the image manager (rwt.html.ImageManager) and reduces the
      * visible counter
      *
      * @type member
@@ -248,7 +248,7 @@ qx.Class.define("rwt.widgets.base.Image",
       var source = this.getSource();
       if (source && this._registeredAsVisible)
       {
-        qx.io.image.Manager.getInstance().hide(source);
+        rwt.html.ImageManager.getInstance().hide(source);
         delete this._registeredAsVisible;
       }
 
@@ -273,7 +273,7 @@ qx.Class.define("rwt.widgets.base.Image",
      */
     _applySource : function(value, old)
     {
-      var imageMgr = qx.io.image.Manager.getInstance();
+      var imageMgr = rwt.html.ImageManager.getInstance();
 
       if (old)
       {
@@ -327,7 +327,7 @@ qx.Class.define("rwt.widgets.base.Image",
       }
       else
       {
-        var preloader = qx.io.image.PreloaderManager.getInstance().create(value);
+        var preloader = rwt.html.ImagePreloaderManager.getInstance().create(value);
         this.setPreloader(preloader);
       }
     },
@@ -443,7 +443,7 @@ qx.Class.define("rwt.widgets.base.Image",
       "gecko|opera|webkit" : function() {
         this._styleEnabled();
       },
-      "default": rwt.util.Function.returnTrue
+      "default": rwt.util.Functions.returnTrue
     } ),
 
     /*

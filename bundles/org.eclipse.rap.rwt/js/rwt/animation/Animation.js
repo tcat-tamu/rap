@@ -9,9 +9,9 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.animation.Animation", {
+rwt.qx.Class.define( "rwt.animation.Animation", {
 
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
   construct : function() {
     this.base( arguments );
@@ -48,9 +48,9 @@ qx.Class.define( "rwt.animation.Animation", {
   },
 
   events: {
-    "init" : "qx.event.type.DataEvent",
-    "finish" : "qx.event.type.DataEvent",
-    "cancel" : "qx.event.type.DataEvent"
+    "init" : "rwt.event.DataEvent",
+    "finish" : "rwt.event.DataEvent",
+    "cancel" : "rwt.event.DataEvent"
   },
 
   members : {
@@ -187,7 +187,7 @@ qx.Class.define( "rwt.animation.Animation", {
       if( this.isStarted() ) {
         throw "Cannot remove AnimationRenderer: Animation already started!";
       }
-      rwt.util.Array.remove( this._renderer, renderer );
+      rwt.util.Arrays.remove( this._renderer, renderer );
     },
 
     _init : function() {
@@ -260,7 +260,7 @@ qx.Class.define( "rwt.animation.Animation", {
       if( animation === this._exclusive ) {
         this._exclusive = null;
       } else {
-        rwt.util.Array.remove( this._queue, animation );
+        rwt.util.Arrays.remove( this._queue, animation );
       }
       if( this._exclusive === null && this._queue.length === 0 ) {
         this._stopLoop();
@@ -278,7 +278,7 @@ qx.Class.define( "rwt.animation.Animation", {
 
     _mainLoop : function() {
       try {
-        if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+        if( !rwt.remote.EventUtil.getSuspended() ) {
           var time = new Date().getTime();
           var Animation = rwt.animation.Animation;
           try {

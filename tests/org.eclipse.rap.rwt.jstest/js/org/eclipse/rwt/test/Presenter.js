@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2011 EclipseSource and others.
+ * Copyright (c) 2009, 2012 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,9 +9,9 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.Presenter", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.Presenter", {
 
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
   type : "singleton",
 
@@ -116,7 +116,7 @@ qx.Class.define( "org.eclipse.rwt.test.Presenter", {
       //var msg = document.createTextNode( text );
       var br = document.createElement( "br" );
       //span.appendChild( msg );
-      span.innerHTML = rwt.protocol.EncodingUtil.replaceNewLines( text, "</br>" );
+      span.innerHTML = rwt.util.Encoding.replaceNewLines( text, "</br>" );
       if( link ) {
         span.style.cursor = "pointer";
         span.link = link;

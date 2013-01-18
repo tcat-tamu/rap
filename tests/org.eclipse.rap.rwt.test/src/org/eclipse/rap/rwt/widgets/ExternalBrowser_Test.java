@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,12 +11,14 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.widgets;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 
-import junit.framework.TestCase;
-
 import org.eclipse.rap.rwt.application.EntryPoint;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
 import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
 import org.eclipse.rap.rwt.testfixture.Fixture;
@@ -25,20 +27,25 @@ import org.eclipse.rap.rwt.testfixture.Message.CallOperation;
 import org.eclipse.rap.rwt.testfixture.Message.CreateOperation;
 import org.eclipse.rap.rwt.testfixture.Message.Operation;
 import org.eclipse.swt.widgets.Display;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class ExternalBrowser_Test extends TestCase {
+@SuppressWarnings( "deprecation" )
+public class ExternalBrowser_Test {
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
+  @Test
   public void testOpen() {
     new Display();
     // Test illegal arguments
@@ -62,6 +69,7 @@ public class ExternalBrowser_Test extends TestCase {
     }
   }
 
+  @Test
   public void testClose() {
     new Display();
     // Test illegal arguments
@@ -83,13 +91,15 @@ public class ExternalBrowser_Test extends TestCase {
    * Ensure that the order in which the protocol messages are rendered
    * matches the order of the ExternalBrowser#open/close calls
    */
+  @Test
   public void testExecutionOrder() throws IOException {
-    RWTFactory.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
-                                                      TestExecutionOrderEntryPoint.class,
-                                                      null );
+    ApplicationContextImpl applicationContext = getApplicationContext();
+    applicationContext.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
+                                                        TestExecutionOrderEntryPoint.class,
+                                                        null );
     Fixture.fakeNewRequest();
 
-    RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
+    RWTLifeCycle lifeCycle = ( RWTLifeCycle )applicationContext.getLifeCycleFactory().getLifeCycle();
     lifeCycle.execute();
 
     Message message = Fixture.getProtocolMessage();
@@ -154,4 +164,5 @@ public class ExternalBrowser_Test extends TestCase {
       return 0;
     }
   }
+
 }

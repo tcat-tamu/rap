@@ -1,25 +1,41 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2010 Innoopract Informationssysteme GmbH.
+ * Copyright (c) 2008, 2012 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     Innoopract Informationssysteme GmbH - initial API and implementation
+ *    Innoopract Informationssysteme GmbH - initial API and implementation
+ *    EclipseSource - ongoing development
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.lifecycle;
 
-import java.util.Locale;
+import static org.junit.Assert.assertEquals;
 
-import junit.framework.TestCase;
+import java.util.Locale;
 
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.swt.widgets.Button;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class LifeCycleAdapterUtil_Test extends TestCase {
+public class LifeCycleAdapterUtil_Test {
 
+  @Before
+  public void setUp() {
+    Fixture.setUp();
+    Fixture.fakeResponseWriter();
+  }
+
+  @After
+  public void tearDown() {
+    Fixture.tearDown();
+  }
+
+  @Test
   public void testGetKitPackageVariantsWithClass() {
     String[] variants
       = LifeCycleAdapterUtil.getKitPackageVariants( Button.class );
@@ -35,6 +51,7 @@ public class LifeCycleAdapterUtil_Test extends TestCase {
     expected = "org.eclipse.swt.widgets.internal.buttonkit";
   }
 
+  @Test
   public void testGetKitPackageVariants() {
     String packageName = "org.eclipse.swt.widgets";
     String className = "Item";
@@ -66,6 +83,7 @@ public class LifeCycleAdapterUtil_Test extends TestCase {
     assertEquals( expected, variants[ 0 ] );
   }
 
+  @Test
   public void testGetKitPackageVariantsWithTurkishLocale() {
     Locale originalLocale = Locale.getDefault();
     String packageName = "org.eclipse.swt.widgets";
@@ -89,18 +107,11 @@ public class LifeCycleAdapterUtil_Test extends TestCase {
     }
   }
 
+  @Test
   public void testGetSimpleClassName() {
     String className = LifeCycleAdapterUtil.getSimpleClassName( Button.class );
     String expected = "Button";
     assertEquals( expected, className );
   }
 
-  protected void setUp() throws Exception {
-    Fixture.setUp();
-    Fixture.fakeResponseWriter();
-  }
-
-  protected void tearDown() throws Exception {
-    Fixture.tearDown();
-  }
 }

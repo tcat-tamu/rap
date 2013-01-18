@@ -10,12 +10,12 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.ui.forms.widgets.ToggleHyperlink", {
+rwt.qx.Class.define( "org.eclipse.ui.forms.widgets.ToggleHyperlink", {
   extend : rwt.widgets.base.Image,
 
   construct : function() {
     this.base( arguments );
-    this.setCursor( qx.constant.Style.CURSOR_HAND );
+    this.setCursor( "pointer" );
     this._hover = false;
     this._expanded = false;
     this._collapseNormal = null;
@@ -48,9 +48,9 @@ qx.Class.define( "org.eclipse.ui.forms.widgets.ToggleHyperlink", {
 
     setHasDefaultSelectionListener : function( value ) {
       if( value ) {
-        this.addEventListener( "click", org.eclipse.swt.EventUtil.widgetDefaultSelected, this );
+        this.addEventListener( "click", rwt.remote.EventUtil.widgetDefaultSelected, this );
       } else {
-        this.removeEventListener( "click", org.eclipse.swt.EventUtil.widgetDefaultSelected, this );
+        this.removeEventListener( "click", rwt.remote.EventUtil.widgetDefaultSelected, this );
       }
     },
 

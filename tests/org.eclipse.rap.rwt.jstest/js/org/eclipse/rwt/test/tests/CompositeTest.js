@@ -11,18 +11,18 @@
 
 (function(){
 
-var ObjectRegistry = rwt.protocol.ObjectRegistry;
-var MessageProcessor = rwt.protocol.MessageProcessor;
+var ObjectRegistry = rwt.remote.ObjectRegistry;
+var MessageProcessor = rwt.remote.MessageProcessor;
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.CompositeTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.CompositeTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 
     testCreateCompositeByProtocol : function() {
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w2",
         "action" : "create",
@@ -40,7 +40,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.CompositeTest", {
           "parent" : "w2"
         }
       } );
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var shell = widgetManager.findWidgetById( "w2" );
       var composite = widgetManager.findWidgetById( "w3" );
       assertTrue( composite instanceof rwt.widgets.Composite );

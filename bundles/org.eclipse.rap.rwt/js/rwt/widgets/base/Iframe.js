@@ -18,7 +18,7 @@
  *
  * @appearance iframe
  */
-qx.Class.define("rwt.widgets.base.Iframe",
+rwt.qx.Class.define("rwt.widgets.base.Iframe",
 {
   extend : rwt.widgets.base.Terminator,
 
@@ -59,7 +59,7 @@ qx.Class.define("rwt.widgets.base.Iframe",
     /**
      * The "load" event is fired after the iframe content has successfully been loaded.
      */
-    "load" : "qx.event.type.Event"
+    "load" : "rwt.event.Event"
   },
 
 
@@ -233,7 +233,7 @@ qx.Class.define("rwt.widgets.base.Iframe",
     getContentWindow : function()
     {
       if (this.isCreated()) {
-        return qx.html.Iframe.getWindow(this.getIframeNode());
+        return rwt.html.Iframes.getWindow(this.getIframeNode());
       } else {
         return null;
       }
@@ -249,7 +249,7 @@ qx.Class.define("rwt.widgets.base.Iframe",
     getContentDocument : function()
     {
       if (this.isCreated()) {
-        return qx.html.Iframe.getDocument(this.getIframeNode());
+        return rwt.html.Iframes.getDocument(this.getIframeNode());
       } else {
         return null;
       }
@@ -523,7 +523,7 @@ qx.Class.define("rwt.widgets.base.Iframe",
       this.base(arguments);
 
       // register to iframe manager as active widget
-      rwt.widgets.base.IframeManager.getInstance().add(this);
+      rwt.widgets.util.IframeManager.getInstance().add(this);
     },
 
 
@@ -538,7 +538,7 @@ qx.Class.define("rwt.widgets.base.Iframe",
       this.base(arguments);
 
       // deregister from iframe manager
-      rwt.widgets.base.IframeManager.getInstance().remove(this);
+      rwt.widgets.util.IframeManager.getInstance().remove(this);
     },
 
 

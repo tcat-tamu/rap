@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.Sash", {
+rwt.qx.Class.define( "rwt.widgets.Sash", {
   extend : rwt.widgets.base.Parent,
 
   construct : function() {
@@ -25,20 +25,20 @@ qx.Class.define( "rwt.widgets.Sash", {
     this._slider.setAppearance( "sash-slider" );
     this._slider.setVisibility( false );
     // Fix IE Styling issues
-    org.eclipse.swt.WidgetUtil.fixIEBoxHeight( this._slider );
+    rwt.widgets.util.WidgetUtil.fixIEBoxHeight( this._slider );
     this.add( this._slider );
     this._sliderHandle = new rwt.widgets.base.Parent();
     this._sliderHandle.setStyleProperty( "backgroundPosition", "center center" );
     this._sliderHandle.setAppearance( "sash-handle" );
     this._sliderHandle.setVisibility( false );
     // Fix IE Styling issues
-    org.eclipse.swt.WidgetUtil.fixIEBoxHeight( this._sliderHandle );
+    rwt.widgets.util.WidgetUtil.fixIEBoxHeight( this._sliderHandle );
     this.add( this._sliderHandle );
     this._handle = new rwt.widgets.base.Parent();
     this._handle.setStyleProperty( "backgroundPosition", "center center" );
     this._handle.setAppearance( "sash-handle" );
     // Fix IE Styling issues
-    org.eclipse.swt.WidgetUtil.fixIEBoxHeight( this._handle );
+    rwt.widgets.util.WidgetUtil.fixIEBoxHeight( this._handle );
     this.add( this._handle );
     this.initOrientation();
     this._bufferZIndex = null;
@@ -142,7 +142,7 @@ qx.Class.define( "rwt.widgets.Sash", {
       if( this._bufferZIndex != null ) {
         this.setZIndex( this._bufferZIndex );
       }
-      var widgetUtil = org.eclipse.swt.WidgetUtil;
+      var widgetUtil = rwt.widgets.util.WidgetUtil;
       widgetUtil._fakeMouseEvent( this, "mouseout" );
       // notify server
       this._sendWidgetSelected();
@@ -225,11 +225,11 @@ qx.Class.define( "rwt.widgets.Sash", {
     },
 
     _sendWidgetSelected : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         // TODO [rst] Clarify what the getOffsetLeft() does
         var leftOffset = this._slider.getLeft() + this._frameOffset;
         var topOffset = this._slider.getTop() + this._frameOffset;
-        org.eclipse.swt.EventUtil.notifySelected(
+        rwt.remote.EventUtil.notifySelected(
             this,
             this.getLeft() + leftOffset,
             this.getTop() + topOffset,

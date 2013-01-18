@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 EclipseSource and others.
+ * Copyright (c) 2010, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,9 +16,9 @@ var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 var tree;
 var row;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   // TODO [tb] : Since TreeRow has been refactored to work without reference to Tree, the
   //             tests could also be refactored to not use the an tree instance anymore.
@@ -2020,7 +2020,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
     },
 
     testInheritFont : function() {
-      tree.setFont( new qx.ui.core.Font( 12, [ "monospace" ] ) );
+      tree.setFont( new rwt.html.Font( 12, [ "monospace" ] ) );
       var item = this._createItem( tree );
       item.setTexts( [ "Test1" ] );
       row.renderItem( item, tree._config, false, null );
@@ -2323,7 +2323,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       if( hasNext ) {
         new rwt.widgets.GridItem( parentItem, count );
       }
-      rwt.protocol.ObjectRegistry.add( "w" + item.toHashCode(), item );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.GridItem" );
+      rwt.remote.ObjectRegistry.add( "w" + item.toHashCode(), item, handler );
       return item;
     },
 

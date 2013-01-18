@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,7 +13,14 @@
 package org.eclipse.swt.internal.widgets.displaykit;
 
 import static org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil.getId;
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -26,12 +33,10 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 
-import junit.framework.TestCase;
-
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
@@ -44,12 +49,13 @@ import org.eclipse.rap.rwt.internal.remote.RemoteObjectImpl;
 import org.eclipse.rap.rwt.internal.remote.RemoteObjectRegistry;
 import org.eclipse.rap.rwt.internal.serverpush.ServerPushManager;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
-import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
+import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
+import org.eclipse.rap.rwt.remote.OperationHandler;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.DestroyOperation;
@@ -66,17 +72,20 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.InOrder;
 
 
-public class DisplayLCA_Test extends TestCase {
+public class DisplayLCA_Test {
 
   private Display display;
   private String displayId;
   private DisplayLCA displayLCA;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
     display = new Display();
     displayId = DisplayUtil.getId( display );
@@ -84,12 +93,13 @@ public class DisplayLCA_Test extends TestCase {
     Fixture.fakeNewRequest();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
     setEnableUiTests( false );
   }
 
+  @Test
   public void testPreserveValues() {
     Shell shell = new Shell( display );
     new Button( shell, SWT.PUSH );
@@ -105,6 +115,7 @@ public class DisplayLCA_Test extends TestCase {
     assertNull( exitConfirmation );
   }
 
+  @Test
   public void testRender() throws IOException {
     AbstractWidgetLCA lca = mock( AbstractWidgetLCA.class );
     Shell shell1 = new CustomLCAShell( display, lca );
@@ -121,6 +132,7 @@ public class DisplayLCA_Test extends TestCase {
     inOrder.verify( lca ).render( button2 );
   }
 
+  @Test
   public void testRenderWithIOException() {
     Composite shell = new Shell( display , SWT.NONE );
     new CustomLCAWidget( shell, new TestWidgetLCA() {
@@ -137,6 +149,7 @@ public class DisplayLCA_Test extends TestCase {
     }
   }
 
+  @Test
   public void testReadData() {
     AbstractWidgetLCA lca = mock( AbstractWidgetLCA.class );
     Composite shell = new CustomLCAShell( display, lca );
@@ -152,6 +165,7 @@ public class DisplayLCA_Test extends TestCase {
     verifyNoMoreInteractions( lca );
   }
 
+  @Test
   public void testReadDisplayBounds() {
     Fixture.fakeSetParameter( getId( display ), "bounds", new int[] { 0, 0, 30, 70 } );
 
@@ -160,6 +174,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( new Rectangle( 0, 0, 30, 70 ), display.getBounds() );
   }
 
+  @Test
   public void testRenderWithChangedAndDisposedWidget() throws IOException {
     Shell shell = new Shell( display, SWT.NONE );
     AbstractWidgetLCA lca = mock( AbstractWidgetLCA.class );
@@ -175,6 +190,7 @@ public class DisplayLCA_Test extends TestCase {
     verifyNoMoreInteractions( lca );
   }
 
+  @Test
   public void testIsInitializedState() throws IOException {
     final Boolean[] compositeInitState = new Boolean[] { null };
     Shell shell = new Shell( display, SWT.NONE );
@@ -191,18 +207,21 @@ public class DisplayLCA_Test extends TestCase {
     // was rendered; as opposed to being set to true after the whole widget
     // tree was rendered
     // check precondition
-    assertEquals( false, WidgetUtil.getAdapter( composite ).isInitialized() );
+    assertFalse( WidgetUtil.getAdapter( composite ).isInitialized() );
 
     displayLCA.render( display );
 
     assertEquals( Boolean.TRUE, compositeInitState[ 0 ] );
   }
 
+  @Test
   public void testRenderInitiallyDisposed() {
-    RWTFactory.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
-                                                      TestRenderInitiallyDisposedEntryPoint.class,
-                                                      null );
-    RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
+    ApplicationContextImpl applicationContext = getApplicationContext();
+    applicationContext.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
+                                                        TestRenderInitiallyDisposedEntryPoint.class,
+                                                        null );
+    RWTLifeCycle lifeCycle
+      = ( RWTLifeCycle )getApplicationContext().getLifeCycleFactory().getLifeCycle();
     LifeCycleUtil.setSessionDisplay( null );
     // ensure that life cycle execution succeeds with disposed display
     try {
@@ -212,11 +231,13 @@ public class DisplayLCA_Test extends TestCase {
     }
   }
 
+  @Test
   public void testRenderDisposed() throws Exception {
-    RWTFactory.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
-                                                      TestRenderDisposedEntryPoint.class,
-                                                      null );
-    RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
+    ApplicationContextImpl applicationContext = getApplicationContext();
+    applicationContext.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
+                                                        TestRenderDisposedEntryPoint.class,
+                                                        null );
+    RWTLifeCycle lifeCycle = ( RWTLifeCycle )applicationContext.getLifeCycleFactory().getLifeCycle();
     LifeCycleUtil.setSessionDisplay( null );
     lifeCycle.execute();
     Fixture.fakeNewRequest();
@@ -244,6 +265,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( shellId, message.getOperation( 0 ).getTarget() );
   }
 
+  @Test
   public void testRenderRunnableIsExecutedAndCleared() throws IOException {
     Widget widget = new Shell( display );
     WidgetAdapterImpl widgetAdapter = ( WidgetAdapterImpl )WidgetUtil.getAdapter( widget );
@@ -258,6 +280,7 @@ public class DisplayLCA_Test extends TestCase {
   }
 
 
+  @Test
   public void testFocusControl() {
     Shell shell = new Shell( display, SWT.NONE );
     Control control = new Button( shell, SWT.PUSH );
@@ -275,6 +298,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( previousFocusControl, display.getFocusControl() );
   }
 
+  @Test
   public void testResizeMaximizedShells() {
     Object adapter = display.getAdapter( IDisplayAdapter.class );
     IDisplayAdapter displayAdapter = ( IDisplayAdapter )adapter;
@@ -295,6 +319,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( new Rectangle( 0, 0, 700, 500 ), shell2.getBounds() );
   }
 
+  @Test
   public void testReadCursorLocation() {
     Object adapter = display.getAdapter( IDisplayAdapter.class );
     IDisplayAdapter displayAdapter = ( IDisplayAdapter )adapter;
@@ -306,8 +331,9 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( new Point( 1, 2 ), display.getCursorLocation() );
   }
 
-  public void testUICallBackRendered() throws IOException {
-    ServerPushManager.getInstance().activateServerPushFor( "id" );
+  @Test
+  public void testServerPushRendered() throws IOException {
+    ServerPushManager.getInstance().activateServerPushFor( new Object() );
 
     displayLCA.render( display );
 
@@ -315,6 +341,7 @@ public class DisplayLCA_Test extends TestCase {
     assertNotNull( message.findSetProperty( "rwt.client.ServerPush", "active" ) );
   }
 
+  @Test
   public void testRenderBeep() throws IOException {
     display.beep();
     displayLCA.render( display );
@@ -324,6 +351,7 @@ public class DisplayLCA_Test extends TestCase {
     assertFalse( display.getAdapter( IDisplayAdapter.class ).isBeepCalled() );
   }
 
+  @Test
   public void testRenderEnableUiTests() throws IOException {
     setEnableUiTests( true );
 
@@ -336,6 +364,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( Boolean.TRUE, firstOperation.getProperty( "enableUiTests" ) );
   }
 
+  @Test
   public void testRenderEnableUiTests_WhenAlreadyInitialized() throws IOException {
     Fixture.markInitialized( display );
     setEnableUiTests( true );
@@ -346,6 +375,7 @@ public class DisplayLCA_Test extends TestCase {
     assertNull( message.findSetOperation( displayId, "enableUiTests" ) );
   }
 
+  @Test
   public void testInvalidCustomId() {
     Fixture.markInitialized( display );
     setEnableUiTests( true );
@@ -359,6 +389,7 @@ public class DisplayLCA_Test extends TestCase {
     }
   }
 
+  @Test
   public void testRenderWithCustomId() throws IOException {
     Shell shell = new Shell( display, SWT.NONE );
     setEnableUiTests( true );
@@ -370,6 +401,7 @@ public class DisplayLCA_Test extends TestCase {
     assertNotNull( message.findCreateOperation( "myShell" ) );
   }
 
+  @Test
   public void testRendersExitConfirmation() throws IOException {
     RWT.getClient().getService( ExitConfirmation.class ).setMessage( "test" );
 
@@ -379,6 +411,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( "test", message.findSetProperty( displayId, "exitConfirmation" ) );
   }
 
+  @Test
   public void testPreservesExitConfirmation() throws IOException {
     RWT.getClient().getService( ExitConfirmation.class ).setMessage( "test" );
 
@@ -389,6 +422,7 @@ public class DisplayLCA_Test extends TestCase {
     assertNull( message.findSetOperation( displayId, "exitConfirmation" ) );
   }
 
+  @Test
   public void testRendersExitConfirmationReset() throws IOException {
     RWT.getClient().getService( ExitConfirmation.class ).setMessage( "test" );
     displayLCA.preserveValues( display );
@@ -400,6 +434,7 @@ public class DisplayLCA_Test extends TestCase {
     assertEquals( JSONObject.NULL, message.findSetProperty( displayId, "exitConfirmation" ) );
   }
 
+  @Test
   public void testRendersRemoteObjects() throws IOException {
     RemoteObjectImpl remoteObject = mock( RemoteObjectImpl.class );
     when( remoteObject.getId() ).thenReturn( "id" );
@@ -410,9 +445,12 @@ public class DisplayLCA_Test extends TestCase {
     verify( remoteObject ).render( any( ProtocolMessageWriter.class ) );
   }
 
+  @Test
   public void testReadDataDelegatesToRemoteObjects() {
+    OperationHandler handler = mock( OperationHandler.class );
     RemoteObjectImpl remoteObject = mock( RemoteObjectImpl.class );
     when( remoteObject.getId() ).thenReturn( "id" );
+    when( remoteObject.getHandler() ).thenReturn( handler );
     RemoteObjectRegistry.getInstance().register( remoteObject );
     HashMap<String, Object> properties = new HashMap<String, Object>();
     properties.put( "foo", "bar" );
@@ -420,7 +458,7 @@ public class DisplayLCA_Test extends TestCase {
 
     displayLCA.readData( display );
 
-    verify( remoteObject ).handleCall( eq( "method" ), eq( properties ) );
+    verify( handler ).handleCall( eq( "method" ), eq( properties ) );
   }
 
   private static void setEnableUiTests( boolean value ) {

@@ -11,9 +11,13 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.serverpush;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -25,10 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionBindingListener;
 
-import junit.framework.TestCase;
-
-import org.eclipse.rap.rwt.internal.serverpush.ServerPushManager;
-import org.eclipse.rap.rwt.internal.serverpush.ServerPushServiceHandler;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
@@ -38,28 +38,27 @@ import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
 import org.eclipse.rap.rwt.testfixture.TestResponse;
 import org.eclipse.rap.rwt.testfixture.internal.NoOpRunnable;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.widgets.Display;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class ServerPushManager_Test extends TestCase {
+public class ServerPushManager_Test {
+
   public static final String SYS_PROP_SLEEP_TIME = "sleepTime";
-  public static final String SYS_PROP_TIMER_EXEC_DELAY = "timerExecDelay";
 
   private static final int SLEEP_TIME;
-  private static final int TIMER_EXEC_DELAY;
 
-  private static final String ID_1 = "id_1";
-  private static final String ID_2 = "id_2";
+  private static final Object HANDLE_1 = new Object();
+  private static final Object HANDLE_2 = new Object();
   private static final String RUN_ASYNC_EXEC = "run async exec|";
   private static final Runnable EMPTY_RUNNABLE = new NoOpRunnable();
 
   static {
     String sleepTimeProp = System.getProperty( SYS_PROP_SLEEP_TIME );
     SLEEP_TIME = sleepTimeProp == null ? 200 : Integer.parseInt( sleepTimeProp );
-    String timerExecDelayProp = System.getProperty( SYS_PROP_TIMER_EXEC_DELAY );
-    TIMER_EXEC_DELAY = timerExecDelayProp == null ? 5000 :Integer.parseInt( timerExecDelayProp );
   }
 
   private volatile String log = "";
@@ -67,8 +66,8 @@ public class ServerPushManager_Test extends TestCase {
   private ServerPushManager manager;
   private ServerPushServiceHandler pushServiceHandler;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
     log = "";
     display  = new Display();
@@ -76,13 +75,14 @@ public class ServerPushManager_Test extends TestCase {
     pushServiceHandler = new ServerPushServiceHandler();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
+  @Test
   public void testWakeClient() throws InterruptedException {
-    final Throwable[] uiCallBackServiceHandlerThrowable = { null };
+    final Throwable[] serverPushServiceHandlerThrowable = { null };
     final ServiceContext context[] = { ContextProvider.getContext() };
     Thread thread = new Thread( new Runnable() {
       public void run() {
@@ -90,20 +90,19 @@ public class ServerPushManager_Test extends TestCase {
         Fixture.fakeResponseWriter();
         ServerPushServiceHandler pushServiceHandler = new ServerPushServiceHandler();
         try {
-          manager.activateServerPushFor( "foo" );
-          pushServiceHandler.service( ContextProvider.getRequest(),
-                                            ContextProvider.getResponse() );
+          manager.activateServerPushFor( HANDLE_1 );
+          pushServiceHandler.service( ContextProvider.getRequest(), ContextProvider.getResponse() );
         } catch( Throwable thr ) {
-          uiCallBackServiceHandlerThrowable[ 0 ] = thr;
+          serverPushServiceHandlerThrowable[ 0 ] = thr;
         }
       }
     } );
     thread.start();
     Thread.sleep( SLEEP_TIME );
-    if( uiCallBackServiceHandlerThrowable[ 0 ] != null ) {
-      uiCallBackServiceHandlerThrowable[ 0 ].printStackTrace();
+    if( serverPushServiceHandlerThrowable[ 0 ] != null ) {
+      serverPushServiceHandlerThrowable[ 0 ].printStackTrace();
     }
-    assertNull( uiCallBackServiceHandlerThrowable[ 0 ] );
+    assertNull( serverPushServiceHandlerThrowable[ 0 ] );
     assertTrue( manager.isCallBackRequestBlocked() );
 
     manager.setHasRunnables( true );
@@ -114,6 +113,7 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( thread.isAlive() );
   }
 
+  @Test
   public void testWaitOnUIThread() throws Exception {
     CallBackRequestSimulator callBackRequestSimulator = new CallBackRequestSimulator();
     callBackRequestSimulator.sendRequest();
@@ -125,6 +125,7 @@ public class ServerPushManager_Test extends TestCase {
     manager.releaseBlockedRequest();
   }
 
+  @Test
   public void testWaitOnBackgroundThread() throws Throwable {
     CallBackRequestSimulator callBackRequestSimulator = new CallBackRequestSimulator();
     callBackRequestSimulator.sendRequest();
@@ -138,6 +139,7 @@ public class ServerPushManager_Test extends TestCase {
   }
 
   // same test as above, but while UIThread running
+  @Test
   public void testWaitOnBackgroundThreadDuringLifecycle() throws Throwable {
     CallBackRequestSimulator callBackRequestSimulator = new CallBackRequestSimulator();
     callBackRequestSimulator.sendRequest();
@@ -153,6 +155,7 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( manager.isCallBackRequestBlocked() );
   }
 
+  @Test
   public void testAsyncExecWhileLifeCycleIsRunning() {
     fakeNewRequest();
     Fixture.fakePhase( PhaseId.READ_DATA );
@@ -165,6 +168,7 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( manager.isCallBackRequestBlocked() );
   }
 
+  @Test
   public void testAsyncExecWithBackgroundAndLifeCycleRunnables() throws Throwable {
     // test unblocking in case of background addition of runnables
     simulateBackgroundAddition( ContextProvider.getContext() );
@@ -177,6 +181,7 @@ public class ServerPushManager_Test extends TestCase {
     assertEquals( RUN_ASYNC_EXEC + RUN_ASYNC_EXEC + RUN_ASYNC_EXEC, log );
   }
 
+  @Test
   public void testCallBackRequestBlocking() throws Exception {
     CallBackRequestSimulator callBackRequestSimulator = new CallBackRequestSimulator();
     callBackRequestSimulator.sendRequest();
@@ -184,6 +189,7 @@ public class ServerPushManager_Test extends TestCase {
     assertTrue( manager.isCallBackRequestBlocked() );
   }
 
+  @Test
   public void testCallBackRequestReleasing() throws Throwable {
     ServiceContext context = ContextProvider.getContext();
     CallBackRequestSimulator callBackRequestSimulator = new CallBackRequestSimulator( context );
@@ -197,6 +203,7 @@ public class ServerPushManager_Test extends TestCase {
     assertEquals( "", log );
   }
 
+  @Test
   public void testCallBackRequestNotBlockedWhenRunnablesExist() throws Throwable {
     ServiceContext context = ContextProvider.getContext();
     display.asyncExec( mock( Runnable.class ) );
@@ -209,6 +216,7 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( callBackRequestSimulator.isRequestRunning() );
   }
 
+  @Test
   public void testCallBackRequestIsReleasedOnSessionInvalidate() throws Exception {
     ServiceContext context = ContextProvider.getContext();
     CallBackRequestSimulator callBackRequestSimulator = new CallBackRequestSimulator( context );
@@ -222,6 +230,7 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( callBackRequestSimulator.exceptionOccured() );
   }
 
+  @Test
   public void testCallBackRequestIsReleasedWhenSessionExpires() {
     HttpSession httpSession = ContextProvider.getUISession().getHttpSession();
     httpSession.setMaxInactiveInterval( 1 );
@@ -229,12 +238,13 @@ public class ServerPushManager_Test extends TestCase {
     httpSession.setAttribute( "listener", sessionListener );
     manager.setRequestCheckInterval( 10 );
 
-    manager.activateServerPushFor( "id" );
+    manager.activateServerPushFor( HANDLE_1 );
 
     // must not block
     manager.processRequest( ContextProvider.getResponse() );
   }
 
+  @Test
   public void testMultipleCallBackRequests() throws Exception {
     manager.setRequestCheckInterval( 20 );
     ServiceContext context1 = ContextProvider.getContext();
@@ -253,6 +263,7 @@ public class ServerPushManager_Test extends TestCase {
     assertTrue( callBackRequestSimulator2.isRequestRunning() );
   }
 
+  @Test
   public void testCallBackRequestTerminatsWhenConnectionBreaks() throws Exception {
     manager.setRequestCheckInterval( 20 );
     TestResponse response = new TestResponse() {
@@ -274,6 +285,7 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( callBackRequestSimulator.isRequestRunning() );
   }
 
+  @Test
   public void testAsyncExec() throws Throwable {
     Throwable[] serverPushServiceHandlerThrowable = { null };
     ServiceContext context = ContextProvider.getContext();
@@ -294,72 +306,8 @@ public class ServerPushManager_Test extends TestCase {
     assertEquals( RUN_ASYNC_EXEC + RUN_ASYNC_EXEC, log );
   }
 
-  public void testExceptionInAsyncExec() {
-    Fixture.fakePhase( PhaseId.PROCESS_ACTION );
-    final RuntimeException exception = new RuntimeException( "bad things happen" );
-    Runnable runnable = new Runnable() {
-      public void run() {
-        throw exception;
-      }
-    };
-    display.asyncExec( runnable );
-    try {
-      display.readAndDispatch();
-      String msg
-        = "Exception that occurs in an asynExec runnable must be wrapped "
-        + "in an SWTException";
-      fail( msg );
-    } catch( SWTException e ) {
-      assertEquals( SWT.ERROR_FAILED_EXEC, e.code );
-      assertSame( exception, e.throwable );
-    }
-  }
-
-  public void testTimerExec() throws Exception {
-    Fixture.fakePhase( PhaseId.PROCESS_ACTION );
-    Runnable runnable = mock( Runnable.class );
-    display.timerExec( TIMER_EXEC_DELAY, runnable );
-    Thread.sleep( TIMER_EXEC_DELAY + 50 );
-
-    display.readAndDispatch();
-
-    verify( runnable ).run();
-  }
-
-  // Ensure that runnables that were added via timerExec but should be executed
-  // in the future are *not* executed on session shutdown
-  public void testNoTimerExecAfterSessionShutdown() throws Exception {
-    Runnable runnable = mock( Runnable.class );
-    display.timerExec( TIMER_EXEC_DELAY, runnable );
-    display.dispose();
-    Thread.sleep( SLEEP_TIME );
-    verifyZeroInteractions( runnable );
-  }
-
-  public void testRemoveAddedTimerExec() throws Exception {
-    Runnable runnable = mock( Runnable.class );
-    display.timerExec( TIMER_EXEC_DELAY, runnable );
-    display.timerExec( -1, runnable );
-    Thread.sleep( SLEEP_TIME );
-    assertFalse( manager.hasRunnables() );
-    verifyZeroInteractions( runnable );
-  }
-
-  public void testTimerExecActivatesServerPush() {
-    display.timerExec( TIMER_EXEC_DELAY, mock( Runnable.class ) );
-
-    assertTrue( ServerPushManager.getInstance().isServerPushActive() );
-  }
-
-  public void testDispatchingTimerExecRunnableDeactivatesServerPush() throws Exception {
-    display.timerExec( TIMER_EXEC_DELAY, mock( Runnable.class ) );
-
-    Thread.sleep( TIMER_EXEC_DELAY + 50 );
-
-    assertFalse( ServerPushManager.getInstance().isServerPushActive() );
-  }
-
   // This test ensures that addSync doesn't cause deadlocks
+  @Test
   public void testSyncExecBlock() throws Exception {
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     final ServiceContext context = ContextProvider.getContext();
@@ -397,6 +345,7 @@ public class ServerPushManager_Test extends TestCase {
 
   // This test ensures that SyncRunnable releases the blocked thread in case of
   // an exception
+  @Test
   public void testAddSyncWithExceptionInRunnable() throws Exception {
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     final ServiceContext context = ContextProvider.getContext();
@@ -436,29 +385,34 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( bgThread.isAlive() );
   }
 
+  @Test
   public void testMustBlockCallBackRequest() {
     assertFalse( manager.mustBlockCallBackRequest() );
   }
 
+  @Test
   public void testMustBlockCallBackRequestWhenActive() {
-    manager.activateServerPushFor( "foo" );
+    manager.activateServerPushFor( HANDLE_1 );
     assertTrue( manager.mustBlockCallBackRequest() );
   }
 
+  @Test
   public void testMustBlockCallBackRequestWhenActiveAndRunnablesPending() {
-    manager.activateServerPushFor( "foo" );
+    manager.activateServerPushFor( HANDLE_1 );
     manager.setHasRunnables( true );
     assertFalse( manager.mustBlockCallBackRequest() );
   }
 
+  @Test
   public void testMustBlockCallBackRequestWhenDeactivatedAndRunnablesPending() {
     manager.setHasRunnables( true );
     assertFalse( manager.mustBlockCallBackRequest() );
   }
 
+  @Test
   public void testNeedActivationFromDifferentSession() throws Throwable {
     // test that on/off switching is managed in session scope
-    manager.activateServerPushFor( ID_1 );
+    manager.activateServerPushFor( HANDLE_1 );
     final boolean[] otherSession = new boolean[ 1 ];
     Runnable runnable = new Runnable() {
       public void run() {
@@ -471,48 +425,56 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( otherSession[ 0 ] );
   }
 
+  @Test
   public void testNeedActivationWithoutActivateCall() {
     boolean needsActivation = manager.needsActivation();
     assertFalse( needsActivation );
   }
 
+  @Test
   public void testNeedActivationAfterDeactivate() {
-    manager.deactivateServerPushFor( ID_1 );
+    manager.deactivateServerPushFor( HANDLE_1 );
     assertFalse( manager.needsActivation() );
   }
 
+  @Test
   public void testNeedActivationWithDifferentIds() {
-    manager.activateServerPushFor( ID_1 );
-    manager.activateServerPushFor( ID_2 );
+    manager.activateServerPushFor( HANDLE_1 );
+    manager.activateServerPushFor( HANDLE_2 );
     assertTrue( manager.needsActivation() );
   }
 
+  @Test
   public void testNeedActivationAfterActivateTwoDeactivateOne() {
-    manager.activateServerPushFor( ID_1 );
-    manager.activateServerPushFor( ID_2 );
-    manager.deactivateServerPushFor( ID_1 );
+    manager.activateServerPushFor( HANDLE_1 );
+    manager.activateServerPushFor( HANDLE_2 );
+    manager.deactivateServerPushFor( HANDLE_1 );
     assertTrue( manager.needsActivation() );
   }
 
+  @Test
   public void testNeedActivateTwice() {
-    manager.activateServerPushFor( ID_1 );
-    manager.deactivateServerPushFor( ID_1 );
-    manager.activateServerPushFor( ID_2 );
+    manager.activateServerPushFor( HANDLE_1 );
+    manager.deactivateServerPushFor( HANDLE_1 );
+    manager.activateServerPushFor( HANDLE_2 );
     assertTrue( manager.needsActivation() );
   }
 
+  @Test
   public void testNeedActivationWithActivateDeactivateAndPendingRunnables() {
-    manager.activateServerPushFor( ID_1 );
+    manager.activateServerPushFor( HANDLE_1 );
     display.asyncExec( EMPTY_RUNNABLE );
-    manager.deactivateServerPushFor( ID_1 );
+    manager.deactivateServerPushFor( HANDLE_1 );
     assertTrue( manager.needsActivation() );
   }
 
+  @Test
   public void testNeedActivationWithPendingRunnablesDoesntEnableServerPush() {
     display.asyncExec( EMPTY_RUNNABLE );
     assertFalse( manager.needsActivation() );
   }
 
+  @Test
   public void testIsSessionExpiredWithInfiniteSessionTimeout() {
     ContextProvider.getUISession().getHttpSession().setMaxInactiveInterval( -1 );
 
@@ -521,6 +483,7 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( sessionExpired );
   }
 
+  @Test
   public void testIsSessionExpiredWhenSessionTimedOut() {
     ContextProvider.getUISession().getHttpSession().setMaxInactiveInterval( 10 );
 
@@ -529,6 +492,7 @@ public class ServerPushManager_Test extends TestCase {
     assertTrue( sessionExpired );
   }
 
+  @Test
   public void testIsSessionExpiredWhenSessionActive() {
     ContextProvider.getUISession().getHttpSession().setMaxInactiveInterval( 10 );
 
@@ -537,9 +501,10 @@ public class ServerPushManager_Test extends TestCase {
     assertFalse( sessionExpired );
   }
 
+  @Test
   public void testSetHasRunnablesWithoutStateInfo() {
     // Service handlers don't have a state info
-    manager.activateServerPushFor( "foo" );
+    manager.activateServerPushFor( HANDLE_1 );
     Fixture.replaceServiceStore( null );
 
     try {
@@ -625,9 +590,9 @@ public class ServerPushManager_Test extends TestCase {
           ContextProvider.setContext( serviceContext );
           Fixture.fakeResponseWriter();
           try {
-            manager.activateServerPushFor( "foo" );
+            manager.activateServerPushFor( HANDLE_1 );
             pushServiceHandler.service( ContextProvider.getRequest(),
-                                              ContextProvider.getResponse() );
+                                        ContextProvider.getResponse() );
           } catch( Throwable thr ) {
             exception = thr;
           }
@@ -649,4 +614,5 @@ public class ServerPushManager_Test extends TestCase {
       return exception != null;
     }
   }
+
 }

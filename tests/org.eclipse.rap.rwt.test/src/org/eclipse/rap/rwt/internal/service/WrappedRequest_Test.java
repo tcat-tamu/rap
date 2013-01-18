@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 EclipseSource and others.
+ * Copyright (c) 2002, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,34 +12,41 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.service;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import junit.framework.TestCase;
-
 import org.eclipse.rap.rwt.application.EntryPoint;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.service.ServiceHandler;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
 import org.eclipse.swt.widgets.Display;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class WrappedRequest_Test extends TestCase {
+public class WrappedRequest_Test {
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
+  @Test
   public void testAdditionalParameters() {
     TestRequest original = new TestRequest();
     String p0 = "p0";
@@ -98,11 +105,13 @@ public class WrappedRequest_Test extends TestCase {
     }
   }
 
+  @Test
   public void testStartupRequestWithParameter() throws Exception {
-    RWTFactory.getEntryPointManager().register( "/rap", DefaultEntryPoint.class, null );
+    ApplicationContextImpl applicationContext = getApplicationContext();
+    applicationContext.getEntryPointManager().register( "/rap", DefaultEntryPoint.class, null );
     TestRequest getRequest = Fixture.fakeNewGetRequest();
     getRequest.setParameter( "param", "value" );
-    ServiceHandler handler = RWTFactory.getServiceManager().getHandler();
+    ServiceHandler handler = getApplicationContext().getServiceManager().getHandler();
     handler.service( ContextProvider.getRequest(), ContextProvider.getResponse() );
 
     TestRequest uiRequest = Fixture.fakeNewRequest();

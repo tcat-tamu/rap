@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -103,7 +103,6 @@ public class ControlLCAUtil {
    * there occured a help event for the given <code>widget</code>.
    *
    * @param control the control to process
-   * @since 1.3
    */
   public static void processMenuDetect( Control control ) {
     if( WidgetLCAUtil.wasEventSent( control, ClientMessageConst.EVENT_MENU_DETECT ) ) {
@@ -268,6 +267,7 @@ public class ControlLCAUtil {
     WidgetLCAUtil.preserveHelpListener( control );
     ActiveKeysUtil.preserveActiveKeys( control );
     ActiveKeysUtil.preserveCancelKeys( control );
+    WidgetLCAUtil.preserveData( control );
   }
 
   /**
@@ -315,7 +315,6 @@ public class ControlLCAUtil {
    *
    * @param control the control whose properties to set
    * @see #preserveValues(Control)
-   * @since 1.5
    */
   public static void renderChanges( Control control ) {
     renderBounds( control );
@@ -340,6 +339,7 @@ public class ControlLCAUtil {
     renderListenTraverse( control );
     renderListenMenuDetect( control );
     WidgetLCAUtil.renderListenHelp( control );
+    WidgetLCAUtil.renderData( control );
   }
 
   /**
@@ -348,7 +348,6 @@ public class ControlLCAUtil {
    * response that updates the client-side bounds.
    *
    * @param control the control whose bounds to write
-   * @since 1.5
    */
   public static void renderBounds( Control control ) {
     WidgetLCAUtil.renderBounds( control, control.getBounds() );
@@ -381,7 +380,6 @@ public class ControlLCAUtil {
    * response that updates the client-side tool tip.
    *
    * @param control the control whose tool tip to write
-   * @since 1.5
    */
   public static void renderToolTip( Control control ) {
     WidgetLCAUtil.renderToolTip( control, control.getToolTipText() );
@@ -394,7 +392,6 @@ public class ControlLCAUtil {
    * property.
    *
    * @param control the control whose menu property to write
-   * @since 1.5
    */
   public static void renderMenu( Control control ) {
     WidgetLCAUtil.renderMenu( control, control.getMenu() );
@@ -406,7 +403,6 @@ public class ControlLCAUtil {
    * the response that updates the client-side visibility.
    *
    * @param control the control whose visibility to write
-   * @since 1.5
    */
   public static void renderVisible( Control control ) {
     Boolean newValue = Boolean.valueOf( getVisible( control ) );
@@ -425,7 +421,6 @@ public class ControlLCAUtil {
    * property.
    *
    * @param control the control whose enabled property to write
-   * @since 1.5
    */
   public static void renderEnabled( Control control ) {
     // Using isEnabled() would result in unnecessarily updating child widgets of
@@ -440,7 +435,6 @@ public class ControlLCAUtil {
    * foreground property.
    *
    * @param control the control whose foreground property to write
-   * @since 1.5
    */
   public static void renderForeground( Control control ) {
     IControlAdapter controlAdapter = ControlUtil.getControlAdapter( control );
@@ -454,7 +448,6 @@ public class ControlLCAUtil {
    * background property.
    *
    * @param control the control whose background property to write
-   * @since 1.5
    */
   public static void renderBackground( Control control ) {
     IControlAdapter controlAdapter = ControlUtil.getControlAdapter( control );
@@ -470,7 +463,6 @@ public class ControlLCAUtil {
    * property.
    *
    * @param control the control whose background image property to write
-   * @since 1.5
    */
   public static void renderBackgroundImage( Control control ) {
     IControlAdapter controlAdapter = ControlUtil.getControlAdapter( control );
@@ -484,7 +476,6 @@ public class ControlLCAUtil {
    * a protocol message to the response that updates the client-side font property.
    *
    * @param control the control whose font property to write
-   * @since 1.5
    */
   public static void renderFont( Control control ) {
     IControlAdapter controlAdapter = ControlUtil.getControlAdapter( control );

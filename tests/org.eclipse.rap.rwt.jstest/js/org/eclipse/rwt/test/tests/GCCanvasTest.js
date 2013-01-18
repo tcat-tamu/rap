@@ -9,8 +9,8 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.GCCanvasTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GCCanvasTest", {
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -24,7 +24,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCCanvasTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       TestUtil.flush();
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       gc.init( 300, 300,
                [ [ "Arial" ], 10, false, false ],
                [ 255, 0, 0, 255 ], [ 0, 0, 255, 255 ] );
@@ -53,7 +53,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCCanvasTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       TestUtil.flush();
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       gc.init( 300, 300,
                [ [ "Arial" ], 10, false, false ],
                [ 255, 0, 0, 255 ], [ 0, 0, 255, 255 ] );
@@ -81,7 +81,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GCCanvasTest", {
       canvas.setDimension( 300, 300 );
       canvas.addToDocument();
       TestUtil.flush();
-      var gc = new org.eclipse.swt.graphics.GC( canvas );
+      var gc = new rwt.widgets.GC( canvas );
       gc.init( 300, 300,
                [ [ "Arial" ], 10, false, false ],
                [ 255, 0, 0, 255 ], [ 0, 0, 255, 255 ] );

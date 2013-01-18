@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,8 +9,8 @@
  *   EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
-  extend : qx.core.Target,
+rwt.qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
+  extend : rwt.qx.Target,
   type : "singleton",
 
   construct : function() {
@@ -33,12 +33,12 @@ qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
     this._asserts = 0;
     this._loopWrapper = null;
     var testScripts = this._getTestScripts();
-    var classes = qx.Class.__registry;
+    var classes = rwt.qx.Class.__registry;
     var filter = this._createTestClassFilter();
     var shortName;
     for( var clazz in classes ) {
       if( clazz.substr( clazz.length - 4 ) == "Test" ) {
-        qx.Class.__initializeClass( classes[ clazz ] );
+        rwt.qx.Class.__initializeClass( classes[ clazz ] );
         shortName = this._getShortClassName( clazz );
         if( testScripts[ shortName ] ) {
           delete testScripts[ shortName ];
@@ -118,7 +118,7 @@ qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
       org.eclipse.rwt.test.fixture.TestUtil.initRequestLog();
       org.eclipse.rwt.test.fixture.TestUtil.prepareTimerUse();
       // prevent actual dom-events
-      org.eclipse.rwt.EventHandler.detachEvents();
+      rwt.event.EventHandler.detachEvents();
       org.eclipse.rwt.test.fixture.TestUtil.initErrorPageLog();
       var that = this;
       this._loopWrapper = function(){ that._loop(); };
@@ -248,8 +248,9 @@ qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
         org.eclipse.rwt.test.fixture.TestUtil.cleanUpKeyUtil();
         org.eclipse.rwt.test.fixture.TestUtil.clearErrorPage();
         org.eclipse.rwt.test.fixture.TestUtil.resetObjectManager();
+        org.eclipse.rwt.test.fixture.TestUtil.resetWindowManager();
         org.eclipse.rwt.test.fixture.TestUtil.clearXMLHttpRequests();
-        org.eclipse.rwt.EventHandler.setFocusRoot(
+        rwt.event.EventHandler.setFocusRoot(
           rwt.widgets.base.ClientDocument.getInstance()
         );
       }
@@ -302,7 +303,7 @@ qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
         if( value instanceof Array ) {
           result = value.join();
         } else if(    value instanceof Object
-                   && !( value instanceof qx.core.Object ) )
+                   && !( value instanceof rwt.qx.Object ) )
         {
           var arr = [];
           for( var key in value ) {
@@ -364,8 +365,8 @@ qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
 
     _freezeQooxdoo : function() {
       rwt.widgets.base.Widget.__allowFlushs = false;
-      org.eclipse.rwt.EventHandler.detachEvents();
-      qx.core.Target.prototype.dispatchEvent = function(){};
+      rwt.event.EventHandler.detachEvents();
+      rwt.qx.Target.prototype.dispatchEvent = function(){};
       rwt.animation.Animation._stopLoop();
       rwt.runtime.MobileWebkitSupport._removeListeners();
     },
@@ -433,7 +434,7 @@ qx.Class.define( "org.eclipse.rwt.test.TestRunner", {
     },
 
     _createTestClassFilter : function() {
-      var classes = qx.Class.__registry;
+      var classes = rwt.qx.Class.__registry;
       var engine = rwt.client.Client.getEngine();
       var platform = rwt.client.Client.getPlatform();
       var param = this._getFilterParam();

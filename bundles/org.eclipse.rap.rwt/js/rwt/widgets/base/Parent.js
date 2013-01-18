@@ -16,7 +16,7 @@
  *
  * Don't instantiate this class directly.
  */
-qx.Class.define("rwt.widgets.base.Parent",
+rwt.qx.Class.define("rwt.widgets.base.Parent",
 {
   extend : rwt.widgets.base.Widget,
 
@@ -54,7 +54,7 @@ qx.Class.define("rwt.widgets.base.Parent",
     /** Individual focus handler for all child elements. */
     focusHandler :
     {
-      check : "qx.event.handler.FocusHandler",
+      check : "rwt.widgets.util.FocusHandler",
       apply : "_applyFocusHandler",
       nullable : true
     },
@@ -117,7 +117,7 @@ qx.Class.define("rwt.widgets.base.Parent",
      * Return the responsible focus handler
      *
      * @type member
-     * @return {qx.event.handler.FocusHandler} TODOC
+     * @return {rwt.widgets.util.FocusHandler} TODOC
      */
     getFocusRoot : function()
     {
@@ -145,7 +145,7 @@ qx.Class.define("rwt.widgets.base.Parent",
         return;
       }
 
-      this._focusHandler = new qx.event.handler.FocusHandler(this);
+      this._focusHandler = new rwt.widgets.util.FocusHandler(this);
       this.setFocusHandler(this._focusHandler);
     },
 
@@ -213,9 +213,9 @@ qx.Class.define("rwt.widgets.base.Parent",
       var vFocusValid = value != null;
       var vBlurValid = old != null;
 
-      if (qx.Class.isDefined("qx.ui.popup.PopupManager") && vFocusValid)
+      if (rwt.qx.Class.isDefined("rwt.widgets.util.PopupManager") && vFocusValid)
       {
-        var vMgr = qx.ui.popup.PopupManager.getInstance();
+        var vMgr = rwt.widgets.util.PopupManager.getInstance();
 
         if (vMgr) {
           vMgr.update(value);
@@ -227,7 +227,7 @@ qx.Class.define("rwt.widgets.base.Parent",
         // Dispatch FocusOut
         if (old.hasEventListeners("focusout"))
         {
-          var vEventObject = new qx.event.type.FocusEvent("focusout", old);
+          var vEventObject = new rwt.event.FocusEvent("focusout", old);
 
           if (vFocusValid) {
             vEventObject.setRelatedTarget(value);
@@ -243,7 +243,7 @@ qx.Class.define("rwt.widgets.base.Parent",
         if (value.hasEventListeners("focusin"))
         {
           // Dispatch FocusIn
-          var vEventObject = new qx.event.type.FocusEvent("focusin", value);
+          var vEventObject = new rwt.event.FocusEvent("focusin", value);
 
           if (vBlurValid) {
             vEventObject.setRelatedTarget(old);
@@ -263,7 +263,7 @@ qx.Class.define("rwt.widgets.base.Parent",
         old.setFocused(false);
 
         // Dispatch Blur
-        var vEventObject = new qx.event.type.FocusEvent("blur", old);
+        var vEventObject = new rwt.event.FocusEvent("blur", old);
 
         if (vFocusValid) {
           vEventObject.setRelatedTarget(value);
@@ -271,7 +271,7 @@ qx.Class.define("rwt.widgets.base.Parent",
 
         old.dispatchEvent(vEventObject);
 
-        var vMgr = qx.ui.popup.ToolTipManager.getInstance();
+        var vMgr = rwt.widgets.util.ToolTipManager.getInstance();
 
         if (vMgr) {
           vMgr.handleBlur(vEventObject);
@@ -284,10 +284,10 @@ qx.Class.define("rwt.widgets.base.Parent",
       {
         this.setActiveChild(value);
         value.setFocused(true);
-        org.eclipse.rwt.EventHandler.setFocusRoot(this);
+        rwt.event.EventHandler.setFocusRoot(this);
 
         // Dispatch Focus
-        var vEventObject = new qx.event.type.FocusEvent("focus", value);
+        var vEventObject = new rwt.event.FocusEvent("focus", value);
 
         if (vBlurValid) {
           vEventObject.setRelatedTarget(old);
@@ -295,7 +295,7 @@ qx.Class.define("rwt.widgets.base.Parent",
 
         value.dispatchEvent(vEventObject);
 
-        var vMgr = qx.ui.popup.ToolTipManager.getInstance();
+        var vMgr = rwt.widgets.util.ToolTipManager.getInstance();
 
         if (vMgr) {
           vMgr.handleFocus(vEventObject);
@@ -328,14 +328,14 @@ qx.Class.define("rwt.widgets.base.Parent",
      * @return {rwt.widgets.base.BoxLayout} TODOC
      */
     _createLayoutImpl : function() {
-      return new qx.ui.layout.impl.CanvasLayoutImpl( this);
+      return new rwt.widgets.util.CanvasLayoutImpl( this);
     },
 
 
     /**
      * Return the layout implementation.
      *
-     * return {qx.ui.layout.impl.LayoutImpl}
+     * return {rwt.widgets.util.LayoutImpl}
      *
      * @type member
      * @return {var} TODOC
@@ -560,10 +560,10 @@ qx.Class.define("rwt.widgets.base.Parent",
         if (vOldIndex != vIndex)
         {
           if (vOldIndex != -1) {
-            rwt.util.Array.removeAt(vChildren, vOldIndex);
+            rwt.util.Arrays.removeAt(vChildren, vOldIndex);
           }
 
-          rwt.util.Array.insertAt(vChildren, vChild, vIndex);
+          rwt.util.Arrays.insertAt(vChildren, vChild, vIndex);
 
           if (this._initialLayoutDone)
           {
@@ -741,7 +741,7 @@ qx.Class.define("rwt.widgets.base.Parent",
      * @return {Widget|null} First child widget (null if this widget does not have any children)
      */
     getFirstChild : function() {
-      return rwt.util.Array.getFirst(this.getChildren()) || null;
+      return rwt.util.Arrays.getFirst(this.getChildren()) || null;
     },
 
 
@@ -753,7 +753,7 @@ qx.Class.define("rwt.widgets.base.Parent",
      *     not have any visible children)
      */
     getFirstVisibleChild : function() {
-      return rwt.util.Array.getFirst(this.getVisibleChildren()) || null;
+      return rwt.util.Arrays.getFirst(this.getVisibleChildren()) || null;
     },
 
 
@@ -786,7 +786,7 @@ qx.Class.define("rwt.widgets.base.Parent",
      *     not have any children)
      */
     getLastChild : function() {
-      return rwt.util.Array.getLast(this.getChildren()) || null;
+      return rwt.util.Arrays.getLast(this.getChildren()) || null;
     },
 
 
@@ -798,7 +798,7 @@ qx.Class.define("rwt.widgets.base.Parent",
      *     not have any visible children)
      */
     getLastVisibleChild : function() {
-      return rwt.util.Array.getLast(this.getVisibleChildren()) || null;
+      return rwt.util.Arrays.getLast(this.getVisibleChildren()) || null;
     },
 
 
@@ -919,7 +919,7 @@ qx.Class.define("rwt.widgets.base.Parent",
           }
         } );
       },
-      "default" : rwt.util.Function.returnTrue
+      "default" : rwt.util.Functions.returnTrue
     } ),
 
     // overridden
@@ -1086,7 +1086,7 @@ qx.Class.define("rwt.widgets.base.Parent",
       {
         delete this._childrenQueue[vChild.toHashCode()];
 
-        if (rwt.util.Object.isEmpty(this._childrenQueue))
+        if (rwt.util.Objects.isEmpty(this._childrenQueue))
         {
           this._childrenQueue = {};
           rwt.widgets.base.Widget.removeFromGlobalLayoutQueue(this);
@@ -1103,7 +1103,7 @@ qx.Class.define("rwt.widgets.base.Parent",
      */
     _flushChildrenQueue : function()
     {
-      if (!rwt.util.Object.isEmpty(this._childrenQueue))
+      if (!rwt.util.Objects.isEmpty(this._childrenQueue))
       {
         this.getLayoutImpl().flushChildrenQueue(this._childrenQueue);
         delete this._childrenQueue;

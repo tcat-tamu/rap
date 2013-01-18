@@ -11,7 +11,7 @@
  *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.BasicText", {
+rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
 
   extend : rwt.widgets.base.Terminator,
 
@@ -26,7 +26,7 @@ qx.Class.define( "rwt.widgets.base.BasicText", {
     this.initTabIndex();
     this._selectionStart = 0;
     this._selectionLength = 0;
-    this.__oninput = rwt.util.Function.bindEvent( this._oninputDom, this );
+    this.__oninput = rwt.util.Functions.bindEvent( this._oninputDom, this );
     this.addEventListener( "blur", this._onblur );
     this.addEventListener( "keydown", this._onkeydown );
     this.addEventListener( "keypress", this._onkeypress );
@@ -57,7 +57,7 @@ qx.Class.define( "rwt.widgets.base.BasicText", {
   },
 
   events: {
-    "input" : "qx.event.type.DataEvent"
+    "input" : "rwt.event.DataEvent"
   },
 
   properties : {
@@ -534,7 +534,7 @@ qx.Class.define( "rwt.widgets.base.BasicText", {
         if( this.__font != null ) {
           this.__font.renderElement( this._inputElement );
         } else {
-          qx.ui.core.Font.resetElement( this._inputElement );
+          rwt.html.Font.resetElement( this._inputElement );
         }
       }
     },
@@ -555,12 +555,12 @@ qx.Class.define( "rwt.widgets.base.BasicText", {
     },
 
     _renderTextShadow : function() {
-      org.eclipse.rwt.HtmlUtil.setTextShadow( this._inputElement, this.__textShadow );
+      rwt.html.Style.setTextShadow( this._inputElement, this.__textShadow );
     },
 
     _visualizeFocus : function() {
       this.base( arguments );
-      if( !qx.event.handler.FocusHandler.blockFocus ) {
+      if( !rwt.widgets.util.FocusHandler.blockFocus ) {
         try {
           this._inputElement.focus();
         } catch( ex ) {
@@ -606,14 +606,14 @@ qx.Class.define( "rwt.widgets.base.BasicText", {
 
     _getInputElementHeight : rwt.util.Variant.select( "qx.client", {
       "mshtml" : function() {
-        var result = qx.html.Dimension.getBoxHeight( this._inputElement );
+        var result = this._inputElement.offsetWidth;
         if( result !== 0 ) {
           result -= 2;
         }
         return result;
       },
       "default" :function() {
-        return qx.html.Dimension.getBoxHeight( this._inputElement );
+        return this._inputElement.offsetHeight;
       }
     } ),
 
@@ -636,7 +636,7 @@ qx.Class.define( "rwt.widgets.base.BasicText", {
         var newValue = this.getComputedValue().toString();
         var doit = true;
         if( this.hasEventListeners( "input" ) ) {
-          doit = this.dispatchEvent( new qx.event.type.DataEvent( "input", this._typed ), true );
+          doit = this.dispatchEvent( new rwt.event.DataEvent( "input", this._typed ), true );
         }
         if( doit ) {
           this.setValue( newValue ); // if doit is false, the listener has to do this
@@ -656,7 +656,7 @@ qx.Class.define( "rwt.widgets.base.BasicText", {
 
     _applyFocused : function( newValue, oldValue ) {
       this.base( arguments, newValue, oldValue );
-      if( !qx.event.handler.FocusHandler.mouseFocus ) {
+      if( !rwt.widgets.util.FocusHandler.mouseFocus ) {
         this._renderSelection();
       }
     },

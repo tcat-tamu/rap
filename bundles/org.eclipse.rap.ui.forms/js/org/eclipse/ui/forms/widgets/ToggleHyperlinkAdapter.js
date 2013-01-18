@@ -9,25 +9,25 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-rwt.protocol.AdapterRegistry.add( "forms.widgets.ToggleHyperlink", {
+rwt.remote.HandlerRegistry.add( "forms.widgets.ToggleHyperlink", {
 
   factory : function( properties ) {
     var result = new org.eclipse.ui.forms.widgets.ToggleHyperlink();
     result.setUserData( "isControl", true );
-    rwt.protocol.AdapterUtil.setParent( result, properties.parent );
+    rwt.remote.HandlerUtil.setParent( result, properties.parent );
     return result;
   },
 
-  destructor : rwt.protocol.AdapterUtil.getControlDestructor(),
+  destructor : rwt.remote.HandlerUtil.getControlDestructor(),
 
-  getDestroyableChildren : rwt.protocol.AdapterUtil.getDestroyableChildrenFinder(),
+  getDestroyableChildren : rwt.remote.HandlerUtil.getDestroyableChildrenFinder(),
 
-  properties : rwt.protocol.AdapterUtil.extendControlProperties( [
+  properties : rwt.remote.HandlerUtil.extendControlProperties( [
     "images",
     "expanded"
   ] ),
 
-  propertyHandler : rwt.protocol.AdapterUtil.extendControlPropertyHandler( {
+  propertyHandler : rwt.remote.HandlerUtil.extendControlPropertyHandler( {
     "images" : function( widget, value ) {
       var collapseNormal = value[ 0 ] === null ? null : value[ 0 ][ 0 ];
       var collapseHover = value[ 1 ] === null ? null : value[ 1 ][ 0 ];
@@ -37,11 +37,11 @@ rwt.protocol.AdapterRegistry.add( "forms.widgets.ToggleHyperlink", {
     }
   } ),
 
-  listeners : rwt.protocol.AdapterUtil.extendControlListeners( [
+  listeners : rwt.remote.HandlerUtil.extendControlListeners( [
     "DefaultSelection"
   ] ),
 
-  listenerHandler : rwt.protocol.AdapterUtil.extendControlListenerHandler( {} ),
+  listenerHandler : rwt.remote.HandlerUtil.extendControlListenerHandler( {} ),
 
   methods : []
 

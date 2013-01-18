@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.Menu", {
+rwt.qx.Class.define( "rwt.widgets.Menu", {
   extend : rwt.widgets.base.Popup,
   include : rwt.animation.VisibilityAnimationMixin,
 
@@ -70,19 +70,19 @@ qx.Class.define( "rwt.widgets.Menu", {
     },
 
     menuDetectedByMouse : function( evt ) {
-      if( evt.getButton() === qx.event.type.MouseEvent.C_BUTTON_RIGHT ) {
+      if( evt.getButton() === rwt.event.MouseEvent.C_BUTTON_RIGHT ) {
         rwt.widgets.Menu.contextMenuHandler( evt );
       }
     },
 
     contextMenuHandler : function( event ) {
-      var control = org.eclipse.swt.WidgetUtil.getControl( event.getTarget() );
+      var control = rwt.widgets.util.WidgetUtil.getControl( event.getTarget() );
       var contextMenu = control ? control.getContextMenu() : null;
       if( contextMenu != null ) {
         event.stopPropagation();
         event.preventDefault();
-        var pageX = qx.event.type.MouseEvent.getPageX();
-        var pageY = qx.event.type.MouseEvent.getPageY();
+        var pageX = rwt.event.MouseEvent.getPageX();
+        var pageY = rwt.event.MouseEvent.getPageY();
         contextMenu.setLocation( pageX, pageY );
         contextMenu.setOpener( control );
         contextMenu.show();
@@ -123,7 +123,7 @@ qx.Class.define( "rwt.widgets.Menu", {
   },
 
   events : {
-    "changeHoverItem" : "qx.event.type.Event"
+    "changeHoverItem" : "rwt.event.Event"
   },
 
   members : {
@@ -347,7 +347,7 @@ qx.Class.define( "rwt.widgets.Menu", {
     _beforeAppear : function() {
       // original qooxdoo code: (1 line)
       rwt.widgets.base.Parent.prototype._beforeAppear.call( this );
-      org.eclipse.rwt.MenuManager.getInstance().add( this );
+      rwt.widgets.util.MenuManager.getInstance().add( this );
       this.bringToFront();
       this._makeActive();
       this._menuShown();
@@ -356,7 +356,7 @@ qx.Class.define( "rwt.widgets.Menu", {
     _beforeDisappear : function() {
       // original qooxdoo code: (1 line)
       rwt.widgets.base.Parent.prototype._beforeDisappear.call( this );
-      org.eclipse.rwt.MenuManager.getInstance().remove( this );
+      rwt.widgets.util.MenuManager.getInstance().remove( this );
       if( this.getFocusRoot() ) {
         // if the menu is disposed while visible, it might not have a focusRoot
         this._makeInactive();
@@ -412,9 +412,9 @@ qx.Class.define( "rwt.widgets.Menu", {
         var itemNode = item.getElement();
         var thisNode = this.getElement();
         // the position is relative to the document, therefore we need helper
-        subMenu.setTop( qx.bom.element.Location.getTop( itemNode ) - 2 );
-        subMenu.setLeft(   qx.bom.element.Location.getLeft( thisNode )
-                         + qx.html.Dimension.getBoxWidth( thisNode )
+        subMenu.setTop( rwt.html.Location.getTop( itemNode ) - 2 );
+        subMenu.setLeft(   rwt.html.Location.getLeft( thisNode )
+                         + thisNode.offsetWidth
                          - 3 );
         subMenu.show();
       }
@@ -516,7 +516,7 @@ qx.Class.define( "rwt.widgets.Menu", {
         this._openItem.getMenu().hoverFirstItem();
       } else if( this._hoverItem ){
         this._hoverItem.execute();
-        org.eclipse.rwt.MenuManager.getInstance().update();
+        rwt.widgets.util.MenuManager.getInstance().update();
       }
       event.preventDefault();
       event.stopPropagation();
@@ -538,7 +538,7 @@ qx.Class.define( "rwt.widgets.Menu", {
     },
 
    _menuShown : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         if( this._hasShowListener ) {
           // create preliminary item
           if( this._preItem == null ) {
@@ -560,7 +560,7 @@ qx.Class.define( "rwt.widgets.Menu", {
           }
           //this.setDisplay( true ); //wouldn't be called if display was false
           // send event
-          rwt.remote.Server.getInstance().getServerObject( this ).notify( "Show" );
+          rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Show" );
         } else {
           var display = this._layout.getChildren().length !== 0;
           //no items and no listener to add some:
@@ -575,9 +575,9 @@ qx.Class.define( "rwt.widgets.Menu", {
     },
 
     _menuHidden : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         if( this._hasHideListener ) {
-          rwt.remote.Server.getInstance().getServerObject( this ).notify( "Hide" );
+          rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Hide" );
         }
       }
     },

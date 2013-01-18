@@ -8,15 +8,15 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.WidgetToolTipTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetToolTipTest", {
+  extend : rwt.qx.Object,
   
   construct : function() {
     this.base( arguments );
     this.TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
     this.TestUtil.prepareTimerUse();
-    this.manager = qx.ui.popup.ToolTipManager.getInstance();
-    this.wm = org.eclipse.swt.WidgetManager.getInstance();        
+    this.manager = rwt.widgets.util.ToolTipManager.getInstance();
+    this.wm = rwt.remote.WidgetManager.getInstance();        
     this.TestUtil.flush();
     this.toolTip = rwt.widgets.base.WidgetToolTip.getInstance();
   },

@@ -10,50 +10,57 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
+
 import org.eclipse.rap.rwt.internal.RWTProperties;
 import org.eclipse.rap.rwt.internal.util.ClassInstantiationException;
 import org.eclipse.rap.rwt.testfixture.Fixture;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import junit.framework.TestCase;
 
+public class IdGeneratorProvider_Test {
 
-public class IdGeneratorProvider_Test extends TestCase {
-
-  private static final String CUSTOM_ID_GENERATOR_CLASS_NAME
-    = "org.eclipse.swt.internal.widgets.CustomIdGenerator";
-
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
     System.clearProperty( RWTProperties.ID_GENERATOR );
   }
 
-  public void testDefaultIdGenerator() {
+  @Test
+  public void testGetIdGenerator_returnsDefaultGenerator() {
     IdGenerator idGenerator = IdGeneratorProvider.getIdGenerator();
 
-    assertTrue( idGenerator instanceof IdGeneratorImpl );
+    assertSame( IdGeneratorImpl.class, idGenerator.getClass() );
   }
 
-  public void testDefaultIdGenerator_SameInstance() {
+  @Test
+  public void testGetIdGenerator_returnsSameInstance() {
     IdGenerator idGenerator1 = IdGeneratorProvider.getIdGenerator();
     IdGenerator idGenerator2 = IdGeneratorProvider.getIdGenerator();
 
     assertSame( idGenerator1, idGenerator2 );
   }
 
-  public void testCustomIdGenerator() {
-    System.setProperty( RWTProperties.ID_GENERATOR, CUSTOM_ID_GENERATOR_CLASS_NAME );
+  @Test
+  public void testGetIdGenerator_CustomGenerator() {
+    System.setProperty( RWTProperties.ID_GENERATOR, CustomIdGenerator.class.getName() );
+
     IdGenerator idGenerator = IdGeneratorProvider.getIdGenerator();
 
-    assertTrue( idGenerator instanceof CustomIdGenerator );
+    assertSame( CustomIdGenerator.class, idGenerator.getClass() );
   }
 
-  public void testCustomIdGenerator_NotIdGeneratorClass() {
+  @Test
+  public void testGetIdGenerator_failsForIncompatibleClass() {
     System.setProperty( RWTProperties.ID_GENERATOR, "java.lang.Object" );
 
     try {
@@ -65,15 +72,17 @@ public class IdGeneratorProvider_Test extends TestCase {
     }
   }
 
-  public void testCustomIdGenerator_MissingClass() {
-    System.setProperty( RWTProperties.ID_GENERATOR, "foo.bar.Gen" );
+  @Test
+  public void testGetIdGenerator_failsForMissingClass() {
+    System.setProperty( RWTProperties.ID_GENERATOR, "foo.bar.Generator" );
 
     try {
       IdGeneratorProvider.getIdGenerator();
       fail();
     } catch( ClassInstantiationException expected ) {
-      String expectedMessage = "Failed to load class: foo.bar.Gen";
+      String expectedMessage = "Failed to load class: foo.bar.Generator";
       assertEquals( expectedMessage, expected.getMessage() );
     }
   }
+
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 Frank Appel and others.
+ * Copyright (c) 2011, 2013 Frank Appel and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,23 +11,27 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.textsize;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 import static org.eclipse.rap.rwt.internal.textsize.MeasurementOperator.METHOD_MEASURE_ITEMS;
 import static org.eclipse.rap.rwt.internal.textsize.MeasurementOperator.METHOD_STORE_MEASUREMENTS;
 import static org.eclipse.rap.rwt.internal.textsize.MeasurementOperator.PROPERTY_RESULTS;
 import static org.eclipse.rap.rwt.internal.textsize.MeasurementOperator.TYPE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.eclipse.rap.rwt.graphics.Graphics;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.lifecycle.LifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
+import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
-import org.eclipse.rap.rwt.testfixture.internal.PhaseListenerHelper;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
@@ -36,17 +40,20 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class MeasurementListener_Test extends TestCase {
+public class MeasurementListener_Test {
   private static final int EXPAND_AND_RESTORE = 2;
   private static final FontData FONT_DATA = new FontData( "arial", 12, SWT.BOLD );
 
   private MeasurementListener listener;
   private int resizeCount;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     listener = new MeasurementListener();
 
     Fixture.setUp();
@@ -55,42 +62,47 @@ public class MeasurementListener_Test extends TestCase {
     initResizeCount();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
+  @Test
   public void testGetPhaseId() {
     PhaseId phaseId = listener.getPhaseId();
 
     assertSame( PhaseId.ANY, phaseId );
   }
 
+  @Test
   public void testAfterPhaseWithoutMeasurementItemsOrProbes() {
-    listener.afterPhase( PhaseListenerHelper.createRenderEvent() );
+    listener.afterPhase( createPhaseEvent( PhaseId.RENDER ) );
 
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findCallOperation( TYPE, METHOD_MEASURE_ITEMS ) );
   }
 
+  @Test
   public void testAfterPhaseWithMeasurementItems() {
     MeasurementOperator.getInstance().addItemToMeasure( createItem() );
 
-    listener.afterPhase( PhaseListenerHelper.createRenderEvent() );
+    listener.afterPhase( createPhaseEvent( PhaseId.RENDER ) );
 
     Message message = Fixture.getProtocolMessage();
     assertNotNull( message.findCallOperation( TYPE, METHOD_MEASURE_ITEMS ) );
   }
 
+  @Test
   public void testAfterPhaseWithProbes() {
     MeasurementOperator.getInstance().addProbeToMeasure( FONT_DATA );
 
-    listener.afterPhase( PhaseListenerHelper.createRenderEvent() );
+    listener.afterPhase( createPhaseEvent( PhaseId.RENDER ) );
 
     Message message = Fixture.getProtocolMessage();
     assertNotNull( message.findCallOperation( TYPE, METHOD_MEASURE_ITEMS ) );
   }
 
+  @Test
   public void testAfterPhaseWithMeasurementItemsButWrongPhaseId() {
     MeasurementOperator.getInstance().addItemToMeasure( createItem() );
 
@@ -100,6 +112,7 @@ public class MeasurementListener_Test extends TestCase {
     assertNull( message.findCallOperation( TYPE, METHOD_MEASURE_ITEMS ) );
   }
 
+  @Test
   public void testAfterPhaseWithProbesButWrongPhaseId() {
     MeasurementOperator.getInstance().addProbeToMeasure( FONT_DATA );
 
@@ -109,37 +122,41 @@ public class MeasurementListener_Test extends TestCase {
     assertNull( message.findCallOperation( TYPE, METHOD_MEASURE_ITEMS ) );
   }
 
+  @Test
   public void testBeforePhaseWithMeasuredProbes() {
     fakeRequestWithProbeMeasurementResults();
 
-    listener.beforePhase( PhaseListenerHelper.createProcessActionEvent() );
+    listener.beforePhase( createPhaseEvent( PhaseId.PROCESS_ACTION ) );
 
     checkProbeResultHasBeenStored();
   }
 
+  @Test
   public void testBeforePhaseWithMeasuredItems() {
     createShellWithResizeListener();
     fakeRequestWithItemMeasurementResults();
 
-    listener.beforePhase( PhaseListenerHelper.createProcessActionEvent() );
+    listener.beforePhase( createPhaseEvent( PhaseId.PROCESS_ACTION ) );
 
     checkTextMeasurementResultHasBeenStored();
     checkShellHasBeenResized();
   }
 
+  @Test
   public void testBeforePhaseWithoutMeasuredItemsMustNotResizeShell() {
     createShellWithResizeListener();
 
-    listener.beforePhase( PhaseListenerHelper.createProcessActionEvent() );
+    listener.beforePhase( createPhaseEvent( PhaseId.PROCESS_ACTION ) );
 
     checkShellHasNotBeenResized();
   }
 
+  @Test
   public void testBeforePhaseProbeMeasurementOfStartupProbes() {
     createProbe();
     fakeRequestWithProbeMeasurementResults();
 
-    listener.beforePhase( PhaseListenerHelper.createPrepareUIRootEvent() );
+    listener.beforePhase( createPhaseEvent( PhaseId.PREPARE_UI_ROOT ) );
 
     checkProbeResultWasStored();
   }
@@ -153,7 +170,7 @@ public class MeasurementListener_Test extends TestCase {
   }
 
   private void createProbe() {
-    ProbeStore textSizeProbeStore = RWTFactory.getProbeStore();
+    ProbeStore textSizeProbeStore = getApplicationContext().getProbeStore();
     textSizeProbeStore.createProbe( FONT_DATA );
   }
 
@@ -172,12 +189,12 @@ public class MeasurementListener_Test extends TestCase {
 
   private void checkTextMeasurementResultHasBeenStored() {
     Font font = Graphics.getFont( FONT_DATA );
-    assertEquals( new Point( 100, 10 ), Graphics.stringExtent( font, "text" ) );
+    assertEquals( new Point( 100, 10 ), TextSizeUtil.stringExtent( font, "text" ) );
   }
 
   private void fakeRequestWithProbeMeasurementResults() {
     MeasurementOperator.getInstance().addProbeToMeasure( FONT_DATA );
-    listener.afterPhase( PhaseListenerHelper.createRenderEvent() );
+    listener.afterPhase( createPhaseEvent( PhaseId.RENDER ) );
     Map<String, Object> parameters = new HashMap<String, Object>();
     Map<String, Object> results = new HashMap<String, Object>();
     results.put( MeasurementUtil.getId( FONT_DATA ), new int[] { 5, 10 }  );
@@ -197,9 +214,9 @@ public class MeasurementListener_Test extends TestCase {
   }
 
   private void executeNonRenderPhases() {
-    listener.afterPhase( PhaseListenerHelper.createPrepareUIRootEvent() );
-    listener.afterPhase( PhaseListenerHelper.createReadDataEvent() );
-    listener.afterPhase( PhaseListenerHelper.createProcessActionEvent() );
+    listener.afterPhase( createPhaseEvent( PhaseId.PREPARE_UI_ROOT ) );
+    listener.afterPhase( createPhaseEvent( PhaseId.READ_DATA ) );
+    listener.afterPhase( createPhaseEvent( PhaseId.PROCESS_ACTION ) );
   }
 
   private void createShellWithResizeListener() {
@@ -213,7 +230,12 @@ public class MeasurementListener_Test extends TestCase {
     } );
   }
 
-  private MeasurementItem createItem() {
+  private static MeasurementItem createItem() {
     return new MeasurementItem( "text", FONT_DATA, SWT.DEFAULT, TextSizeUtil.STRING_EXTENT );
   }
+
+  private static PhaseEvent createPhaseEvent( PhaseId phaseId ) {
+    return new PhaseEvent( mock( LifeCycle.class ), phaseId );
+  }
+
 }

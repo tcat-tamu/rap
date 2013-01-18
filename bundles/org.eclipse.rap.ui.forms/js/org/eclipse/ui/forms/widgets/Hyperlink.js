@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.ui.forms.widgets.Hyperlink", {
+rwt.qx.Class.define( "org.eclipse.ui.forms.widgets.Hyperlink", {
   extend : rwt.widgets.base.Atom,
 
   construct : function( style ) {
@@ -21,8 +21,8 @@ qx.Class.define( "org.eclipse.ui.forms.widgets.Hyperlink", {
     // End of workaround
     var labelObject = this.getLabelObject();
     labelObject.setAppearance( "hyperlink-label" );
-    labelObject.setMode( qx.constant.Style.LABEL_MODE_HTML );
-    labelObject.setWrap( rwt.util.String.contains( style, "wrap" ) );
+    labelObject.setMode( "html" );
+    labelObject.setWrap( rwt.util.Strings.contains( style, "wrap" ) );
     // TODO [rh] workaround for weird getLabelObject behavior
     this.setLabel( "" );
     // End of workaround
@@ -71,18 +71,18 @@ qx.Class.define( "org.eclipse.ui.forms.widgets.Hyperlink", {
     },
 
     setActiveTextColor : function( value ) {
-      this._activeTextColor = value;      
+      this._activeTextColor = value;
     },
 
     setUnderlineMode : function( value ) {
-      this._underlineMode = value;      
+      this._underlineMode = value;
     },
 
     setHasDefaultSelectionListener : function( value ) {
       if( value ) {
-        this.addEventListener( "click", org.eclipse.swt.EventUtil.widgetDefaultSelected, this );
+        this.addEventListener( "click", rwt.remote.EventUtil.widgetDefaultSelected, this );
       } else {
-        this.removeEventListener( "click", org.eclipse.swt.EventUtil.widgetDefaultSelected, this );
+        this.removeEventListener( "click", rwt.remote.EventUtil.widgetDefaultSelected, this );
       }
     },
 

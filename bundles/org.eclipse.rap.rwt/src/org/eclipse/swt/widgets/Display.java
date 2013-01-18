@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,8 @@
  *    Frank Appel - replaced singletons and static fields (Bug 337787)
  ******************************************************************************/
 package org.eclipse.swt.widgets;
+
+import static org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil.getId;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -25,7 +27,6 @@ import java.util.Set;
 import org.eclipse.rap.rwt.Adaptable;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.IUIThreadHolder;
@@ -41,10 +42,11 @@ import org.eclipse.rap.rwt.internal.theme.QxImage;
 import org.eclipse.rap.rwt.internal.theme.QxType;
 import org.eclipse.rap.rwt.internal.theme.SimpleSelector;
 import org.eclipse.rap.rwt.internal.theme.ThemeUtil;
-import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
+import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
+import org.eclipse.rap.rwt.service.ServerPushSession;
 import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -58,6 +60,7 @@ import org.eclipse.swt.internal.SerializableCompatibility;
 import org.eclipse.swt.internal.events.EventList;
 import org.eclipse.swt.internal.events.EventUtil;
 import org.eclipse.swt.internal.widgets.IDisplayAdapter;
+import org.eclipse.swt.internal.widgets.IdGeneratorProvider;
 import org.eclipse.swt.internal.widgets.WidgetAdapterImpl;
 import org.eclipse.swt.internal.widgets.WidgetTreeVisitor;
 import org.eclipse.swt.internal.widgets.WidgetTreeVisitor.AllWidgetTreeVisitor;
@@ -144,6 +147,8 @@ import org.eclipse.swt.internal.widgets.WidgetTreeVisitor.AllWidgetTreeVisitor;
 public class Display extends Device implements Adaptable {
 
   private final static String BOUNDS = "bounds";
+  private final static String DPI = "dpi";
+  private final static String COLOR_DEPTH = "colorDepth";
   private static final String ATTR_INVALIDATE_FOCUS
     = DisplayAdapter.class.getName() + "#invalidateFocus";
   private static final String APP_NAME = Display.class.getName() + "#appName";
@@ -207,6 +212,8 @@ public class Display extends Device implements Adaptable {
   private transient Thread thread;
   private final UISession uiSession;
   private final Rectangle bounds;
+  private final Point dpi;
+  private final int depth;
   private final Point cursorLocation;
   private Shell activeShell;
   private Collection<Control> redrawControls;
@@ -261,6 +268,8 @@ public class Display extends Device implements Adaptable {
     monitor = new Monitor( this );
     cursorLocation = new Point( 0, 0 );
     bounds = readInitialBounds();
+    dpi = readDPI();
+    depth = readDepth();
     synchronizer = new Synchronizer( this );
     register();
   }
@@ -279,6 +288,18 @@ public class Display extends Device implements Adaptable {
   public Rectangle getBounds() {
     checkDevice();
     return new Rectangle( bounds.x, bounds.y, bounds.width, bounds.height );
+  }
+
+  @Override
+  public Point getDPI() {
+    checkDevice();
+    return new Point( dpi.x, dpi.y );
+  }
+
+  @Override
+  public int getDepth() {
+    checkDevice();
+    return depth;
   }
 
   /**
@@ -641,7 +662,9 @@ public class Display extends Device implements Adaptable {
    */
   public void disposeExec( Runnable runnable ) {
     checkDevice();
-    if (disposeList == null) disposeList = new Runnable [4];
+    if (disposeList == null) {
+      disposeList = new Runnable [4];
+    }
     for (int i=0; i<disposeList.length; i++) {
       if (disposeList [i] == null) {
         disposeList [i] = runnable;
@@ -741,7 +764,8 @@ public class Display extends Device implements Adaptable {
       result = ( T )displayAdapter;
     } else if( adapter == IClientObjectAdapter.class || adapter == WidgetAdapter.class ) {
       if( widgetAdapter == null ) {
-        widgetAdapter = new WidgetAdapterImpl( "w1" );
+        String id = IdGeneratorProvider.getIdGenerator().createId( this );
+        widgetAdapter = new WidgetAdapterImpl( id );
       }
       result = ( T )widgetAdapter;
     } else if( adapter == DisplayLifeCycleAdapter.class ) {
@@ -881,23 +905,18 @@ public class Display extends Device implements Adaptable {
    *
    * @param thread the user-interface thread
    * @return the display for the given thread
-   *
-   * @since 1.3
    */
   public static Display findDisplay( Thread thread ) {
     synchronized( Device.class ) {
-      WeakReference[] displays = getDisplays();
-      Display result = null;
-      for( int i = 0; result == null && i < displays.length; i++ ) {
-        WeakReference current = displays[ i ];
-        if( current != null ) {
-          Display display = ( Display )current.get();
+      for( WeakReference<Display> displayRef : getDisplays() ) {
+        if( displayRef != null ) {
+          Display display = displayRef.get();
           if( display != null && !display.isDisposed() && display.thread == thread ) {
-            result = display;
+            return display;
           }
         }
       }
-      return result;
+      return null;
     }
   }
 
@@ -921,8 +940,12 @@ public class Display extends Device implements Adaptable {
   // verbatim copy of SWT code
   public void setSynchronizer (Synchronizer synchronizer) {
     checkDevice ();
-    if (synchronizer == null) error (SWT.ERROR_NULL_ARGUMENT);
-    if (synchronizer == this.synchronizer) return;
+    if (synchronizer == null) {
+      error (SWT.ERROR_NULL_ARGUMENT);
+    }
+    if (synchronizer == this.synchronizer) {
+      return;
+    }
     Synchronizer oldSynchronizer;
     synchronized (deviceLock) {
       oldSynchronizer = this.synchronizer;
@@ -1074,13 +1097,17 @@ public class Display extends Device implements Adaptable {
       error( SWT.ERROR_NULL_ARGUMENT );
     }
     if( scheduler == null ) {
-      scheduler = new TimerExecScheduler( this, ServerPushManager.getInstance() );
+      scheduler = createTimerExecScheduler();
     }
     if( milliseconds < 0 ) {
       scheduler.cancel( runnable );
     } else {
       scheduler.schedule( milliseconds, runnable );
     }
+  }
+
+  TimerExecScheduler createTimerExecScheduler() {
+    return new TimerExecScheduler( this );
   }
 
   /**
@@ -1169,7 +1196,7 @@ public class Display extends Device implements Adaptable {
    */
   public boolean sleep() {
     checkDevice();
-    LifeCycle lifeCycle = ( LifeCycle )getApplicationContext().getLifeCycleFactory().getLifeCycle();
+    LifeCycle lifeCycle = getApplicationContext().getLifeCycleFactory().getLifeCycle();
     lifeCycle.sleep();
     // return true as we cannot reliably determinate what actually caused
     // lifeCycle#sleep() to return
@@ -1177,17 +1204,15 @@ public class Display extends Device implements Adaptable {
   }
 
   /**
-   * Notifies the client side to send a life cycle request as UI thread to
-   * perform UI-updates. Note that this method may be called from any thread.
-   *
-   * <p>Note that this only works as expected if the
-   * <code>{@link org.eclipse.rap.rwt.lifecycle.UICallBack UICallBack}</code>
-   * mechanism is activated.</p>
+   * Notifies the client to send a request in order to wake up a sleeping UI thread and to perform
+   * pending UI updates. Note that this method may be called from any thread.
+   * <p>
+   * Note that this method has no effect unless a {@link ServerPushSession} is active.
+   * </p>
    *
    * @exception SWTException <ul>
    *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
    * </ul>
-   *
    */
   public void wake() {
     synchronized( deviceLock ) {
@@ -1322,25 +1347,6 @@ public class Display extends Device implements Adaptable {
     return null;
   }
 
-  /**
-   * Returns the matching standard color for the given
-   * constant, which should be one of the color constants
-   * specified in class <code>SWT</code>. Any value other
-   * than one of the SWT color constants which is passed
-   * in will result in the color black. This color should
-   * not be free'd because it was allocated by the system,
-   * not the application.
-   *
-   * @param id the color constant
-   * @return the matching color
-   *
-   * @exception SWTException <ul>
-   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-   *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
-   * </ul>
-   *
-   * @see SWT
-   */
   @Override
   public Color getSystemColor( int id ) {
     checkDevice();
@@ -2195,7 +2201,7 @@ public class Display extends Device implements Adaptable {
   }
 
   private static WeakReference<Display>[] getDisplays() {
-    return RWTFactory.getDisplaysHolder().getDisplays();
+    return ContextProvider.getApplicationContext().getDisplaysHolder().getDisplays();
   }
 
   private void setDisplays( WeakReference<Display>[] displays ) {
@@ -2213,7 +2219,7 @@ public class Display extends Device implements Adaptable {
   }
 
   boolean isValidThread () {
-    return thread == Thread.currentThread ();
+    return thread == Thread.currentThread();
   }
 
   @Override
@@ -2241,9 +2247,26 @@ public class Display extends Device implements Adaptable {
   }
 
   private Rectangle readInitialBounds() {
-    Rectangle result = ProtocolUtil.readPropertyValueAsRectangle( "w1",  Display.BOUNDS );
+    Rectangle result = ProtocolUtil.readPropertyValueAsRectangle( getId( this ), BOUNDS );
     if( result == null ) {
       result = new Rectangle( 0, 0, 1024, 768 );
+    }
+    return result;
+  }
+
+  private Point readDPI() {
+    Point result = ProtocolUtil.readPropertyValueAsPoint( getId( this ), DPI );
+    if( result == null ) {
+      result = new Point( 0, 0 );
+    }
+    return result;
+  }
+
+  private int readDepth() {
+    int result = 16;
+    String parameter = ProtocolUtil.readPropertyValueAsString( getId( this ), COLOR_DEPTH );
+    if( parameter != null ) {
+      result = Integer.parseInt( parameter );
     }
     return result;
   }

@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
+rwt.qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
 
   extend : rwt.widgets.base.Terminator,
 
@@ -348,17 +348,17 @@ qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
       this._afterScheduleLayoutY();
     },
 
-    _afterScheduleLayoutX : rwt.util.Function.returnTrue,
+    _afterScheduleLayoutX : rwt.util.Functions.returnTrue,
 
-    _afterScheduleLayoutY : rwt.util.Function.returnTrue,
+    _afterScheduleLayoutY : rwt.util.Functions.returnTrue,
 
-    _beforeComputeInnerWidth : rwt.util.Function.returnTrue,
+    _beforeComputeInnerWidth : rwt.util.Functions.returnTrue,
 
-    _beforeComputeInnerHeight : rwt.util.Function.returnTrue,
+    _beforeComputeInnerHeight : rwt.util.Functions.returnTrue,
 
-    _beforeRenderLayout : rwt.util.Function.returnTrue,
+    _beforeRenderLayout : rwt.util.Functions.returnTrue,
 
-    _afterRenderLayout : rwt.util.Function.returnTrue,
+    _afterRenderLayout : rwt.util.Functions.returnTrue,
 
     _cellHasContent : function( cell ) {
       var content = this.__cellData[ cell ][ 1 ];
@@ -427,7 +427,7 @@ qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
     __computeCellDimension : function( cellEntry, wrapWidth ) {
       var dimension;
       if( cellEntry[ 0 ] == "label" && cellEntry[ 1 ] != null ) {
-        var calc = org.eclipse.swt.FontSizeCalculation;
+        var calc = rwt.widgets.util.FontSizeCalculation;
         dimension = calc.computeTextDimensions( cellEntry[ 1 ], this.__fontCache, wrapWidth );
       } else {
         dimension = [ 0, 0 ];
@@ -437,8 +437,8 @@ qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
       return dimension;
     },
 
-    _isWidthEssential : rwt.util.Function.returnTrue,
-    _isHeightEssential : rwt.util.Function.returnTrue,
+    _isWidthEssential : rwt.util.Functions.returnTrue,
+    _isHeightEssential : rwt.util.Functions.returnTrue,
 
     _computePreferredInnerWidth : function() {
       return this._getContentWidth( "ignoreFlexible" );
@@ -693,7 +693,7 @@ qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
       var node = this.getCellNode( cell );
       var source = this.getCellContent( cell );
       var opacity = this.getEnabled() ? 1 : 0.3;
-      org.eclipse.rwt.HtmlUtil.setBackgroundImage( node, source, opacity );
+      rwt.html.Style.setBackgroundImage( node, source, opacity );
     },
 
     _updateAllImages : function() {
@@ -747,7 +747,7 @@ qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
       if( font ) {
         font.renderStyle( this.__fontCache );
       } else {
-        qx.ui.core.Font.resetStyle( this.__fontCache );
+        rwt.html.Font.resetStyle( this.__fontCache );
       }
       for( var i = 0; i < this.__cellCount; i++ ) {
         if( this._isTextCell( i ) && this._cellHasContent( i ) ) {
@@ -755,7 +755,7 @@ qx.Class.define( "rwt.widgets.base.MultiCellWidget",  {
             if( font ) {
               font.renderStyle( this.getCellNode( i ).style );
             } else {
-              qx.ui.core.Font.resetStyle( this.getCellNode( i ).style );
+              rwt.html.Font.resetStyle( this.getCellNode( i ).style );
             }
           }
           this.__updateComputedCellDimension( i );

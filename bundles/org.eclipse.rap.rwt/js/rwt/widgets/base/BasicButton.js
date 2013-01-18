@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.BasicButton", {
+rwt.qx.Class.define( "rwt.widgets.base.BasicButton", {
 
   extend : rwt.widgets.base.MultiCellWidget,
 
@@ -46,8 +46,8 @@ qx.Class.define( "rwt.widgets.base.BasicButton", {
         this._isSelectable = true;
         this._sendEvent = true;
         this.setNoRadioGroup( false );
-        org.eclipse.rwt.RadioButtonUtil.registerExecute( this );
-        org.eclipse.rwt.RadioButtonUtil.registerKeypress( this );
+        rwt.widgets.util.RadioButtonUtil.registerExecute( this );
+        rwt.widgets.util.RadioButtonUtil.registerKeypress( this );
       break;
     }
 
@@ -61,7 +61,7 @@ qx.Class.define( "rwt.widgets.base.BasicButton", {
   },
 
   events: {
-    "stateOverChanged" : "qx.event.type.Event"
+    "stateOverChanged" : "rwt.event.Event"
   },
 
   properties : {
@@ -169,8 +169,8 @@ qx.Class.define( "rwt.widgets.base.BasicButton", {
         } else {
           this.removeState( "selected" );
         }
-        if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-          var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+        if( !rwt.remote.EventUtil.getSuspended() ) {
+          var widgetManager = rwt.remote.WidgetManager.getInstance();
           var id = widgetManager.findIdByWidget( this );
           var req = rwt.remote.Server.getInstance();
           req.addParameter( id + ".selection", this._selected );
@@ -180,11 +180,11 @@ qx.Class.define( "rwt.widgets.base.BasicButton", {
 
     // Not using EventUtil for listener since no event should be sent for radio
     _sendChanges : function() {
-      if(    !org.eclipse.swt.EventUtil.getSuspended()
+      if(    !rwt.remote.EventUtil.getSuspended()
           && this._hasSelectionListener
           && this._sendEvent )
       {
-        org.eclipse.swt.EventUtil.notifySelected( this );
+        rwt.remote.EventUtil.notifySelected( this );
       }
     },
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -31,8 +31,10 @@ import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.ContextUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.ISessionShutdownAdapter;
+import org.eclipse.rap.rwt.internal.remote.ConnectionImpl;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
 import org.eclipse.rap.rwt.internal.util.SerializableLock;
+import org.eclipse.rap.rwt.remote.Connection;
 import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.service.UISessionEvent;
 import org.eclipse.rap.rwt.service.UISessionListener;
@@ -51,6 +53,7 @@ public final class UISessionImpl
   private final Map<String, Object> attributes;
   private final Set<UISessionListener> listeners;
   private final String id;
+  private Connection connection;
   private transient HttpSession httpSession;
   private boolean bound;
   private boolean inDestroy;
@@ -62,9 +65,10 @@ public final class UISessionImpl
     lock = new SerializableLock();
     attributes = new HashMap<String, Object>();
     listeners = new HashSet<UISessionListener>();
-    id = httpSession.getId();
+    id = httpSession.getId() + ":1";
     bound = true;
     this.httpSession = httpSession;
+    connection = new ConnectionImpl();
   }
 
   public void setShutdownAdapter( ISessionShutdownAdapter adapter ) {
@@ -148,6 +152,10 @@ public final class UISessionImpl
     ApplicationContextImpl applicationContext = ApplicationContextUtil.get( this );
     ClientSelector clientSelector = applicationContext.getClientSelector();
     return clientSelector.getSelectedClient( this );
+  }
+
+  public Connection getConnection() {
+    return connection;
   }
 
   public Locale getLocale() {
@@ -238,6 +246,13 @@ public final class UISessionImpl
 
   public static void attachInstanceToSession( HttpSession httpSession, UISession uiSession ) {
     httpSession.setAttribute( ATTR_SESSION_STORE, uiSession );
+  }
+
+  /*
+   * test hook
+   */
+  void setConnection( Connection connection ) {
+    this.connection = connection;
   }
 
   Object getRequestLock() {

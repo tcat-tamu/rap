@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.Button", {
+rwt.qx.Class.define( "rwt.widgets.Button", {
 
   extend : rwt.widgets.base.BasicButton,
 
@@ -71,7 +71,7 @@ qx.Class.define( "rwt.widgets.Button", {
     },
 
     _showFocusIndicator : function() {
-      var focusIndicator = org.eclipse.rwt.FocusIndicator.getInstance();
+      var focusIndicator = rwt.widgets.util.FocusIndicator.getInstance();
       var node = this.getCellNode( 2 ) != null ? this.getCellNode( 2 ) : this.getCellNode( 1 );
       focusIndicator.show( this, "Button-FocusIndicator", node );
     },
@@ -81,7 +81,7 @@ qx.Class.define( "rwt.widgets.Button", {
     },
 
     _onBlur : function( event ) {
-      var focusIndicator = org.eclipse.rwt.FocusIndicator.getInstance();
+      var focusIndicator = rwt.widgets.util.FocusIndicator.getInstance();
       focusIndicator.hide( this );
     }
 

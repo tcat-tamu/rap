@@ -42,10 +42,10 @@
  * The original code is licensed under a BSD license
  * (http://developer.yahoo.com/yui/license.txt).
  */
-qx.Class.define("rwt.client.BrowserNavigation",
+rwt.qx.Class.define("rwt.client.BrowserNavigation",
 {
   type : "singleton",
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
 
 
@@ -118,7 +118,7 @@ qx.Class.define("rwt.client.BrowserNavigation",
      * Fired when the user moved in the history. The data property of the event
      * holds the state, which was passed to {@link #addToHistory}.
      */
-    "request" : "qx.event.type.DataEvent"
+    "request" : "rwt.event.DataEvent"
   },
 
 
@@ -377,7 +377,7 @@ qx.Class.define("rwt.client.BrowserNavigation",
     _historyNavigated : function( event ) {
       var state = event.getData();
       var server = rwt.remote.Server.getInstance();
-      server.getServerObject( this ).notify( "Navigation", {
+      server.getRemoteObject( this ).notify( "Navigation", {
         "state" : state
       } );
     }

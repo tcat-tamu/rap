@@ -12,23 +12,23 @@
 (function(){
 
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-var MessageProcessor = rwt.protocol.MessageProcessor;
+var MessageProcessor = rwt.remote.MessageProcessor;
 
 var display;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.DisplayTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.DisplayTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 
     testSetFocusControlByProtocol : function() {
       var button = new rwt.widgets.Button( "push" );
-      org.eclipse.swt.WidgetManager.getInstance().add( button, "btn1" );
+      rwt.remote.WidgetManager.getInstance().add( button, "btn1" );
       button.addToDocument();
       TestUtil.flush();
       assertFalse( button.getFocused() );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w1",
         "action" : "set",
@@ -44,7 +44,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DisplayTest", {
       var shell = TestUtil.createShellByProtocol( "w2" );
       shell.open();
       var button = new rwt.widgets.Button( "push" );
-      org.eclipse.swt.WidgetManager.getInstance().add( button, "btn1" );
+      rwt.remote.WidgetManager.getInstance().add( button, "btn1" );
       button.setParent( shell );
       TestUtil.flush();
       shell.setActive( true );
@@ -75,8 +75,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DisplayTest", {
     },
 
     testSendWindowSize : function() {
-      var width = qx.html.Window.getInnerWidth( window );
-      var height = qx.html.Window.getInnerHeight( window );
+      var width = rwt.html.Window.getInnerWidth( window );
+      var height = rwt.html.Window.getInnerHeight( window );
       rwt.widgets.base.ClientDocument.getInstance().createDispatchEvent( "windowresize" );
 
       var message = TestUtil.getMessageObject();
@@ -113,8 +113,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DisplayTest", {
 
     setUp : function() {
       display = rwt.widgets.Display.getCurrent();
-      var adapter = rwt.protocol.AdapterRegistry.getAdapter( "rwt.widgets.Display" );
-      rwt.protocol.ObjectRegistry.add( "w1", display, adapter );
+      var adapter = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Display" );
+      rwt.remote.ObjectRegistry.add( "w1", display, adapter );
     }
 
   }

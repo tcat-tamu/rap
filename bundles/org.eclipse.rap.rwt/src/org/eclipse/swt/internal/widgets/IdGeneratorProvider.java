@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,11 +10,12 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+
 import org.eclipse.rap.rwt.SingletonUtil;
 import org.eclipse.rap.rwt.internal.RWTProperties;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.util.ClassInstantiationException;
-import org.eclipse.rap.rwt.service.ApplicationContext;
 
 
 public class IdGeneratorProvider {
@@ -32,33 +33,38 @@ public class IdGeneratorProvider {
 
   @SuppressWarnings( "unchecked" )
   private static Class<? extends IdGenerator> getIdGeneratorClass() {
-    ApplicationContext applicationContext = RWTFactory.getApplicationContext();
+    ApplicationContextImpl applicationContext = getApplicationContext();
     Object result = applicationContext.getAttribute( ATTR_ID_GENERATOR_CLASS );
     if( result == null ) {
-      String className = RWTProperties.getIdGeneratorClassName();
-      if( className == null ) {
-        result = IdGeneratorImpl.class;
-      } else {
-        try {
-          result = loadClass( className ).asSubclass( IdGenerator.class );
-        } catch( ClassCastException exception ) {
-          String message = "Class is not an instance of IdGenerator: " + className;
-          throw new ClassInstantiationException( message, exception );
-        }
-      }
+      result = getGeneratorClass();
       applicationContext.setAttribute( ATTR_ID_GENERATOR_CLASS, result );
     }
-    return ( Class<? extends IdGenerator> )result;
+    return ( Class< ? extends IdGenerator> )result;
+  }
+
+  private static Class< ? extends IdGenerator> getGeneratorClass() {
+    String className = RWTProperties.getIdGeneratorClassName();
+    if( className != null ) {
+      return loadCustomGeneratorClass( className );
+    }
+    return IdGeneratorImpl.class;
+  }
+
+  private static Class<? extends IdGenerator> loadCustomGeneratorClass( String className ) {
+    try {
+      return loadClass( className ).asSubclass( IdGenerator.class );
+    } catch( ClassCastException exception ) {
+      String message = "Class is not an instance of IdGenerator: " + className;
+      throw new ClassInstantiationException( message, exception );
+    }
   }
 
   private static Class<?> loadClass( String className ) {
-    Class<?> result;
     try {
-      result = IdGeneratorProvider.class.getClassLoader().loadClass( className );
+      return IdGeneratorProvider.class.getClassLoader().loadClass( className );
     } catch( ClassNotFoundException exception ) {
       throw new ClassInstantiationException( "Failed to load class: " + className, exception );
     }
-    return result;
   }
 
 }

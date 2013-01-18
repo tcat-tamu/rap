@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.swt.SWT;
@@ -1850,7 +1849,7 @@ public class Tree extends Composite {
     int result;
     if( getColumnCount() == 0 && index == 0 ) {
       String text = item.getText( 0 );
-      int textWidth = Graphics.stringExtent( item.getFont(), text ).x;
+      int textWidth = TextSizeUtil.stringExtent( item.getFont(), text ).x;
       result = getCellPadding().width
                + getItemImageOuterWidth( index )
                + textWidth
@@ -1875,7 +1874,7 @@ public class Tree extends Composite {
   int getVisualTextWidth( int index, TreeItem item ) {
     int result = 0;
     if( index == 0 && getColumnCount() == 0 ) {
-      result = Graphics.stringExtent( item.getFont(), item.getText( 0 ) ).x;
+      result = TextSizeUtil.stringExtent( item.getFont(), item.getText( 0 ) ).x;
       result += TEXT_MARGIN.width;
     } else if( index >= 0 && index < getColumnCount() ) {
       result = getTextWidth( index ) - getIndentionOffset( item );
@@ -1889,7 +1888,7 @@ public class Tree extends Composite {
     if( !item.hasPreferredWidthBuffer( columnIndex ) ) {
       result = getTextOffset( columnIndex ) ;
       Rectangle padding = getCellPadding();
-      result += Graphics.stringExtent( getFont(), item.getTextWithoutMaterialize( columnIndex ) ).x;
+      result += TextSizeUtil.stringExtent( getFont(), item.getTextWithoutMaterialize( columnIndex ) ).x;
       result += padding.width - padding.x;
       if( isTreeColumn( columnIndex ) ) {
         result += TEXT_MARGIN.width - TEXT_MARGIN.x;
@@ -2038,12 +2037,12 @@ public class Tree extends Composite {
     int result = 0;
     if( headerVisible ) {
       Font headerFont = getHeaderFont();
-      int textHeight = Graphics.getCharHeight( headerFont );
+      int textHeight = TextSizeUtil.getCharHeight( headerFont );
       int imageHeight = 0;
       for( int i = 0; i < getColumnCount(); i++ ) {
         TreeColumn column = columnHolder.getItem( i );
         if( column.getText().contains( "\n" ) ) {
-          int columnTextHeight = Graphics.textExtent( headerFont, column.getText(), 0 ).y;
+          int columnTextHeight = TextSizeUtil.textExtent( headerFont, column.getText(), 0 ).y;
           textHeight = Math.max( textHeight, columnTextHeight );
         }
         Image image = getColumn( i ).getImage();
@@ -2071,7 +2070,7 @@ public class Tree extends Composite {
 
   private int computeItemHeight() {
     Rectangle padding = getCellPadding();
-    int textHeight = Graphics.getCharHeight( getFont() );
+    int textHeight = TextSizeUtil.getCharHeight( getFont() );
     textHeight += TEXT_MARGIN.height + padding.height;
     int itemImageHeight = getItemImageSize().y + padding.height;
     int result = Math.max( itemImageHeight, textHeight );

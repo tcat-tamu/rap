@@ -29,7 +29,7 @@
  * @appearance window-captionbar {rwt.widgets.base.HorizontalBoxLayout}
  * @state active {window-captionbar}
  */
-qx.Class.define("rwt.widgets.base.Window",
+rwt.qx.Class.define("rwt.widgets.base.Window",
 {
   extend : rwt.widgets.base.ResizablePopup,
 
@@ -221,12 +221,12 @@ qx.Class.define("rwt.widgets.base.Window",
      * the manager is created.
      *
      * @type static
-     * @return {qx.ui.window.Manager} window manager instance
+     * @return {rwt.widgets.util.WindowManager} window manager instance
      */
     getDefaultWindowManager : function()
     {
       if (!rwt.widgets.base.Window._defaultWindowManager) {
-        rwt.widgets.base.Window._defaultWindowManager = new qx.ui.window.Manager();
+        rwt.widgets.base.Window._defaultWindowManager = new rwt.widgets.util.WindowManager();
       }
 
       return rwt.widgets.base.Window._defaultWindowManager;
@@ -255,13 +255,13 @@ qx.Class.define("rwt.widgets.base.Window",
     /** The windowManager to use for. */
     windowManager :
     {
-      check : "qx.ui.window.Manager",
+      check : "rwt.widgets.util.WindowManager",
       event : "changeWindowManager"
     },
 
 
     /**
-     * If the window is active, only one window in a single qx.ui.window.Manager could
+     * If the window is active, only one window in a single rwt.widgets.util.WindowManager could
      *  have set this to true at the same time.
      */
     active :
@@ -596,10 +596,10 @@ qx.Class.define("rwt.widgets.base.Window",
       rwt.widgets.base.Parent.prototype._beforeAppear.call(this);
 
       // Hide popups
-      qx.ui.popup.PopupManager.getInstance().update();
+      rwt.widgets.util.PopupManager.getInstance().update();
 
       // Configure the focus root to be the current opened window
-      org.eclipse.rwt.EventHandler.setFocusRoot(this);
+      rwt.event.EventHandler.setFocusRoot(this);
 
       this.getWindowManager().add(this);
       this._makeActive();
@@ -620,16 +620,16 @@ qx.Class.define("rwt.widgets.base.Window",
       rwt.widgets.base.Parent.prototype._beforeDisappear.call(this);
 
       // Reset focus root
-      var vFocusRoot = org.eclipse.rwt.EventHandler.getFocusRoot();
+      var vFocusRoot = rwt.event.EventHandler.getFocusRoot();
 
       if (vFocusRoot == this || this.contains(vFocusRoot)) {
-        org.eclipse.rwt.EventHandler.setFocusRoot(null);
+        rwt.event.EventHandler.setFocusRoot(null);
       }
 
       // Be sure to disable any capturing inside invisible parts
       // Is this to much overhead?
       // Are there any other working solutions?
-      var vWidget = org.eclipse.rwt.EventHandler.getCaptureWidget();
+      var vWidget = rwt.event.EventHandler.getCaptureWidget();
 
       if (vWidget && this.contains(vWidget)) {
         vWidget.setCapture(false);
@@ -663,7 +663,7 @@ qx.Class.define("rwt.widgets.base.Window",
       var zIndexCompare = function(a, b) {
         return a.getZIndex() - b.getZIndex();
       };
-      var vAll = rwt.util.Object.getValues(this.getWindowManager().getAll()).sort(zIndexCompare);
+      var vAll = rwt.util.Objects.getValues(this.getWindowManager().getAll()).sort(zIndexCompare);
       var vLength = vAll.length;
       var vIndex = this._minZIndex;
 
@@ -1213,10 +1213,10 @@ qx.Class.define("rwt.widgets.base.Window",
 
 
     /**
-     * Stops every mouse click on the window by calling {@link qx.event.type.Event#stopPropagation}
+     * Stops every mouse click on the window by calling {@link rwt.event.Event#stopPropagation}
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse click event
+     * @param e {rwt.event.MouseEvent} mouse click event
      * @return {void}
      */
     _onwindowclick : function(e)
@@ -1230,7 +1230,7 @@ qx.Class.define("rwt.widgets.base.Window",
      * Focuses the window instance.
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse down event
+     * @param e {rwt.event.MouseEvent} mouse down event
      * @return {void}
      */
     _onwindowmousedown : function(e) {
@@ -1247,10 +1247,10 @@ qx.Class.define("rwt.widgets.base.Window",
 
     /**
      * Stops every mouse down event on each button in the captionbar
-     * by calling {@link qx.event.type.Event#stopPropagation}
+     * by calling {@link rwt.event.Event#stopPropagation}
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse down event
+     * @param e {rwt.event.MouseEvent} mouse down event
      * @return {void}
      */
     _onbuttonmousedown : function(e) {
@@ -1260,10 +1260,10 @@ qx.Class.define("rwt.widgets.base.Window",
 
     /**
      * Minmizes the window, removes all states from the minimize button and
-     * stops the further propagation of the event (calling {@link qx.event.type.Event#stopPropagation}).
+     * stops the further propagation of the event (calling {@link rwt.event.Event#stopPropagation}).
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse click event
+     * @param e {rwt.event.MouseEvent} mouse click event
      * @return {void}
      */
     _onminimizebuttonclick : function(e)
@@ -1282,10 +1282,10 @@ qx.Class.define("rwt.widgets.base.Window",
 
     /**
      * Restores the window, removes all states from the restore button and
-     * stops the further propagation of the event (calling {@link qx.event.type.Event#stopPropagation}).
+     * stops the further propagation of the event (calling {@link rwt.event.Event#stopPropagation}).
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse click event
+     * @param e {rwt.event.MouseEvent} mouse click event
      * @return {void}
      */
     _onrestorebuttonclick : function(e)
@@ -1304,10 +1304,10 @@ qx.Class.define("rwt.widgets.base.Window",
 
     /**
      * Maximizes the window, removes all states from the maximize button and
-     * stops the further propagation of the event (calling {@link qx.event.type.Event#stopPropagation}).
+     * stops the further propagation of the event (calling {@link rwt.event.Event#stopPropagation}).
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse click event
+     * @param e {rwt.event.MouseEvent} mouse click event
      * @return {void}
      */
     _onmaximizebuttonclick : function(e)
@@ -1326,10 +1326,10 @@ qx.Class.define("rwt.widgets.base.Window",
 
     /**
      * Closes the window, removes all states from the close button and
-     * stops the further propagation of the event (calling {@link qx.event.type.Event#stopPropagation}).
+     * stops the further propagation of the event (calling {@link rwt.event.Event#stopPropagation}).
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse click event
+     * @param e {rwt.event.MouseEvent} mouse click event
      * @return {void}
      */
     _onclosebuttonclick : function(e)
@@ -1359,7 +1359,7 @@ qx.Class.define("rwt.widgets.base.Window",
      * appearance (translucent, frame or opaque) for the moving of the window.
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse down event
+     * @param e {rwt.event.MouseEvent} mouse down event
      * @return {void}
      */
     _oncaptionmousedown : function(e)
@@ -1379,8 +1379,8 @@ qx.Class.define("rwt.widgets.base.Window",
       var pl = pa.getElement();
 
       // compute locations
-      var paLoc = qx.bom.element.Location.get(pl, "scroll");
-      var elLoc = qx.bom.element.Location.get(el);
+      var paLoc = rwt.html.Location.get(pl, "scroll");
+      var elLoc = rwt.html.Location.get(el);
 
       this._dragSession =
       {
@@ -1430,7 +1430,7 @@ qx.Class.define("rwt.widgets.base.Window",
      * of the window.
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} mouse up event
+     * @param e {rwt.event.MouseEvent} mouse up event
      * @return {void}
      */
     _oncaptionmouseup : function(e)
@@ -1475,7 +1475,7 @@ qx.Class.define("rwt.widgets.base.Window",
      * of the window (or frame) at runtime using direct dom methods.
      *
      * @type member
-     * @param e {qx.event.type.Event} mouse move event
+     * @param e {rwt.event.Event} mouse move event
      * @return {void}
      */
     _oncaptionmousemove : function(e)
@@ -1488,7 +1488,7 @@ qx.Class.define("rwt.widgets.base.Window",
       }
 
       // pre check if we go out of the available area
-      if (!rwt.util.Number.isBetweenRange(e.getPageX(), s.parentAvailableAreaLeft, s.parentAvailableAreaRight) || !rwt.util.Number.isBetweenRange(e.getPageY(), s.parentAvailableAreaTop, s.parentAvailableAreaBottom)) {
+      if (!rwt.util.Numbers.isBetweenRange(e.getPageX(), s.parentAvailableAreaLeft, s.parentAvailableAreaRight) || !rwt.util.Numbers.isBetweenRange(e.getPageY(), s.parentAvailableAreaTop, s.parentAvailableAreaBottom)) {
         return;
       }
 
@@ -1505,7 +1505,7 @@ qx.Class.define("rwt.widgets.base.Window",
      * maximized.
      *
      * @type member
-     * @param e {qx.event.type.MouseEvent} double click event
+     * @param e {rwt.event.MouseEvent} double click event
      * @return {void}
      */
     _oncaptiondblblick : function(e)

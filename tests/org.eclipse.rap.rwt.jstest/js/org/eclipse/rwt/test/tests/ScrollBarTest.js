@@ -9,14 +9,14 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   construct : function() {
     var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
     TestUtil.prepareTimerUse();
-    qx.Class.__initializeClass( rwt.widgets.base.ScrollBar );
+    rwt.qx.Class.__initializeClass( rwt.widgets.base.ScrollBar );
     rwt.widgets.base.ScrollBar.prototype._getMinThumbSize = function() { return 8; };
   },
 
@@ -495,7 +495,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
     testCreateScrollBarForControlInProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       var scrollable = this._createScrollable();
 
       processor.processOperation( {
@@ -508,7 +508,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
         }
       } );
 
-      var scrollbar = rwt.protocol.ObjectRegistry.getObject( "w5" );
+      var scrollbar = rwt.remote.ObjectRegistry.getObject( "w5" );
       assertIdentical( scrollable.getVerticalBar(), scrollbar );
       shell.destroy();
     },
@@ -516,7 +516,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
     testCreateHorizontalScrollBarForControlInProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       var scrollable = this._createScrollable();
 
       processor.processOperation( {
@@ -529,7 +529,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
         }
       } );
 
-      var scrollbar = rwt.protocol.ObjectRegistry.getObject( "w5" );
+      var scrollbar = rwt.remote.ObjectRegistry.getObject( "w5" );
       assertIdentical( scrollable.getHorizontalBar(), scrollbar );
       shell.destroy();
     },
@@ -537,7 +537,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
     testSetScrollBarVisibilityInProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       var scrollable = this._createScrollable();
 
       processor.processOperation( {
@@ -551,7 +551,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
         }
       } );
 
-      var scrollbar = rwt.protocol.ObjectRegistry.getObject( "w5" );
+      var scrollbar = rwt.remote.ObjectRegistry.getObject( "w5" );
       assertFalse( scrollable.isVerticalBarVisible() );
       shell.destroy();
     },
@@ -559,7 +559,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
     testSetScrollBarVisibilityInProtocolHorizontal : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       var scrollable = this._createScrollable();
 
       processor.processOperation( {
@@ -573,7 +573,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
         }
       } );
 
-      var scrollbar = rwt.protocol.ObjectRegistry.getObject( "w5" );
+      var scrollbar = rwt.remote.ObjectRegistry.getObject( "w5" );
       assertFalse( scrollable.isVerticalBarVisible() );
       shell.destroy();
     },
@@ -581,7 +581,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
     testDestroyScrollBarWithControlInProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       var scrollable = this._createScrollable();
       processor.processOperation( {
         "target" : "w5",
@@ -598,14 +598,14 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
         "action" : "destroy"
       } );
 
-      assertTrue( rwt.protocol.ObjectRegistry.getEntry( "w5" ) == null );
+      assertTrue( rwt.remote.ObjectRegistry.getEntry( "w5" ) == null );
       shell.destroy();
     },
 
     testScrollBarListenSelection : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       var scrollable = this._createScrollable();
       processor.processOperation( {
         "target" : "w5",
@@ -619,7 +619,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
 
       TestUtil.protocolListen( "w5", { "Selection" : true } );
 
-      var scrollbar = rwt.protocol.ObjectRegistry.getObject( "w5" );
+      var scrollbar = rwt.remote.ObjectRegistry.getObject( "w5" );
       assertTrue( scrollbar.getHasSelectionListener() );
       shell.destroy();
     },
@@ -628,7 +628,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
 //    testSendScrollBarSelectionNotify : function() {
 //      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 //      var shell = TestUtil.createShellByProtocol( "w2" );
-//      var processor = rwt.protocol.MessageProcessor;
+//      var processor = rwt.remote.MessageProcessor;
 //      var scrollable = this._createScrollable();
 //      processor.processOperation( {
 //        "target" : "w5",
@@ -640,7 +640,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
 //        }
 //      } );
 //      TestUtil.protocolListen( "w5", { "Selection" : true } );
-//      var scrollbar = rwt.protocol.ObjectRegistry.getObject( "w5" );
+//      var scrollbar = rwt.remote.ObjectRegistry.getObject( "w5" );
 //
 //      scrollBar
 //
@@ -706,7 +706,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
     },
 
     _createScrollable : function() {
-       var processor = rwt.protocol.MessageProcessor;
+       var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -720,7 +720,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ScrollBarTest", {
           "checkBoxMetrics" : [ 5, 16 ]
         }
       } );
-      return rwt.protocol.ObjectRegistry.getObject( "w3" );
+      return rwt.remote.ObjectRegistry.getObject( "w3" );
     }
 
   }

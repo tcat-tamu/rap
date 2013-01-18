@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,13 +9,13 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   construct : function(){
-    this.gfxBorder = new org.eclipse.rwt.Border( 1, "rounded", "black", 0 );
-    this.cssBorder = new org.eclipse.rwt.Border( 1, "solid", "black" );
+    this.gfxBorder = new rwt.html.Border( 1, "rounded", "black", 0 );
+    this.cssBorder = new rwt.html.Border( 1, "solid", "black" );
     this.gradient = [ [ 0, "red" ], [ 1, "yellow" ] ];
   },
 
@@ -25,7 +25,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testSetGradient : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var shell = this._createShell();
       assertTrue( shell.isSeeable() );
       assertFalse( this.usesGfxBackground( shell ) );
@@ -55,7 +55,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testSetGradientWhileNotInDOM : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var shell = this._createShell();
       shell.setParent( null );
       TestUtil.flush();
@@ -77,7 +77,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testSetSolidFillAfterBorder : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var shell = this._createShell();
       shell.setBorder( this.gfxBorder );
       TestUtil.flush();
@@ -93,7 +93,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testSetSolidFillBeforeBorder : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var shell = this._createShell();
       shell.setBackgroundColor( "green" );
       shell.setBorder( this.gfxBorder );
@@ -110,12 +110,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = this._createShell();
       shell.setBackgroundColor( "#008000" );
-      var result = rwt.util.ColorUtil.stringToRgb( TestUtil.getCssBackgroundColor( shell ) );
+      var result = rwt.util.Colors.stringToRgb( TestUtil.getCssBackgroundColor( shell ) );
       assertEquals( [ 0, 128, 0 ], result );
       shell.setBackgroundGradient( this.gradient );
       assertNull( TestUtil.getCssBackgroundColor( shell ) );
       shell.setBackgroundGradient( null );
-      result = rwt.util.ColorUtil.stringToRgb( TestUtil.getCssBackgroundColor( shell ) );
+      result = rwt.util.Colors.stringToRgb( TestUtil.getCssBackgroundColor( shell ) );
       assertEquals( [ 0, 128, 0 ], result );
       shell.destroy();
       TestUtil.flush();
@@ -150,11 +150,11 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       assertTrue( widget.getElement() !== widget._getTargetNode() );
       assertEquals( [ 1, 1, 1, 1 ], this.getFakePadding( widget ) );
       assertEquals( [ 1, 1, 1, 1 ], this.getBorderCache( widget ) );
-      widget.setBorder( new org.eclipse.rwt.Border( 0, "rounded", "black", 0 ) );
+      widget.setBorder( new rwt.html.Border( 0, "rounded", "black", 0 ) );
       TestUtil.flush();
       assertEquals ( [ 0, 0, 0, 0 ], this.getFakePadding( widget ) );
       assertEquals ( [ 0, 0, 0, 0 ], this.getBorderCache( widget ) );
-      widget.setBorder( new org.eclipse.rwt.Border( [ 4, 0, 3, 0 ], "rounded", "black", 0 ) );
+      widget.setBorder( new rwt.html.Border( [ 4, 0, 3, 0 ], "rounded", "black", 0 ) );
       TestUtil.flush();
       assertEquals ( [ 4, 0, 3, 0 ], this.getFakePadding( widget ) );
       assertEquals ( [ 4, 0, 3, 0 ], this.getBorderCache( widget ) );
@@ -175,7 +175,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       var widget = this._createWidget();
       // TODO [tb] : this test is not completely valid as RAP does not support different widths for
       //             complex borders (the Border class does, but not ThemeStore and Widget)
-      widget.setBorder( new org.eclipse.rwt.Border( [ 0, 1, 2, 3 ], "complex", "red", "blue" ) );
+      widget.setBorder( new rwt.html.Border( [ 0, 1, 2, 3 ], "complex", "red", "blue" ) );
       TestUtil.flush();
       TestUtil.flush();
       widget.setBackgroundGradient( this.gradient );
@@ -209,19 +209,19 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testRoundedBorderWidth : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var widget = this._createWidget();
-      var gfxBorder = new org.eclipse.rwt.Border( 0, "rounded", "black", 3 );
+      var gfxBorder = new rwt.html.Border( 0, "rounded", "black", 3 );
       widget.setBorder( gfxBorder );
       TestUtil.flush();
       assertTrue( this.usesGfxBorder( widget ) );
       var shape = widget._gfxData.backgroundShape;
       assertEquals( 0, gfxUtil.getStrokeWidth( shape ) );
-      gfxBorder = new org.eclipse.rwt.Border( 2, "rounded", "black", 0 );
+      gfxBorder = new rwt.html.Border( 2, "rounded", "black", 0 );
       widget._applyBorder( gfxBorder );
       TestUtil.flush();
       assertEquals( 2, gfxUtil.getStrokeWidth( shape ) );
-      gfxBorder = new org.eclipse.rwt.Border( [ 1, 2, 3, 4 ], "rounded", "black", 0 );
+      gfxBorder = new rwt.html.Border( [ 1, 2, 3, 4 ], "rounded", "black", 0 );
       widget._applyBorder( gfxBorder );
       TestUtil.flush();
       assertEquals( 4, gfxUtil.getStrokeWidth( shape ) );
@@ -231,9 +231,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testRoundedBorderColor : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var widget = this._createWidget();
-      var gfxBorder = new org.eclipse.rwt.Border( 2, "rounded", "red", 3 );
+      var gfxBorder = new rwt.html.Border( 2, "rounded", "red", 3 );
       widget.setBorder( gfxBorder );
       TestUtil.flush();
       assertTrue( this.usesGfxBorder( widget ) );
@@ -248,7 +248,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       // outline is visually incompatible with SVG (glitch)
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = this._createShell();
-      var gfxBorder = new org.eclipse.rwt.Border( 1, "rounded", "black", 4 );
+      var gfxBorder = new rwt.html.Border( 1, "rounded", "black", 4 );
       shell.setBorder( gfxBorder );
       shell.setHideFocus( false );
       TestUtil.flush();
@@ -276,7 +276,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       widget.addToDocument();
       widget.setLocation( 0, 0 );
       widget.setDimension( 100, 100 );
-      var gfxBorder = new org.eclipse.rwt.Border( [ 1, 0, 0, 1 ], "rounded", "black", 5 );
+      var gfxBorder = new rwt.html.Border( [ 1, 0, 0, 1 ], "rounded", "black", 5 );
       widget.setBorder( gfxBorder );
       TestUtil.flush();
       assertTrue( this.usesGfxBorder( widget ) );
@@ -292,7 +292,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       widget.addToDocument();
       widget.setLocation( 0, 0 );
       widget.setDimension( 100, 100 );
-      var gfxBorder = new org.eclipse.rwt.Border( 1, "rounded", "black", 5 );
+      var gfxBorder = new rwt.html.Border( 1, "rounded", "black", 5 );
       widget.setBorder( gfxBorder );
       TestUtil.flush();
       assertTrue( this.usesGfxBorder( widget ) );
@@ -311,7 +311,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       widget.setBackgroundImage( "bla.jpg" );
       rwt.widgets.base.Widget.flushGlobalQueues();
       assertTrue( this.usesGfxBackground( widget ) );
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var shape = widget._gfxData.backgroundShape;
       assertTrue( gfxUtil.getFillType( shape ) == "pattern" );
       widget.destroy();
@@ -320,7 +320,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testGfxBackgroundColorToImage : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var shell = this._createShell();
       shell.setBackgroundColor( "green" );
       shell.setBorder( this.gfxBorder );
@@ -489,7 +489,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       // time via CSS, but when using CSS and Java-API.
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var widget = new rwt.widgets.base.MultiCellWidget( [] );
-      var gfxBorder = new org.eclipse.rwt.Border( 1, "rounded", "black", 5 );
+      var gfxBorder = new rwt.html.Border( 1, "rounded", "black", 5 );
       widget.addToDocument();
       widget.setLocation( 0, 0 );
       widget.setDimension( 100, 100 );
@@ -498,7 +498,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       widget.setBackgroundGradient( this.gradient );
       TestUtil.flush();
       assertTrue( this.usesGfxBackground( widget ) );
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var shape = widget._gfxData.backgroundShape;
       assertEquals( "pattern", gfxUtil.getFillType( shape )  );
       widget.destroy();
@@ -526,7 +526,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testSetShadowCreatesCanvas : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var widget = this._createWidget();
         widget.setShadow( [ false, 10, 10, 10, 3, "#ff00ff", 1 ] );
         assertTrue( this.widgetContainsCanvas( widget ) );
@@ -537,7 +537,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testSetShadowCreatesShape : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var widget = this._createWidget();
         widget.setShadow( [ false, 10, 10, 10, 3, "#ff00ff", 1 ] );
         var canvas = this._getCanvasGroupNode( widget._gfxCanvas );
@@ -552,7 +552,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testDisableShadow : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var widget = this._createWidget();
         widget.setBackgroundGradient( this.gradient );
         widget.setBorder( this.gfxBorder );
@@ -567,7 +567,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testIgnoreInsetShadow : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var widget = this._createWidget();
         widget.setBackgroundGradient( this.gradient );
         widget.setBorder( this.gfxBorder );
@@ -584,7 +584,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testIgnoreShadowWithWidgetOpacity : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var widget = this._createWidget();
         widget.setBackgroundGradient( this.gradient );
         widget.setBorder( this.gfxBorder );
@@ -601,8 +601,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testSetShadowEnablesOverflow : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
-        var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
+        var gfxUtil = rwt.graphics.GraphicsUtil;
         var widget = this._createWidget();
         widget.setShadow( [ false, 10, 10, 10, 3, "#ff00ff", 1 ] );
         var canvas = widget._gfxCanvas;
@@ -620,7 +620,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testSetShadowAndGradient : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
         var isMshtml = rwt.util.Variant.isSet( "qx.client", "mshtml" );
         var childOffset = isMshtml ? 0 : 1;// Count defs-node
@@ -648,7 +648,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testSetShadowBeforeCreate : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
         var widget = this._createWidget( true );
         widget.setShadow( [ false, 10, 10, 10, 3, "#ff00ff", 1 ] );
@@ -661,7 +661,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testRemoveGradientSetShadow : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
         var widget = this._createWidget();
         widget.setBackgroundGradient( this.gradient );
@@ -682,8 +682,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     testSetShadowColorAndOpacity : function() {
       // Note: In the CSS3 speficifcation the opacity is part of the color,
       // for simplicity this is a sepearate value in our shadow-array.
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
-        var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
+        var gfxUtil = rwt.graphics.GraphicsUtil;
         var widget = this._createWidget();
         widget.setShadow( [ false, 10, 10, 3, 10, "#ff00ff", 1 ] );
         var shape = widget._gfxData.shadowShape;
@@ -703,7 +703,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testBasicShadowLayout : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
         var isMshtml = rwt.util.Variant.isSet( "qx.client", "mshtml" );
         var widget = this._createWidget();
@@ -729,12 +729,12 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testRoundedShadowLayout : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
         var isMshtml = rwt.util.Variant.isSet( "qx.client", "mshtml" );
         var widget = this._createWidget();
         widget.setShadow( [ false, 0, 0, 0, 0, "#000000", 1 ] );
-        var gfxBorder = new org.eclipse.rwt.Border( 1, "rounded", "black", 5 );
+        var gfxBorder = new rwt.html.Border( 1, "rounded", "black", 5 );
         widget.setBorder( gfxBorder );
         TestUtil.flush();
         var shape = widget._gfxData.shadowShape;
@@ -756,7 +756,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
     testShiftShadowLayout : function() {
-      if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+      if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
         var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
         var isMshtml = rwt.util.Variant.isSet( "qx.client", "mshtml" );
         var widget = this._createWidget();
@@ -786,7 +786,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       "mshtml" : function() {
       },
       "default" : function(){
-        if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+        if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
           var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
           var widget = this._createWidget();
           widget.setShadow( [ false, -3, -5, 4, 0, "#000000", 1 ] );
@@ -815,7 +815,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
 
     testLayoutTargetNodeAfterBorderRemove : rwt.util.Variant.select("qx.client", {
       "mshtml" : function() {
-        if( org.eclipse.rwt.GraphicsMixin.getSupportsShadows() ) {
+        if( rwt.widgets.util.GraphicsMixin.getSupportsShadows() ) {
           var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
           var widget = this._createWidget();
           widget.setBorder( this.gfxBorder );
@@ -837,7 +837,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     testPrepareShapeBug : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var button = new rwt.widgets.Button( "push" );
-      var gfxBorder = new org.eclipse.rwt.Border( 1, "rounded", "black", 3 );
+      var gfxBorder = new rwt.html.Border( 1, "rounded", "black", 3 );
       button.setText( "Hello World!" );
       button.addToDocument();
       button.setBackgroundGradient( null );
@@ -863,7 +863,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
       result.setBorder( null );
       result.setShadow( null );
       result.open();
-      rwt.protocol.ObjectRegistry.add( "w2", result );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Shell" );
+      rwt.remote.ObjectRegistry.add( "w2", result, handler );
       TestUtil.flush();
       TestUtil.fakeResponse( false );
       return result;
@@ -901,7 +902,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GraphicsMixinTest", {
     },
 
    widgetContainsCanvas : function( widget ) {
-      var gfxUtil = org.eclipse.rwt.GraphicsUtil;
+      var gfxUtil = rwt.graphics.GraphicsUtil;
       var result = false;
       if( widget._gfxCanvas != null && widget.getElement() != null ) {
         var widgetNode = widget.getElement();

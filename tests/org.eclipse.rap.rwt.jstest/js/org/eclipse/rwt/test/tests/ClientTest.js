@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 EclipseSource and others. All rights reserved.
+ * Copyright (c) 2011, 2012 EclipseSource and others. All rights reserved.
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at http://www.eclipse.org/legal/epl-v10.html
@@ -8,19 +8,19 @@
  *   EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ClientTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ClientTest", {
 
-  extend : qx.core.Object,
-  
+  extend : rwt.qx.Object,
+
   members : {
-    
+
     testRunsLocally : function() {
       var msg = "Always run tests from an http-server!";
       assertFalse( msg, rwt.client.Client.getRunsLocally() );
       // NOTE: If this fails, either getRunsLocally returns the wrong value
       //       or, more likely, you started tests from the filesystem
     },
-    
+
     testQuirksmode : function() {
       // NOTE: RAP should always run in quirksmode in IE7/8
       var expected = !rwt.client.Client.isNewMshtml();
@@ -40,10 +40,10 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ClientTest", {
       isEngine = client.isNewMshtml() ? isEngine + 1 : isEngine;
       assertEquals( 1, isEngine );
       assertEquals( "string", typeof client.getBrowser() );
-      // NOTE: No check for specific browsers since there many clones that are 
+      // NOTE: No check for specific browsers since there many clones that are
       // technically almost identical to the major ones and should run RAP.
     },
-    
+
     testVersions : function() {
       var client = rwt.client.Client;
       assertEquals( "number", typeof client.getVersion() );
@@ -79,13 +79,13 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ClientTest", {
       assertEquals( "string", typeof client.getDefaultLocale() );
       assertEquals( "boolean", typeof client.usesDefaultLocale() );
     },
-    
+
     testBoxSizingAttributes : function() {
       var attr = rwt.client.Client.getEngineBoxSizingAttributes();
       assertTrue( attr instanceof Array );
       assertEquals( "string", typeof attr[ 0 ] );
     },
-    
+
     testMobile : function() {
       var client = rwt.client.Client;
       var msafari = client.isMobileSafari();
@@ -94,7 +94,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ClientTest", {
       assertEquals( "boolean", typeof androidb );
       assertTrue( !( msafari && androidb ) );
       // NOTE: Since the android browser indentifies itself as safari,
-      //       there is a certain risk of confusing the two. 
+      //       there is a certain risk of confusing the two.
     }
 
   }

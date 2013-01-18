@@ -10,9 +10,9 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.GridColumn", {
+rwt.qx.Class.define( "rwt.widgets.GridColumn", {
 
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
   construct : function( grid, isGroup ) {
     this.base( arguments );
@@ -53,7 +53,7 @@ qx.Class.define( "rwt.widgets.GridColumn", {
   members : {
 
     setLeft : function( value ) {
-      if( org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( rwt.remote.EventUtil.getSuspended() ) {
         this._left = value;
         this._update();
       } else {
@@ -66,7 +66,7 @@ qx.Class.define( "rwt.widgets.GridColumn", {
     },
 
     setWidth : function( value ) {
-      if( org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( rwt.remote.EventUtil.getSuspended() ) {
         this._width = value;
         this._update();
       } else {
@@ -150,8 +150,7 @@ qx.Class.define( "rwt.widgets.GridColumn", {
     },
 
     setFont : function( value ) {
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
-      this._font = value ? wm._createFont.apply( wm, value ) : null;
+      this._font = value ? rwt.html.Font.fromArray( value ) : null;
       this._update();
     },
 
@@ -178,8 +177,8 @@ qx.Class.define( "rwt.widgets.GridColumn", {
     },
 
     setFooterFont : function( value ) {
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
-      this._footerFont = value ? wm._createFont.apply( wm, value ) : null;
+      var wm = rwt.remote.WidgetManager.getInstance();
+      this._footerFont = value ? rwt.html.Font.fromArray( value ) : null;
       this._update();
     },
 
@@ -255,19 +254,19 @@ qx.Class.define( "rwt.widgets.GridColumn", {
     },
 
     handleSelectionEvent : function( event ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         var isTreeEvent = this._isGroup && event.chevron;
         if( this._hasSelectionListener || isTreeEvent ) {
           if( isTreeEvent ) {
-            var serverObject = rwt.remote.Server.getInstance().getServerObject( this );
-            serverObject.set( "expanded", !this._expanded );
+            var remoteObject = rwt.remote.Server.getInstance().getRemoteObject( this );
+            remoteObject.set( "expanded", !this._expanded );
             if(    ( this._hasCollapseListener && this._expanded )
                 || ( this._hasExpandListener && !this._expanded )  )
             {
-              serverObject.notify( this._expanded ? "Collapse" : "Expand" );
+              remoteObject.notify( this._expanded ? "Collapse" : "Expand" );
             }
           } else {
-            org.eclipse.swt.EventUtil.notifySelected( this );
+            rwt.remote.EventUtil.notifySelected( this );
           }
         }
       }
@@ -310,8 +309,8 @@ qx.Class.define( "rwt.widgets.GridColumn", {
     },
 
     _sendResize : function( width ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var serverColumn = rwt.remote.Server.getInstance().getServerObject( this );
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var serverColumn = rwt.remote.Server.getInstance().getRemoteObject( this );
         serverColumn.call( "resize", {
           "width" : width
         } );
@@ -319,8 +318,8 @@ qx.Class.define( "rwt.widgets.GridColumn", {
     },
 
     _sendMove : function( left ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var serverColumn = rwt.remote.Server.getInstance().getServerObject( this );
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var serverColumn = rwt.remote.Server.getInstance().getRemoteObject( this );
         serverColumn.call( "move", {
           "left" : left
         } );

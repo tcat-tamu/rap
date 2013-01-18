@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 EclipseSource and others.
+ * Copyright (c) 2002, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,8 @@
  *    Frank Appel - replaced singletons and static fields (Bug 337787)
  ******************************************************************************/
 package org.eclipse.rap.rwt.testfixture;
+
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -42,7 +45,6 @@ import org.eclipse.rap.rwt.client.WebClient;
 import org.eclipse.rap.rwt.engine.RWTServletContextListener;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextHelper;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
@@ -53,18 +55,19 @@ import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
-import org.eclipse.rap.rwt.internal.remote.RemoteObject;
-import org.eclipse.rap.rwt.internal.remote.RemoteObjectFactory;
 import org.eclipse.rap.rwt.internal.remote.RemoteObjectImpl;
 import org.eclipse.rap.rwt.internal.resources.ResourceDirectory;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
+import org.eclipse.rap.rwt.internal.service.UISessionTestAdapter;
 import org.eclipse.rap.rwt.internal.util.HTTP;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
+import org.eclipse.rap.rwt.remote.Connection;
+import org.eclipse.rap.rwt.remote.RemoteObject;
 import org.eclipse.rap.rwt.service.ResourceManager;
 import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.testfixture.internal.TestResourceManager;
@@ -318,9 +321,9 @@ public final class Fixture {
     ContextProvider.getUISession().setAttribute( ClientSelector.SELECTED_CLIENT, client );
   }
 
-  public static void fakeRemoteObjectFactory( RemoteObjectFactory factory ) {
+  public static void fakeConnection( Connection connection ) {
     UISession uiSession = ContextProvider.getUISession();
-    uiSession.setAttribute( RemoteObjectFactory.class.getName() + "#instance", factory );
+    UISessionTestAdapter.setConnection( uiSession, connection );
   }
 
   public static TestRequest fakeNewRequest() {
@@ -407,7 +410,7 @@ public final class Fixture {
                                      Map<String, Object> properties )
   {
     RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
-    remoteObjectImpl.handleNotify( eventName, properties );
+    remoteObjectImpl.getHandler().handleNotify( eventName, properties );
   }
 
   public static void dispatchCall( RemoteObject remoteObject,
@@ -415,12 +418,12 @@ public final class Fixture {
                                    Map<String, Object> parameters )
   {
     RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
-    remoteObjectImpl.call( methodName, parameters );
+    remoteObjectImpl.getHandler().handleCall( methodName, parameters );
   }
 
   public static void dispatchSet( RemoteObject remoteObject, Map<String, Object> properties ) {
     RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
-    remoteObjectImpl.handleSet( properties );
+    remoteObjectImpl.getHandler().handleSet( properties );
   }
 
   public static void fakeNotifyOperation( String target,
@@ -492,7 +495,8 @@ public final class Fixture {
     IUIThreadHolder threadHolder = registerCurrentThreadAsUIThreadHolder();
     Thread serverThread = fakeRequestThread( threadHolder );
     simulateRequest( threadHolder, serverThread );
-    RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
+    RWTLifeCycle lifeCycle
+      = ( RWTLifeCycle )getApplicationContext().getLifeCycleFactory().getLifeCycle();
     while( LifeCycleUtil.getSessionDisplay().readAndDispatch() ) {
     }
     lifeCycle.sleep();
@@ -553,16 +557,13 @@ public final class Fixture {
   }
 
   public static void runInThread( final Runnable runnable ) throws Throwable {
-    final Object lock = new Object();
-    final Throwable[] exception = { null };
+    final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
     Runnable exceptionGuard = new Runnable() {
       public void run() {
         try {
           runnable.run();
-        } catch( Throwable thr ) {
-          synchronized( lock ) {
-            exception[ 0 ] = thr;
-          }
+        } catch( Throwable throwable ) {
+          exception.set( throwable );
         }
       }
     };
@@ -570,10 +571,8 @@ public final class Fixture {
     thread.setDaemon( true );
     thread.start();
     thread.join();
-    synchronized( lock ) {
-      if( exception[ 0 ] != null ) {
-        throw exception[ 0 ];
-      }
+    if( exception.get() != null ) {
+      throw exception.get();
     }
   }
 
@@ -643,7 +642,8 @@ public final class Fixture {
   }
 
   private static void simulateRequest( IUIThreadHolder threadHolder, Thread serverThread ) {
-    RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
+    RWTLifeCycle lifeCycle
+      = ( RWTLifeCycle )getApplicationContext().getLifeCycleFactory().getLifeCycle();
     synchronized( threadHolder.getLock() ) {
       serverThread.start();
       try {
@@ -655,7 +655,8 @@ public final class Fixture {
   }
 
   private static Thread fakeRequestThread( final IUIThreadHolder threadHolder ) {
-    final RWTLifeCycle lifeCycle = ( RWTLifeCycle )RWTFactory.getLifeCycleFactory().getLifeCycle();
+    final RWTLifeCycle lifeCycle
+      = ( RWTLifeCycle )getApplicationContext().getLifeCycleFactory().getLifeCycle();
     final ServiceContext context = ContextProvider.getContext();
     Thread result = new Thread( new Runnable() {
       public void run() {

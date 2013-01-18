@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.WidgetToolTip", {
+rwt.qx.Class.define( "rwt.widgets.base.WidgetToolTip", {
   type : "singleton",
   extend : rwt.widgets.base.ToolTip,
   include : rwt.animation.VisibilityAnimationMixin,
@@ -25,7 +25,7 @@ qx.Class.define( "rwt.widgets.base.WidgetToolTip", {
     _applyBoundToWidget : function( value, old ) {
       this.base( arguments, value, old );
       this.updateText( value );
-      var manager = qx.ui.popup.ToolTipManager.getInstance();
+      var manager = rwt.widgets.util.ToolTipManager.getInstance();
       manager.setCurrentToolTip( null );
     },
 

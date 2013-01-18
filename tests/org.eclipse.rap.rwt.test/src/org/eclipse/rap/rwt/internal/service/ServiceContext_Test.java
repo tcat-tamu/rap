@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 Frank Appel and others.
+ * Copyright (c) 2011, 2013 Frank Appel and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,9 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.service;
 
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -18,10 +21,9 @@ import static org.mockito.Mockito.when;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 
-import junit.framework.TestCase;
-
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.application.ApplicationConfiguration;
+import org.eclipse.rap.rwt.internal.SingletonManager;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
@@ -29,15 +31,18 @@ import org.eclipse.rap.rwt.testfixture.TestRequest;
 import org.eclipse.rap.rwt.testfixture.TestResponse;
 import org.eclipse.rap.rwt.testfixture.TestSession;
 import org.eclipse.swt.widgets.Display;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class ServiceContext_Test extends TestCase {
+public class ServiceContext_Test {
 
   private UISessionImpl uiSession;
   private ApplicationContextImpl applicationContext;
 
-  @Override
-  protected void setUp() {
+  @Before
+  public void setUp() {
     ApplicationConfiguration applicationConfiguration = mock( ApplicationConfiguration.class );
     ServletContext servletContext = mock( ServletContext.class );
     when( servletContext.getRealPath( anyString() ) ).thenReturn( "" );
@@ -46,14 +51,15 @@ public class ServiceContext_Test extends TestCase {
     uiSession = new UISessionImpl( new TestSession() );
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     if( ContextProvider.hasContext() ) {
       Fixture.disposeOfServiceContext();
     }
     Fixture.resetSkipResourceRegistration();
   }
 
+  @Test
   public void testGetApplicationContext() {
     ServiceContext context = createContext( applicationContext );
 
@@ -63,6 +69,7 @@ public class ServiceContext_Test extends TestCase {
     assertSame( applicationContext, foundInSession );
   }
 
+  @Test
   public void testGetApplicationContextWithNullUISession() {
     uiSession = null;
     ServiceContext context = createContext( applicationContext );
@@ -72,6 +79,7 @@ public class ServiceContext_Test extends TestCase {
     assertSame( applicationContext, found );
   }
 
+  @Test
   public void testGetApplicationContextFromUISession() {
     ServiceContext context = createContext();
     applicationContext.activate();
@@ -82,6 +90,7 @@ public class ServiceContext_Test extends TestCase {
     assertSame( applicationContext, found );
   }
 
+  @Test
   public void testGetApplicationContextFromUISessionWithDeactivatedApplicationContext() {
     ServiceContext context = createContext();
     ApplicationContextUtil.set( uiSession, applicationContext );
@@ -91,6 +100,7 @@ public class ServiceContext_Test extends TestCase {
     assertNull( found );
   }
 
+  @Test
   public void testGetApplicationContextOnDisposedServiceContext() {
     ServiceContext context = createContext( null );
     context.dispose();
@@ -102,7 +112,9 @@ public class ServiceContext_Test extends TestCase {
     }
   }
 
+  @Test
   public void testGetApplicationContextFromBackgroundThread() throws Throwable {
+    SingletonManager.install( uiSession );
     ServiceContext serviceContext = createContext( applicationContext );
     ContextProvider.setContext( serviceContext );
     final ApplicationContextImpl[] backgroundApplicationContext = { null };
@@ -146,4 +158,5 @@ public class ServiceContext_Test extends TestCase {
     result.setServiceStore( new ServiceStore() );
     return result;
   }
+
 }

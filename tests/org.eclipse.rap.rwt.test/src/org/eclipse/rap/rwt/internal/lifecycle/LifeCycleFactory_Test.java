@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,40 +11,46 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.lifecycle;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
-import org.eclipse.rap.rwt.lifecycle.ILifeCycle;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
 import org.eclipse.rap.rwt.testfixture.Fixture;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class LifeCycleFactory_Test extends TestCase {
+public class LifeCycleFactory_Test {
   private ApplicationContextImpl applicationContext;
   private LifeCycleFactory lifeCycleFactory;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
     applicationContext = ApplicationContextUtil.get( Fixture.getServletContext() );
     lifeCycleFactory = new LifeCycleFactory( applicationContext );
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
+  @Test
   public void testActivateDeactivateCycle() {
     lifeCycleFactory.configure( TestLifeCycle.class );
-    ILifeCycle beforeActivate = lifeCycleFactory.getLifeCycle();
+    LifeCycle beforeActivate = lifeCycleFactory.getLifeCycle();
     lifeCycleFactory.activate();
-    ILifeCycle afterActivate = lifeCycleFactory.getLifeCycle();
-    ILifeCycle secondCall = lifeCycleFactory.getLifeCycle();
+    LifeCycle afterActivate = lifeCycleFactory.getLifeCycle();
+    LifeCycle secondCall = lifeCycleFactory.getLifeCycle();
     lifeCycleFactory.deactivate();
-    ILifeCycle afterDeactivate = lifeCycleFactory.getLifeCycle();
+    LifeCycle afterDeactivate = lifeCycleFactory.getLifeCycle();
 
     assertNull( beforeActivate );
     assertTrue( afterActivate instanceof TestLifeCycle );
@@ -52,6 +58,7 @@ public class LifeCycleFactory_Test extends TestCase {
     assertNull( afterDeactivate );
   }
 
+  @Test
   public void testActivateAfterDeactivate() {
     lifeCycleFactory.configure( TestLifeCycle.class );
     lifeCycleFactory.activate();
@@ -63,6 +70,7 @@ public class LifeCycleFactory_Test extends TestCase {
     assertSame( SimpleLifeCycle.class, lifeCycleClass );
   }
 
+  @Test
   public void testConfigure() {
     lifeCycleFactory.configure( TestLifeCycle.class );
     lifeCycleFactory.activate();
@@ -72,6 +80,7 @@ public class LifeCycleFactory_Test extends TestCase {
     assertSame( TestLifeCycle.class, lifeCycleClass );
   }
 
+  @Test
   public void testDefaultLifeCycle() {
     lifeCycleFactory.activate();
 
@@ -80,15 +89,17 @@ public class LifeCycleFactory_Test extends TestCase {
     assertSame( SimpleLifeCycle.class, lifeCycleClass );
   }
 
+  @Test
   public void testGetLifeCycle() {
     lifeCycleFactory.configure( TestLifeCycle.class );
     lifeCycleFactory.activate();
-    
+
     TestLifeCycle lifeCycle = ( TestLifeCycle )lifeCycleFactory.getLifeCycle();
-    
+
     assertEquals( applicationContext, lifeCycle.applicationContext );
   }
-  
+
+  @Test
   public void testGetLifeCycleWithRegisteredPhaseListeners() {
     PhaseListener phaseListener = mock( PhaseListener.class );
     applicationContext.getPhaseListenerRegistry().removeAll();

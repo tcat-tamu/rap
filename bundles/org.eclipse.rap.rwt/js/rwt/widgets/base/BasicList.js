@@ -11,14 +11,14 @@
  *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.BasicList", {
+rwt.qx.Class.define( "rwt.widgets.base.BasicList", {
   extend : rwt.widgets.base.Scrollable,
 
   construct : function( multiSelection ) {
     this.base( arguments, new rwt.widgets.base.VerticalBoxLayout() );
     this.setAppearance( "list" );
     this.setTabIndex( 1 );
-    this._manager = new qx.ui.selection.SelectionManager( this._clientArea );
+    this._manager = new rwt.widgets.util.SelectionManager( this._clientArea );
     this.addEventListener( "mouseover", this._onmouseover );
     this.addEventListener( "mousedown", this._onmousedown );
     this.addEventListener( "mouseup", this._onmouseup );
@@ -251,7 +251,7 @@ qx.Class.define( "rwt.widgets.base.BasicList", {
     _escapeItems : function( items ) {
       var result = items;
       if( !this._markupEnabled ) {
-        var EncodingUtil = rwt.protocol.EncodingUtil;
+        var EncodingUtil = rwt.util.Encoding;
         for( var i = 0; i < result.length; i++ ) {
           result[ i ] = EncodingUtil.replaceNewLines( result[ i ], " " );
           result[ i ] = EncodingUtil.escapeText( result[ i ], false );

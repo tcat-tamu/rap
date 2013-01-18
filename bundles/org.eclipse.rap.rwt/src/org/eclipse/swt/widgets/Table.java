@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,7 +12,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
@@ -1860,7 +1859,7 @@ public class Table extends Composite {
     checkWidget();
     int result = customItemHeight;
     if( result == -1 ) {
-      int textHeight = Graphics.getCharHeight( getFont() );
+      int textHeight = TextSizeUtil.getCharHeight( getFont() );
       int paddingHeight = getCellPadding().height;
       textHeight += Math.max( paddingHeight, 4 );
       int itemImageHeight = getItemImageSize().y + paddingHeight;
@@ -1887,12 +1886,12 @@ public class Table extends Composite {
     int result = 0;
     if( headerVisible ) {
       Font headerFont = getHeaderFont();
-      int textHeight = Graphics.getCharHeight( headerFont );
+      int textHeight = TextSizeUtil.getCharHeight( headerFont );
       int imageHeight = 0;
       for( int i = 0; i < columnHolder.size(); i++ ) {
         TableColumn column = columnHolder.getItem( i );
         if( column.getText().contains( "\n" ) ) {
-          int columnTextHeight = Graphics.textExtent( headerFont, column.getText(), 0 ).y;
+          int columnTextHeight = TextSizeUtil.textExtent( headerFont, column.getText(), 0 ).y;
           textHeight = Math.max( textHeight, columnTextHeight );
         }
         Image image = column.getImage();
@@ -2701,8 +2700,8 @@ public class Table extends Composite {
 
   private static TableItem max( TableItem item1, TableItem item2 ) {
     TableItem result;
-    int item1TextWidth = Graphics.stringExtent( item1.getFont(), item1.getText( 0 ) ).x;
-    int item2TextWidth = Graphics.stringExtent( item2.getFont(), item2.getText( 0 ) ).x;
+    int item1TextWidth = TextSizeUtil.stringExtent( item1.getFont(), item1.getText( 0 ) ).x;
+    int item2TextWidth = TextSizeUtil.stringExtent( item2.getFont(), item2.getText( 0 ) ).x;
     if( item1TextWidth > item2TextWidth ) {
       result = item1;
     } else {

@@ -19,7 +19,7 @@
  *
  * @appearance label
  */
-qx.Class.define("rwt.widgets.base.Label",
+rwt.qx.Class.define("rwt.widgets.base.Label",
 {
   extend : rwt.widgets.base.Terminator,
 
@@ -251,14 +251,14 @@ qx.Class.define("rwt.widgets.base.Label",
      * Apply the font to the label.
      *
      * @type member
-     * @param font {qx.ui.core.Font} new font.
+     * @param font {rwt.html.Font} new font.
      */
     _styleFont : function( font ) {
       this._invalidatePreferredInnerDimensions();
       if( font ) {
         font.render( this );
       } else {
-        qx.ui.core.Font.reset( this );
+        rwt.html.Font.reset( this );
       }
     },
 
@@ -335,58 +335,13 @@ qx.Class.define("rwt.widgets.base.Label",
      *
      * @param text {String} new label text
      */
-    _syncText : function(text)
-    {
-      /*
-      var mode = this.getMode();
-
-      if (mode === "auto") {
-        mode = rwt.util.Validation.isValidString(text) && text.match(/<.*>/) ? "html" : "text";
-      }
-
-      switch (mode)
-      {
-        case "text":
-          var escapedText = qx.html.String.escape(text).replace(/(^ | $)/g, "&nbsp;").replace(/  /g, "&nbsp;&nbsp;");
-          this._isHtml = escapedText !== text;
-          this._content = escapedText;
-          break;
-
-        case "html":
-          this._isHtml = true;
-          this._content = text;
-          break;
-      }
-      */
-
-          this._content = text;
+    _syncText : function(text) {
+      this._content = text;
 
       if (this._isCreated) {
         this._renderContent();
       }
     },
-
-
-    /**
-     * TODOC
-     *
-     * @type member
-     * @param value {var} Current value
-     * @param old {var} Previous value
-     */
-// TODO [rh] unused
-/*
-    _applyMnemonic : function(value, old)
-    {
-      this._mnemonicTest = value ? new RegExp("^(((<([^>]|" + value + ")+>)|(&([^;]|" + value + ")+;)|[^&" + value + "])*)(" + value + ")", "i") : null;
-
-      if (this._isCreated) {
-        this._renderContent();
-      }
-    },
-*/
-
-
 
 
     /*
@@ -402,7 +357,7 @@ qx.Class.define("rwt.widgets.base.Label",
      */
     _computeObjectNeededDimensions : function() {
       var fontProps = this._styleProperties;
-      var calc = org.eclipse.swt.FontSizeCalculation;
+      var calc = rwt.widgets.util.FontSizeCalculation;
       var dimensions = calc.computeTextDimensions( this._content, fontProps );
       this._cachedPreferredInnerWidth = dimensions[ 0 ];
       this._cachedPreferredInnerHeight = dimensions[ 1 ];
@@ -545,7 +500,7 @@ qx.Class.define("rwt.widgets.base.Label",
       else
       {
         element.innerHTML = "";
-        qx.dom.Element.setTextContent(element, html);
+        rwt.html.Element.setTextContent(element, html);
       }
     }
       */

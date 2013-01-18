@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.GridCellToolTip", {
+rwt.qx.Class.define( "rwt.widgets.base.GridCellToolTip", {
   extend : rwt.widgets.base.ToolTip,
   include : rwt.animation.VisibilityAnimationMixin,
 
@@ -30,8 +30,8 @@ qx.Class.define( "rwt.widgets.base.GridCellToolTip", {
     setText : function( text ) {
       if( this._isValidToolTip( text ) ) {
         this.getAtom().setLabel( text );
-        this.setLeft( qx.event.type.MouseEvent.getPageX() + this.getMousePointerOffsetX() );
-        this.setTop( qx.event.type.MouseEvent.getPageY() + this.getMousePointerOffsetY() );
+        this.setLeft( rwt.event.MouseEvent.getPageX() + this.getMousePointerOffsetX() );
+        this.setTop( rwt.event.MouseEvent.getPageY() + this.getMousePointerOffsetY() );
         this.show();
       }
     },
@@ -53,7 +53,7 @@ qx.Class.define( "rwt.widgets.base.GridCellToolTip", {
       if( this._isValidCell() ) {
         var server = rwt.remote.Server.getInstance();
         this._requestedCell = this._itemId + "," + this._columnIndex;
-        server.getServerObject( this._grid ).call( "renderToolTipText", {
+        server.getRemoteObject( this._grid ).call( "renderToolTipText", {
           "item" : this._itemId,
           "column" : this._columnIndex
         } );

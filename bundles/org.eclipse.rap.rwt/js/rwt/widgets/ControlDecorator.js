@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.ControlDecorator", {
+rwt.qx.Class.define( "rwt.widgets.ControlDecorator", {
   extend : rwt.widgets.base.Image,
 
   construct : function() {
@@ -33,7 +33,7 @@ qx.Class.define( "rwt.widgets.ControlDecorator", {
     },
 
     _updateToolTip : function() {
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
+      var wm = rwt.remote.WidgetManager.getInstance();
       if( this._text === null || this._text === "" || !this._showHover ) {
         wm.setToolTip( this, null );
       } else {
@@ -42,7 +42,7 @@ qx.Class.define( "rwt.widgets.ControlDecorator", {
     },
 
     setHasSelectionListener : function( value ) {
-      var eventUtil = org.eclipse.swt.EventUtil;
+      var eventUtil = rwt.remote.EventUtil;
       if( value ) {
         this.addEventListener( "mousedown", eventUtil.widgetSelected, this );
       } else {
@@ -51,7 +51,7 @@ qx.Class.define( "rwt.widgets.ControlDecorator", {
     },
 
     setHasDefaultSelectionListener : function( value ) {
-      var eventUtil = org.eclipse.swt.EventUtil;
+      var eventUtil = rwt.remote.EventUtil;
       if( value ) {
         this.addEventListener( "dblclick", eventUtil.widgetDefaultSelected, this );
       } else {

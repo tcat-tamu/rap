@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2011 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,8 +11,8 @@
  ******************************************************************************/
 package org.eclipse.swt.graphics;
 
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+
 import org.eclipse.rap.rwt.internal.theme.QxFont;
 import org.eclipse.rap.rwt.internal.theme.QxType;
 import org.eclipse.rap.rwt.internal.theme.SimpleSelector;
@@ -38,13 +38,9 @@ public abstract class Device implements Drawable, SerializableCompatibility {
   // 'deviceLock'.
   protected final SerializableLock deviceLock;
   private boolean disposed;
-  private Point dpi;
-  private int depth;
 
   public Device() {
     deviceLock = new SerializableLock();
-    readDPI();
-    readDepth();
   }
 
   /**
@@ -68,7 +64,7 @@ public abstract class Device implements Drawable, SerializableCompatibility {
    */
   public Color getSystemColor( int id ) {
     checkDevice();
-    ResourceFactory resourceFactory = RWTFactory.getResourceFactory();
+    ResourceFactory resourceFactory = getApplicationContext().getResourceFactory();
     Color result;
     switch( id ) {
       case SWT.COLOR_WHITE:
@@ -149,8 +145,7 @@ public abstract class Device implements Drawable, SerializableCompatibility {
    */
   public Font getSystemFont() {
     checkDevice();
-    QxType font
-      = ThemeUtil.getCssValue( "Display", "font", SimpleSelector.DEFAULT );
+    QxType font = ThemeUtil.getCssValue( "Display", "font", SimpleSelector.DEFAULT );
     return QxFont.createFont( ( QxFont )font );
   }
 
@@ -169,21 +164,16 @@ public abstract class Device implements Drawable, SerializableCompatibility {
    *
    * @since 1.3
    */
-  public FontData[] getFontList( String faceName, boolean scalable )
-  {
+  public FontData[] getFontList( String faceName, boolean scalable ) {
     checkDevice();
     FontData[] result = new FontData[ 0 ];
     if( scalable ) {
       QxFont fontList
-        = ( QxFont )ThemeUtil.getCssValue( "Display",
-                                           "rwt-fontlist",
-                                           SimpleSelector.DEFAULT );
+        = ( QxFont )ThemeUtil.getCssValue( "Display", "rwt-fontlist", SimpleSelector.DEFAULT );
       if( faceName == null ) {
         result = new FontData[ fontList.family.length ];
         for( int i = 0; i < result.length; i++ ) {
-          result[ i ] = new FontData( fontList.family[ i ],
-                                      0,
-                                      SWT.NORMAL );
+          result[ i ] = new FontData( fontList.family[ i ], 0, SWT.NORMAL );
         }
       } else {
         int counter = 0;
@@ -196,9 +186,7 @@ public abstract class Device implements Drawable, SerializableCompatibility {
         counter = 0;
         for( int i = 0; i < fontList.family.length; i++ ) {
           if( fontList.family[ i ].startsWith( faceName ) ) {
-            result[ counter++ ] = new FontData( fontList.family[ i ],
-                                                0,
-                                                SWT.NORMAL );
+            result[ counter++ ] = new FontData( fontList.family[ i ], 0, SWT.NORMAL );
           }
         }
       }
@@ -237,7 +225,7 @@ public abstract class Device implements Drawable, SerializableCompatibility {
    */
   public int getDepth() {
     checkDevice();
-    return depth;
+    return 16;
   }
 
   /**
@@ -254,7 +242,7 @@ public abstract class Device implements Drawable, SerializableCompatibility {
    */
   public Point getDPI() {
     checkDevice();
-    return new Point( dpi.x, dpi.y );
+    return new Point( 0, 0 );
   }
 
   /**
@@ -373,22 +361,6 @@ public abstract class Device implements Drawable, SerializableCompatibility {
   protected void checkDevice() {
     if( disposed ) {
       SWT.error( SWT.ERROR_DEVICE_DISPOSED );
-    }
-  }
-
-  private void readDPI() {
-    dpi = ProtocolUtil.readPropertyValueAsPoint( "w1", "dpi" );
-    if( dpi == null ) {
-      dpi = new Point( 0, 0 );
-    }
-  }
-
-  private void readDepth() {
-    String parameter = ProtocolUtil.readPropertyValueAsString( "w1", "colorDepth" );
-    if( parameter != null ) {
-      depth = Integer.parseInt( parameter );
-    } else {
-      depth = 16;
     }
   }
 }

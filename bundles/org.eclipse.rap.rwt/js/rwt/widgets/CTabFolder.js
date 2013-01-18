@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.CTabFolder", {
+rwt.qx.Class.define( "rwt.widgets.CTabFolder", {
   extend : rwt.widgets.base.Parent,
 
   construct : function() {
@@ -48,7 +48,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
     this._frame = new rwt.widgets.base.Parent();
     this._frame.setAppearance( "ctabfolder-frame" );
     this.add( this._frame );
-    this._frameBorder = new org.eclipse.rwt.Border( 2, "solid", "black" );
+    this._frameBorder = new rwt.html.Border( 2, "solid", "black" );
 
     // Create horizontal line that separates the button bar from the rest of
     // the client area
@@ -181,7 +181,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
       if( color != null && !this.hasState( "rwt_FLAT" ) ) {
         this._frame.setBorder( null );
         this._frameBorder.dispose();
-        this._frameBorder = new org.eclipse.rwt.Border( 2, "solid", color );
+        this._frameBorder = new rwt.html.Border( 2, "solid", color );
         this._frame.setBorder( this._frameBorder );
       } else {
         this._frame.resetBorder();
@@ -263,9 +263,9 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
         // Create chevron button
         this._chevron = new rwt.widgets.base.Button();
         this._chevron.setAppearance( "ctabfolder-drop-down-button" );
-        this._chevron.setShow( qx.constant.Style.BUTTON_SHOW_ICON );
+        this._chevron.setShow( "icon" );
         this._chevron.addEventListener( "execute", this._onChevronExecute, this );
-        var wm = org.eclipse.swt.WidgetManager.getInstance();
+        var wm = rwt.remote.WidgetManager.getInstance();
         wm.setToolTip( this._chevron, rwt.widgets.CTabFolder.CHEVRON_TOOLTIP );
         this.add( this._chevron );
       }
@@ -277,7 +277,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
 
     hideChevron : function() {
       if( this._chevron != null ) {
-        var wm = org.eclipse.swt.WidgetManager.getInstance();
+        var wm = rwt.remote.WidgetManager.getInstance();
         wm.setToolTip( this._chevron, null );
         this._chevron.removeEventListener( "execute", this._onChevronExecute, this );
         this.remove( this._chevron );
@@ -313,7 +313,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
           maxToolTip = rwt.widgets.CTabFolder.MAX_TOOLTIP;
           break;
       }
-      var wm = org.eclipse.swt.WidgetManager.getInstance();
+      var wm = rwt.remote.WidgetManager.getInstance();
       if( this._minButton != null ) {
         this._minButton.setIcon( minIcon );
         wm.setToolTip( this._minButton, minToolTip );
@@ -335,7 +335,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
       if( this._maxButton == null ) {
         this._maxButton = new rwt.widgets.base.Button();
         this._maxButton.setAppearance( "ctabfolder-button" );
-        this._maxButton.setShow( qx.constant.Style.BUTTON_SHOW_ICON );
+        this._maxButton.setShow( "icon" );
         this.setMinMaxState( this._minMaxState );  // initializes the icon according to current state
         // [if] "mousedown" is used instead of "execute" because of the bug 247672
         this._maxButton.addEventListener( "mousedown", this._onMinMaxExecute, this );
@@ -352,7 +352,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
         this._maxButton.removeEventListener( "mousedown",
                                              this._onMinMaxExecute,
                                              this );
-        var wm = org.eclipse.swt.WidgetManager.getInstance();
+        var wm = rwt.remote.WidgetManager.getInstance();
         wm.setToolTip( this._maxButton, null );
         this.remove( this._maxButton );
         this._maxButton.dispose();
@@ -371,7 +371,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
       if( this._minButton == null ) {
         this._minButton = new rwt.widgets.base.Button();
         this._minButton.setAppearance( "ctabfolder-button" );
-        this._minButton.setShow( qx.constant.Style.BUTTON_SHOW_ICON );
+        this._minButton.setShow( "icon" );
         this.setMinMaxState( this._minMaxState );  // initializes the icon according to current state
         // [if] "mousedown" is used instead of "execute" because of the bug 247672
         this._minButton.addEventListener( "mousedown", this._onMinMaxExecute, this );
@@ -388,7 +388,7 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
         this._minButton.removeEventListener( "mousedown",
                                              this._onMinMaxExecute,
                                              this );
-        var wm = org.eclipse.swt.WidgetManager.getInstance();
+        var wm = rwt.remote.WidgetManager.getInstance();
         wm.setToolTip( this._minButton, null );
         this.remove( this._minButton );
         this._minButton.dispose();
@@ -446,15 +446,15 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
 
     _onChevronExecute : function( evt ) {
       if( this._chevronMenu == null || !this._chevronMenu.isSeeable() ) {
-        if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+        if( !rwt.remote.EventUtil.getSuspended() ) {
           var server = rwt.remote.Server.getInstance();
-          server.getServerObject( this ).notify( "Folder", { "detail" : "showList" } );
+          server.getRemoteObject( this ).notify( "Folder", { "detail" : "showList" } );
         }
       }
     },
 
     _onMinMaxExecute : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         var detail;
         if ( evt.getTarget() == this._minButton ) {
           // Minimize button was pressed
@@ -475,12 +475,12 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
             detail = "restore";
           }
         }
-        var id = org.eclipse.swt.WidgetManager.getInstance().findIdByWidget( this );
+        var id = rwt.remote.WidgetManager.getInstance().findIdByWidget( this );
         var server = rwt.remote.Server.getInstance();
         server.addParameter( id + ".minimized", this._minMaxState == "min" );
         server.addParameter( id + ".maximized", this._minMaxState == "max" );
         if( this._hasFolderListener ) {
-          server.getServerObject( this ).notify( "Folder", { "detail" : detail } );
+          server.getRemoteObject( this ).notify( "Folder", { "detail" : detail } );
         }
       }
     },
@@ -511,32 +511,32 @@ qx.Class.define( "rwt.widgets.CTabFolder", {
     // TODO [rst] Change to respect _hasSelectionListener as soon as server-side
     // code is revised accordingly -> CTabFolderLCA.readData().
     _notifyItemClick : function( item ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         if( !item.isSelected() ) {
           this.deselectAll();
           item.setSelected( true );
-          var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+          var widgetManager = rwt.remote.WidgetManager.getInstance();
           var req = rwt.remote.Server.getInstance();
           var id = widgetManager.findIdByWidget( this );
           var itemId = widgetManager.findIdByWidget( item );
           req.addParameter( id + ".selection", itemId );
-          org.eclipse.swt.EventUtil.notifySelected( this );
+          rwt.remote.EventUtil.notifySelected( this );
         }
       }
     },
 
     _notifyItemDblClick : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         if( this._hasDefaultSelectionListener ) {
           var item = evt.getTarget();
-          var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+          var widgetManager = rwt.remote.WidgetManager.getInstance();
           var req = rwt.remote.Server.getInstance();
           var id = widgetManager.findIdByWidget( this );
           var itemId = widgetManager.findIdByWidget( item );
           // TODO [rst] remove this parameter as soon as server-side code is revised
           //      -> CTabFolderLCA.readData()
           req.addParameter( id + ".selection", itemId );
-          org.eclipse.swt.EventUtil.widgetDefaultSelected( evt, this );
+          rwt.remote.EventUtil.widgetDefaultSelected( evt, this );
         }
       }
     }

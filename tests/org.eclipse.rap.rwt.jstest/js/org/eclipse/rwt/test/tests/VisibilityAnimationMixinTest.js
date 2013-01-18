@@ -12,12 +12,12 @@
 
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 var Animation =  rwt.animation.Animation;
-var Processor = rwt.protocol.MessageProcessor;
+var Processor = rwt.remote.MessageProcessor;
 
 var shell;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.VisibilityAnimationMixinTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.VisibilityAnimationMixinTest", {
+  extend : rwt.qx.Object,
 
   members : {
 

@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2011, 2012 EclipseSource and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *    EclipseSource - initial API and implementation
+ ******************************************************************************/
 /*global console:false, org:false */
 (function() {
   var getPropsFromCode = function( fun ) {
@@ -24,7 +34,7 @@
   var lv1 = "  ";
   var lv2 = "    ";
 
-  var registry = rwt.protocol.AdapterRegistry._registry;
+  var registry = rwt.remote.HandlerRegistry._registry;
   var text = "RAP Protocol Reference" + nl + nl;
   for( var key in registry ) {
     try {

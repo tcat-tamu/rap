@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright: 2004, 2010 1&1 Internet AG, Germany, http://www.1und1.de,
+ *  Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
  *                        and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -19,9 +19,9 @@
  * {@link #once} is a special case. It will call a function deferred after a
  * given timeout.
  */
-qx.Class.define("rwt.client.Timer",
+rwt.qx.Class.define("rwt.client.Timer",
 {
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
 
 
@@ -45,10 +45,10 @@ qx.Class.define("rwt.client.Timer",
       this.setInterval(interval);
     }
 
-    this.__oninterval = rwt.util.Function.bind(this._oninterval, this);
+    this.__oninterval = rwt.util.Functions.bind(this._oninterval, this);
 
     //Event instance to dispatch when interval fires
-    this.__event = new qx.event.type.Event("interval");
+    this.__event = new rwt.event.Event("interval");
 
   },
 
@@ -64,7 +64,7 @@ qx.Class.define("rwt.client.Timer",
   events :
   {
     /** This event if fired each time the interval time has elapsed */
-    "interval" : "qx.event.type.Event"
+    "interval" : "rwt.event.Event"
   },
 
 

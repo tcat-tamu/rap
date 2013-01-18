@@ -11,7 +11,7 @@
  *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
  ******************************************************************************/
 
-qx.Class.define("rwt.widgets.base.HtmlEmbed",
+rwt.qx.Class.define("rwt.widgets.base.HtmlEmbed",
 {
   extend : rwt.widgets.base.Terminator,
 
@@ -146,13 +146,13 @@ qx.Class.define("rwt.widgets.base.HtmlEmbed",
 
     /**
      * @type member
-     * @param value {qx.ui.core.Font}
+     * @param value {rwt.html.Font}
      */
     _styleFont : function( value ) {
       if( value ) {
         value.render( this );
       } else {
-        qx.ui.core.Font.reset( this );
+        rwt.html.Font.reset( this );
       }
     },
 

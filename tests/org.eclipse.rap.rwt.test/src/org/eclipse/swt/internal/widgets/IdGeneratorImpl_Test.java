@@ -10,58 +10,79 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import junit.framework.TestCase;
 
 import org.eclipse.rap.rwt.testfixture.Fixture;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Widget;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class IdGeneratorImpl_Test extends TestCase {
+public class IdGeneratorImpl_Test {
 
   private IdGeneratorImpl idGenerator;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     idGenerator = new IdGeneratorImpl();
   }
 
-  public void testCreateId() {
-    String id1 = idGenerator.createId( "w" );
-    String id2 = idGenerator.createId( "w" );
-
-    assertFalse( id1.equals( id2 ) );
-  }
-
-  public void testCreateId_WithNull() {
+  @Test
+  public void testCreateId_doesNotExpectNull() {
     assertTrue( idGenerator.createId( null ).startsWith( "o" ) );
   }
 
-  public void testCreateId_WithObject() {
+  @Test
+  public void testCreateId_uses_w_prefixForDisplay() {
+    assertEquals( "w1", idGenerator.createId( mock( Display.class ) ) );
+  }
+
+  @Test
+  public void testCreateId_uses_w_prefixForWidget() {
+    assertEquals( "w2", idGenerator.createId( mock( Widget.class ) ) );
+    assertEquals( "w3", idGenerator.createId( mock( Widget.class ) ) );
+  }
+
+  @Test
+  public void testCreateId_uses_o_prefixForOtherObjects() {
     assertTrue( idGenerator.createId( mock( Object.class ) ).startsWith( "o" ) );
   }
 
-  public void testCreateId_WithWidget() {
-    assertTrue( idGenerator.createId( mock( Widget.class ) ).startsWith( "w" ) );
+  @Test
+  public void testCreateId_usesStringParameterAsPrefix() {
+    String id = idGenerator.createId( "foo" );
+
+    assertTrue( id.startsWith( "foo" ) );
   }
 
+  @Test
+  public void testCreateId_idsDifferWithCustomPrefix() {
+    String id1 = idGenerator.createId( "foo" );
+    String id2 = idGenerator.createId( "foo" );
+
+    assertFalse( id2.equals( id1 ) );
+  }
+
+  @Test
   public void testReproducibleIds() {
-    String id1 = idGenerator.createId( "w" );
-    String id2 = new IdGeneratorImpl().createId( "w" );
+    String id1 = idGenerator.createId( "x" );
+    String id2 = new IdGeneratorImpl().createId( "x" );
 
     assertEquals( id1, id2 );
   }
 
-  public void testIdsArePrefixed() {
-    assertTrue( idGenerator.createId( "x" ).startsWith( "x" ) );
-    assertTrue( idGenerator.createId( "y" ).startsWith( "y" ) );
-  }
-
+  @Test
   public void testSerialize() throws Exception {
-    String id1 = idGenerator.createId( "w" );
+    String id1 = idGenerator.createId( "x" );
 
     IdGeneratorImpl deserializedIdGenerator = Fixture.serializeAndDeserialize( idGenerator );
+    String id2 = deserializedIdGenerator.createId( "x" );
 
-    assertFalse( id1.equals( deserializedIdGenerator.createId( "w" ) ) );
+    assertFalse( id2.equals( id1 ) );
   }
+
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others. All rights reserved.
+ * Copyright (c) 2011, 2013 EclipseSource and others. All rights reserved.
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at http://www.eclipse.org/legal/epl-v10.html
@@ -8,9 +8,9 @@
  *   EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -225,7 +225,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
         "appearance": "table",
         "splitContainer" : true
       } );
-      org.eclipse.rwt.GridUtil.setFixedColumns( tree, 3 );
+      rwt.widgets.util.GridUtil.setFixedColumns( tree, 3 );
       // first 3 columns fixed -> one extra contianer for first 3
       assertIdentical( tree, tree._rowContainer.getSubContainer( 0 ).getParent() );
       assertIdentical( tree, tree._rowContainer.getSubContainer( 1 ).getParent() );
@@ -240,7 +240,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       var tree = new rwt.widgets.Grid( {
         "appearance": "table"
       } );
-      org.eclipse.rwt.GridUtil.setFixedColumns( tree, 3 );
+      rwt.widgets.util.GridUtil.setFixedColumns( tree, 3 );
       tree.addToDocument();
       TestUtil.flush();
       assertTrue( tree._rowContainer instanceof rwt.widgets.base.GridRowContainer );
@@ -261,7 +261,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       assertEquals( 2, tree.getRowContainer().getFixedColumns() );
       var containerEl = tree.getRowContainer().getSubContainer( 0 ).getElement();
       var orgWidth = parseInt( containerEl.style.width, 10 );
-      org.eclipse.rwt.GridUtil.setFixedColumns( tree, 3 );
+      rwt.widgets.util.GridUtil.setFixedColumns( tree, 3 );
       assertEquals( 3, tree.getRowContainer().getFixedColumns() );
       TestUtil.flush();
       var newWidth = parseInt( containerEl.style.width, 10 );
@@ -318,9 +318,9 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       var item = new rwt.widgets.GridItem( tree.getRootItem(), 0 );
       TestUtil.flush();
       assertFalse( tree.isItemSelected( item ) );
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       tree.selectItem( item );
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
       TestUtil.flush();
       assertTrue( tree.isItemSelected( item ) );
       tree.destroy();
@@ -347,7 +347,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
     testCellToolTipOnFixedColumns : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var tree = this._createSplitTree();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       widgetManager.add( tree, "w3", true );
       tree.setWidth( 300 );
       tree.setEnableCellToolTip( true );
@@ -365,7 +365,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       TestUtil.prepareTimerUse();
       TestUtil.initRequestLog();
       tree.setScrollLeft( 20 );
-      var leftButton = qx.event.type.MouseEvent.buttons.left;
+      var leftButton = rwt.event.MouseEvent.buttons.left;
       var node = tree._rowContainer.getSubContainer( 1 ).getChildren()[ 0 ].getElement();
 
       TestUtil.fakeMouseEventDOM( node, "mouseover", leftButton, 6, 11 );
@@ -384,7 +384,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
     testCellToolTipOnNonFixedColumns : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var tree = this._createSplitTree();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       widgetManager.add( tree, "w3", true );
       tree.setWidth( 300 );
       tree.setEnableCellToolTip( true );
@@ -402,7 +402,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       TestUtil.prepareTimerUse();
       TestUtil.initRequestLog();
       tree.setScrollLeft( 20 );
-      var leftButton = qx.event.type.MouseEvent.buttons.left;
+      var leftButton = rwt.event.MouseEvent.buttons.left;
       var node = tree._rowContainer.getSubContainer( 1 ).getChildren()[ 0 ].getElement();
 
       TestUtil.fakeMouseEventDOM( node, "mouseover", leftButton, 16, 11 );
@@ -423,7 +423,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       var tree = this._createSplitTree();
       for( var i = 0; i < 5; i++ ) {
         var column = new rwt.widgets.GridColumn( tree );
-        rwt.protocol.ObjectRegistry.add( "col", column );
+        var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.GridColumn" );
+        rwt.remote.ObjectRegistry.add( "col", column, handler );
         column.setLeft( tree.getRenderConfig().itemLeft[ i ] );
         column.setWidth( tree.getRenderConfig().itemWidth[ i ] );
         if( i < 2 ) {
@@ -469,7 +470,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       var offset2 = cont2.childNodes.length;
       tree.setLinesVisible( true );
       TestUtil.flush();
-      org.eclipse.rwt.GridUtil.setFixedColumns( tree, 0 );
+      rwt.widgets.util.GridUtil.setFixedColumns( tree, 0 );
       TestUtil.flush();
       assertEquals( offset1, cont1.childNodes.length );
       assertEquals( offset2 + 5, cont2.childNodes.length ); // column count is 5
@@ -483,7 +484,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       // column order: 2,0 - 1,3,4
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var argsMap = { "splitContainer" : true };
-      var result = org.eclipse.rwt.GridUtil.createTreeRowContainer( argsMap );
+      var result = rwt.widgets.util.GridUtil.createTreeRowContainer( argsMap );
       result.setFixedColumns( 2 );
       result.setBaseAppearance( "table" );
       result.setSelectionProvider( function(){ return true; }, {} );
@@ -521,7 +522,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       args[ "selectionPadding" ] = [ 2, 4 ];
       args[ "indentionWidth" ] = 16;
       var tree = new rwt.widgets.Grid( args );
-      org.eclipse.rwt.GridUtil.setFixedColumns( tree, 2 );
+      rwt.widgets.util.GridUtil.setFixedColumns( tree, 2 );
       tree.setTreeColumn( -1 );
       tree.setItemHeight( 20 );
       tree.setLeft( 0 );
@@ -539,9 +540,11 @@ qx.Class.define( "org.eclipse.rwt.test.tests.GridUtilTest", {
       if( !noflush ) {
         TestUtil.flush();
       }
-      rwt.protocol.ObjectRegistry.add( "w3", tree );
-      rwt.protocol.ObjectRegistry.add( "w3_vscroll", tree.getVerticalBar() );
-      rwt.protocol.ObjectRegistry.add( "w3_hscroll", tree.getHorizontalBar() );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Grid" );
+      var barHandler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.ScrollBar" );
+      rwt.remote.ObjectRegistry.add( "w3", tree, handler );
+      rwt.remote.ObjectRegistry.add( "w3_vscroll", tree.getVerticalBar(), barHandler );
+      rwt.remote.ObjectRegistry.add( "w3_hscroll", tree.getHorizontalBar(), barHandler );
       return tree;
     },
 

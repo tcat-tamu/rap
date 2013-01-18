@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2011 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,7 @@
  ******************************************************************************/
 package org.eclipse.swt.custom;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -209,6 +209,7 @@ public class CTabFolder extends Composite {
     highlight_margin = ( style & SWT.FLAT ) != 0 ? 0 : 2;
     updateTabHeight( false );
     resizeListener = new ControlAdapter() {
+      @Override
       public void controlResized( ControlEvent event ) {
         onResize();
       }
@@ -227,9 +228,9 @@ public class CTabFolder extends Composite {
    * @return the tab items
    *
    * @exception SWTException <ul>
-   *		<li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
-   *		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
-   *	</ul>
+   *    <li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
+   *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
+   *  </ul>
    */
   public CTabItem[] getItems() {
     checkWidget();
@@ -291,9 +292,9 @@ public class CTabFolder extends Composite {
    * @return the number of tabs in the folder
    *
    * @exception SWTException <ul>
-   *		<li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
-   *		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
-   *	</ul>
+   *    <li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
+   *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
+   *  </ul>
    */
   public int getItemCount() {
     checkWidget();
@@ -367,9 +368,9 @@ public class CTabFolder extends Composite {
    * @return the index of the selected tab item or -1
    *
    * @exception SWTException <ul>
-   *		<li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
-   *		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
-   *	</ul>
+   *    <li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
+   *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
+   *  </ul>
    */
   public int getSelectionIndex() {
     checkWidget();
@@ -405,9 +406,9 @@ public class CTabFolder extends Composite {
    * @return the selected tab item, or null if none has been selected
    *
    * @exception SWTException <ul>
-   *		<li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
-   *		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
-   *	</ul>
+   *    <li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
+   *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
+   *  </ul>
    */
   public CTabItem getSelection() {
     checkWidget();
@@ -731,6 +732,7 @@ public class CTabFolder extends Composite {
    *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
    * </ul>
    */
+  @Override
   public void setLayout( Layout layout ) {
     checkWidget();
     // ignore - CTabFolder manages its own layout
@@ -764,9 +766,9 @@ public class CTabFolder extends Composite {
    * @return the height of the tab
    *
    * @exception SWTException <ul>
-   *		<li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
-   *		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
-   *	</ul>
+   *    <li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
+   *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
+   *  </ul>
    */
   public int getTabHeight() {
     checkWidget();
@@ -813,6 +815,7 @@ public class CTabFolder extends Composite {
     }
   }
 
+  @Override
   public int getStyle() {
     checkWidget();
     int result = super.getStyle();
@@ -861,9 +864,9 @@ public class CTabFolder extends Composite {
    * @return the position of the tab
    *
    * @exception SWTException <ul>
-   *		<li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
-   *		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
-   *	</ul>
+   *    <li>ERROR_THREAD_INVALID_ACCESS when called from the wrong thread</li>
+   *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
+   *  </ul>
    */
   public int getTabPosition() {
     checkWidget();
@@ -994,6 +997,7 @@ public class CTabFolder extends Composite {
     }
   }
 
+  @Override
   public Rectangle computeTrim( int x, int y, int width, int height ) {
     checkWidget();
     int trimX = x - marginWidth - highlight_margin - borderLeft;
@@ -1342,6 +1346,7 @@ public class CTabFolder extends Composite {
   ///////////////////////////
   // Adaptable implementation
 
+  @Override
   @SuppressWarnings("unchecked")
   public <T> T getAdapter( Class<T> adapter ) {
     T result;
@@ -1361,6 +1366,7 @@ public class CTabFolder extends Composite {
   ////////////////////
   // Control overrides
 
+  @Override
   public void setFont( Font font ) {
     checkWidget();
     if( font != getFont() ) {
@@ -1371,6 +1377,7 @@ public class CTabFolder extends Composite {
     }
   }
 
+  @Override
   public int getBorderWidth() {
     checkWidget();
     return 0;
@@ -1379,6 +1386,7 @@ public class CTabFolder extends Composite {
   //////////////////////
   // Composite overrides
 
+  @Override
   public Rectangle getClientArea() {
     checkWidget();
     Rectangle result;
@@ -1978,7 +1986,7 @@ CTabItem[] items = itemHolder.getItems();
 //      GC gc = new GC(this);
       if (items.length == 0) {
 //        tempHeight = gc.textExtent("Default", CTabItem.FLAGS).y + CTabItem.TOP_MARGIN + CTabItem.BOTTOM_MARGIN; //$NON-NLS-1$
-        tempHeight =   Graphics.getCharHeight( getFont() )
+        tempHeight =   TextSizeUtil.getCharHeight( getFont() )
                      + getItemPadding( false ).height;
       } else {
         for (int i=0; i < items.length; i++) {
@@ -2196,6 +2204,7 @@ CTabItem[] items = itemHolder.getItems();
         item.setImage( tab.getImage() );
         item.setData( id, tab );
         item.addSelectionListener( new SelectionAdapter() {
+          @Override
           public void widgetSelected( SelectionEvent event ) {
             MenuItem menuItem = ( MenuItem )event.getSource();
             int index = indexOf( ( CTabItem )menuItem.getData( id ) );
@@ -2335,6 +2344,7 @@ CTabItem[] items = itemHolder.getItems();
   ///////////////////
   // Skinning support
 
+  @Override
   public void reskin( int flags ) {
     super.reskin( flags );
     CTabItem[] items = getItems();

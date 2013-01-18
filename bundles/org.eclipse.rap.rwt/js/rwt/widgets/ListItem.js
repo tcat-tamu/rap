@@ -11,7 +11,7 @@
  *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
  ******************************************************************************/
 
-qx.Class.define("rwt.widgets.ListItem", {
+rwt.qx.Class.define("rwt.widgets.ListItem", {
 
   extend : rwt.widgets.base.MultiCellWidget,
 
@@ -19,6 +19,8 @@ qx.Class.define("rwt.widgets.ListItem", {
     this.base( arguments, [ "label" ] );
     this.initMinWidth();
     this.setHorizontalChildrenAlign( "left" );
+    // Fix for Bug 396835 - [List][Combo] Lists can scroll over maximum in IE7/8
+    this.setContainerOverflow( false );
   },
 
   properties : {

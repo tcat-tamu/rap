@@ -14,7 +14,7 @@
  * This class provides the client-side counterpart for
  * rwt.widgets.Scale.
  */
-qx.Class.define( "rwt.widgets.Scale", {
+rwt.qx.Class.define( "rwt.widgets.Scale", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( isHorizontal ) {
@@ -56,7 +56,7 @@ qx.Class.define( "rwt.widgets.Scale", {
     this._thumb.addEventListener( "mousemove", this._onThumbMouseMove, this );
     this._thumb.addEventListener( "mouseup", this._onThumbMouseUp, this );
     // Fix IE Styling issues
-    org.eclipse.swt.WidgetUtil.fixIEBoxHeight( this._thumb );
+    rwt.widgets.util.WidgetUtil.fixIEBoxHeight( this._thumb );
     this.add( this._thumb );
     // Thumb offset
     this._thumbOffset = 0;
@@ -90,9 +90,9 @@ qx.Class.define( "rwt.widgets.Scale", {
   },
 
   events : {
-    "selectionChanged" : "qx.event.type.Event",
-    "minimumChanged" : "qx.event.type.Event",
-    "maximumChanged" : "qx.event.type.Event"
+    "selectionChanged" : "rwt.event.Event",
+    "minimumChanged" : "rwt.event.Event",
+    "maximumChanged" : "rwt.event.Event"
   },
 
   statics : {
@@ -219,10 +219,10 @@ qx.Class.define( "rwt.widgets.Scale", {
       if( evt.isLeftButtonPressed() ){
         if( this._horizontal ) {
           pxSel = this._thumb.getLeft() + rwt.widgets.Scale.HALF_THUMB;
-          mousePos = evt.getPageX() - qx.bom.element.Location.getLeft( this.getElement() );
+          mousePos = evt.getPageX() - rwt.html.Location.getLeft( this.getElement() );
         } else {
           pxSel = this._thumb.getTop() + rwt.widgets.Scale.HALF_THUMB;
-          mousePos = evt.getPageY() - qx.bom.element.Location.getTop( this.getElement() );
+          mousePos = evt.getPageY() - rwt.html.Location.getTop( this.getElement() );
         }
         if( mousePos > pxSel ) {
           sel = this._selection + this._pageIncrement;
@@ -238,10 +238,10 @@ qx.Class.define( "rwt.widgets.Scale", {
       var mousePos;
       if( evt.isLeftButtonPressed() ) {
         if( this._horizontal ) {
-          mousePos = evt.getPageX() - qx.bom.element.Location.getLeft( this.getElement() );
+          mousePos = evt.getPageX() - rwt.html.Location.getLeft( this.getElement() );
           this._thumbOffset = mousePos - this._thumb.getLeft();
         } else {
-          mousePos = evt.getPageY() - qx.bom.element.Location.getTop( this.getElement() );
+          mousePos = evt.getPageY() - rwt.html.Location.getTop( this.getElement() );
           this._thumbOffset = mousePos - this._thumb.getTop();
         }
         this._thumb.setCapture(true);
@@ -252,9 +252,9 @@ qx.Class.define( "rwt.widgets.Scale", {
       var mousePos;
       if( this._thumb.getCapture() ) {
         if( this._horizontal ) {
-          mousePos = evt.getPageX() - qx.bom.element.Location.getLeft( this.getElement() );
+          mousePos = evt.getPageX() - rwt.html.Location.getLeft( this.getElement() );
         } else {
-          mousePos = evt.getPageY() - qx.bom.element.Location.getTop( this.getElement() );
+          mousePos = evt.getPageY() - rwt.html.Location.getTop( this.getElement() );
         }
         var sel = this._getSelectionFromThumbPosition( mousePos - this._thumbOffset );
         if( this._selection != sel ) {
@@ -312,13 +312,13 @@ qx.Class.define( "rwt.widgets.Scale", {
     },
 
     _sendChanges : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var req = rwt.remote.Server.getInstance();
         var id = widgetManager.findIdByWidget( this );
         req.addParameter( id + ".selection", this._selection );
         if( this._hasSelectionListener ) {
-          org.eclipse.swt.EventUtil.notifySelected( this );
+          rwt.remote.EventUtil.notifySelected( this );
         }
         this._readyToSendChanges = true;
       }

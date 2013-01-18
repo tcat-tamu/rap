@@ -16,10 +16,10 @@
 
 (function() {
 
-var HtmlUtil = org.eclipse.rwt.HtmlUtil;
+var HtmlUtil = rwt.html.Style;
 var Variant = rwt.util.Variant;
 
-qx.Class.define( "rwt.widgets.base.GridRow", {
+rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
 
   extend : rwt.widgets.base.Terminator,
 
@@ -53,7 +53,7 @@ qx.Class.define( "rwt.widgets.base.GridRow", {
   },
 
   events : {
-    "itemRendered" : "qx.event.type.Event"
+    "itemRendered" : "rwt.event.Event"
   },
 
   members : {
@@ -547,7 +547,7 @@ qx.Class.define( "rwt.widgets.base.GridRow", {
     },
 
     _getVisualTextWidth : function( item, cell, config ) {
-      var calc = org.eclipse.swt.FontSizeCalculation;
+      var calc = rwt.widgets.util.FontSizeCalculation;
       var result = 0;
       if( this._cellLabels[ cell ] ) {
         var font = this._getCellFont( item, cell, config );
@@ -573,10 +573,10 @@ qx.Class.define( "rwt.widgets.base.GridRow", {
     _getFontProps : function( font ) {
       var result = {};
       var fontObject;
-      if( font instanceof qx.ui.core.Font ) {
+      if( font instanceof rwt.html.Font ) {
         fontObject = font;
       } else {
-        fontObject = qx.ui.core.Font.fromString( font );
+        fontObject = rwt.html.Font.fromString( font );
       }
       fontObject.renderStyle( result );
       fontObject.dispose();
@@ -590,7 +590,7 @@ qx.Class.define( "rwt.widgets.base.GridRow", {
       if( font === "" || font === null ) {
         this._resetFont( element );
       } else {
-        if( font instanceof qx.ui.core.Font ) {
+        if( font instanceof rwt.html.Font ) {
           font.renderStyle( element.style );
         } else {
           element.style.font = font;
@@ -813,7 +813,7 @@ qx.Class.define( "rwt.widgets.base.GridRow", {
           }
         }
       },
-      "default" : rwt.util.Function.returnTrue
+      "default" : rwt.util.Functions.returnTrue
     } ),
 
     ////////////////

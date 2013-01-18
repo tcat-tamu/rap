@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,14 +11,16 @@
 
 (function(){
 
-var ObjectRegistry = rwt.protocol.ObjectRegistry;
-var AdapterRegistry = rwt.protocol.AdapterRegistry;
-var MessageProcessor = rwt.protocol.MessageProcessor;
+var ObjectRegistry = rwt.remote.ObjectRegistry;
+var AdapterRegistry = rwt.remote.HandlerRegistry;
+var MessageProcessor = rwt.remote.MessageProcessor;
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ClientAPITest", {
+var shell;
 
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ClientAPITest", {
+
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -27,7 +29,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ClientAPITest", {
 
       rap.registerTypeHandler( "myTestType", handler );
 
-      assertIdentical( handler, AdapterRegistry.getAdapter( "myTestType" ) );
+      assertIdentical( handler, AdapterRegistry.getHandler( "myTestType" ) );
       AdapterRegistry.remove( "myTestType" );
     },
 
@@ -39,7 +41,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ClientAPITest", {
 
       var result = rap.getRemoteObject( obj );
 
-      assertIdentical( result, rwt.remote.Server.getInstance().getServerObject( obj ) );
+      assertIdentical( result, rwt.remote.Server.getInstance().getRemoteObject( obj ) );
       AdapterRegistry.remove( "myTestType" );
     },
 
@@ -134,12 +136,218 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ClientAPITest", {
       assertIdentical( composite._getTargetNode(), otherElement.parentNode );
     },
 
+    testCompositeWrapperGetClientArea : function() {
+      MessageProcessor.processOperationArray( [ "create", "w3", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w2",
+          "clientArea" : [ 1, 2, 3, 4 ]
+        }
+      ] );
+
+      assertEquals( [ 1, 2, 3, 4 ], rap.getObject( "w3" ).getClientArea() );
+    },
+
+    testCompositeWrapperGetClientArea_returnsSaveCopy : function() {
+      MessageProcessor.processOperationArray( [ "create", "w3", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w2",
+          "clientArea" : [ 1, 2, 3, 4 ]
+        }
+      ] );
+
+      rap.getObject( "w3" ).getClientArea()[ 1 ] = 100;
+      assertEquals( [ 1, 2, 3, 4 ], rap.getObject( "w3" ).getClientArea() );
+    },
+
+
+    testCompositeWrapperAddResizeListener : function() {
+      MessageProcessor.processOperationArray( [ "create", "w3", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w2",
+          "clientArea" : [ 1, 2, 3, 4 ]
+        }
+      ] );
+      var logger = TestUtil.getLogger();
+
+      rap.getObject( "w3" ).addListener( "Resize", logger.log );
+      TestUtil.protocolSet( "w3", {
+        "bounds" : [ 0, 0, 110, 120 ],
+        "clientArea" : [ 0, 0, 109, 119 ]
+      } );
+
+      assertEquals( 1, logger.getLog().length );
+    },
+
+    testCompositeWrapperAddResizeListener_UnkownTypeThrowsException : function() {
+      MessageProcessor.processOperationArray( [ "create", "w3", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w2",
+          "clientArea" : [ 1, 2, 3, 4 ]
+        }
+      ] );
+      var logger = TestUtil.getLogger();
+
+      try {
+        rap.getObject( "w3" ).addListener( "resize", logger.log );
+        fail();
+      } catch( ex ) {
+        // expected
+      }
+    },
+
+    testCompositeWrapperAddResizeListener_FireEventAfterClientAreaChanged : function() {
+      MessageProcessor.processOperationArray( [ "create", "w3", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w2",
+          "clientArea" : [ 1, 2, 3, 4 ]
+        }
+      ] );
+      var logger = TestUtil.getLogger();
+      rap.getObject( "w3" ).addListener( "Resize", function() {
+        logger.log( rap.getObject( "w3" ).getClientArea() );
+      } );
+
+      TestUtil.protocolSet( "w3", {
+        "bounds" : [ 0, 0, 110, 120 ],
+        "clientArea" : [ 0, 0, 109, 119 ]
+      } );
+
+      assertEquals( [ 0, 0, 109, 119 ], logger.getLog()[ 0 ] );
+    },
+
+    testCompositeWrapperAddResizeListener_NoEventObjectGiven : function() {
+      MessageProcessor.processOperationArray( [ "create", "w3", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w2",
+          "clientArea" : [ 1, 2, 3, 4 ]
+        }
+      ] );
+      var logger = TestUtil.getLogger();
+      rap.getObject( "w3" ).addListener( "Resize", function() {
+        logger.log( arguments );
+      } );
+
+      TestUtil.protocolSet( "w3", {
+        "bounds" : [ 0, 0, 110, 120 ],
+        "clientArea" : [ 0, 0, 109, 119 ]
+      } );
+
+      var args = logger.getLog()[ 0 ];
+      assertTrue( args.length === 0 || args[ 0 ] === undefined );
+    },
+
+    testCompositeWrapperRemoveResizeListener : function() {
+      MessageProcessor.processOperationArray( [ "create", "w3", "rwt.widgets.Composite", {
+          "style" : [ "BORDER" ],
+          "parent" : "w2",
+          "clientArea" : [ 1, 2, 3, 4 ]
+        }
+      ] );
+      var logger = TestUtil.getLogger();
+      rap.getObject( "w3" ).addListener( "Resize", logger.log );
+      rap.getObject( "w3" ).removeListener( "Resize", logger.log );
+
+      TestUtil.protocolSet( "w3", {
+        "bounds" : [ 0, 0, 110, 120 ],
+        "clientArea" : [ 0, 0, 109, 119 ]
+      } );
+
+      assertEquals( 0, logger.getLog().length );
+    },
+
+    testOn_UnkownTypeThrowsException : function() {
+      try {
+        rap.on( "unkownType", function() {} );
+        fail();
+      } catch( ex ) {
+        // expected
+      }
+    },
+
+    testOn_RegisterAndFireSendEvent : function() {
+      var logger = TestUtil.getLogger();
+
+      rap.on( "send", logger.log );
+      rap.getRemoteObject( shell ).call( "foo" );
+
+      assertEquals( 1, logger.getLog().length );
+    },
+
+    testOn_FireSendEventBeforeSend : function() {
+      var logger = TestUtil.getLogger();
+
+      rap.on( "send", function(){ logger.log( TestUtil.getRequestsSend() ); } );
+      rap.getRemoteObject( shell ).call( "foo" );
+
+      assertEquals( 0, logger.getLog()[ 0 ] );
+    },
+
+    testOn_RegisterAndFireRenderEvent : function() {
+      var logger = TestUtil.getLogger();
+
+      rap.on( "render", logger.log );
+      rap.getRemoteObject( shell ).call( "foo" );
+
+      assertEquals( 1, logger.getLog().length );
+    },
+
+    testOn_RegisterSameEventWithSameListenerTwice : function() {
+      var logger = TestUtil.getLogger();
+
+      rap.on( "render", logger.log );
+      rap.on( "render", logger.log );
+      rap.getRemoteObject( shell ).call( "foo" );
+
+      assertEquals( 1, logger.getLog().length );
+    },
+
+    testOn_FireRenderEventAfterProcess : function() {
+      var logger = TestUtil.getLogger();
+      var server = rwt.remote.Server.getInstance();
+      var now = server.getRequestCounter();
+
+      rap.on( "render", function(){ logger.log( server.getRequestCounter() ); } );
+      rap.getRemoteObject( shell ).call( "foo" );
+
+      assertEquals( now + 1, logger.getLog()[ 0 ] );
+    },
+
+    testOff_DeregisterFirstListener : function() {
+      var logger = TestUtil.getLogger();
+
+      rap.on( "render", logger.log );
+      rap.on( "send", logger.log );
+      rap.off( "render", logger.log );
+      rap.getRemoteObject( shell ).call( "foo" );
+
+      assertEquals( 1, logger.getLog().length );
+    },
+
+    testOff_DeregisterSecondListener : function() {
+      var logger = TestUtil.getLogger();
+
+      rap.on( "render", logger.log );
+      rap.on( "send", logger.log );
+      rap.off( "render", logger.log );
+      rap.getRemoteObject( shell ).call( "foo" );
+
+      assertEquals( 1, logger.getLog().length );
+    },
+
+    testOff_DeregisterWithoutRegister : function() {
+      var logger = TestUtil.getLogger();
+
+      rap.off( "render", logger.log );
+      // succeeds by not crashing
+    },
+
     setUp : function() {
-      TestUtil.createShellByProtocol( "w2" );
+      shell = TestUtil.createShellByProtocol( "w2" );
     },
 
     tearDown : function() {
       MessageProcessor.processOperationArray( [ "destroy", "w2"] );
+      shell = null;
     }
 
 

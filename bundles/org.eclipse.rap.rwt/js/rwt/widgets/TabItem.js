@@ -16,7 +16,7 @@
  * @state checked Set by {@link #checked}
  * @state over
  */
-qx.Class.define( "rwt.widgets.TabItem", {
+rwt.qx.Class.define( "rwt.widgets.TabItem", {
 
   extend : rwt.widgets.base.Atom,
 
@@ -32,7 +32,7 @@ qx.Class.define( "rwt.widgets.TabItem", {
   },
 
   events: {
-    "closetab" : "qx.event.type.Event"
+    "closetab" : "rwt.event.Event"
   },
 
   properties : {
@@ -77,9 +77,9 @@ qx.Class.define( "rwt.widgets.TabItem", {
       nullable : true
     },
 
-    /** The assigned qx.ui.selection.RadioManager which handles the switching between registered buttons */
+    /** The assigned rwt.widgets.util.RadioManager which handles the switching between registered buttons */
     manager : {
-      check  : "qx.ui.selection.RadioManager",
+      check  : "rwt.widgets.util.RadioManager",
       nullable : true,
       apply : "_applyManager"
     },
@@ -126,7 +126,7 @@ qx.Class.define( "rwt.widgets.TabItem", {
           if ( vPrev && vPrev != this ) {
             // we want to enable the outline border, because
             // the user used the keyboard for activation
-            delete qx.event.handler.FocusHandler.mouseFocus;
+            delete rwt.widgets.util.FocusHandler.mouseFocus;
             // focus previous tab
             vPrev.setFocused(true);
             // and naturally make it also checked
@@ -138,7 +138,7 @@ qx.Class.define( "rwt.widgets.TabItem", {
           if( vNext && vNext != this ) {
             // we want to enable the outline border, because
             // the user used the keyboard for activation
-            delete qx.event.handler.FocusHandler.mouseFocus;
+            delete rwt.widgets.util.FocusHandler.mouseFocus;
             // focus next tab
             vNext.setFocused(true);
             // and naturally make it also checked

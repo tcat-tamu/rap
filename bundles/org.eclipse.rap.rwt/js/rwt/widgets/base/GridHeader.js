@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.GridHeader", {
+rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
 
   extend : rwt.widgets.base.Parent,
 
@@ -38,7 +38,7 @@ qx.Class.define( "rwt.widgets.base.GridHeader", {
   },
 
   events: {
-    "columnLayoutChanged" : "qx.event.type.Event"
+    "columnLayoutChanged" : "rwt.event.Event"
   },
 
   members : {
@@ -52,7 +52,7 @@ qx.Class.define( "rwt.widgets.base.GridHeader", {
             this._renderLabelLeft( this._children[ i ], column );
           }
         }
-        if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+        if( !rwt.remote.EventUtil.getSuspended() ) {
           rwt.widgets.base.Widget.flushGlobalQueues();
         }
       }

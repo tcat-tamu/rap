@@ -10,9 +10,9 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.GridItem", {
+rwt.qx.Class.define( "rwt.widgets.GridItem", {
 
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
   construct : function( parent, index, placeholder ) {
     // Dispose is only needed to remove items from the tree and widget manager.
@@ -106,7 +106,7 @@ qx.Class.define( "rwt.widgets.GridItem", {
   },
 
   events: {
-    "update" : "qx.event.type.Event"
+    "update" : "rwt.event.Event"
   },
 
   members : {
@@ -707,7 +707,7 @@ qx.Class.define( "rwt.widgets.GridItem", {
     // Helper
 
     _escapeTexts : function() {
-      var EncodingUtil = rwt.protocol.EncodingUtil;
+      var EncodingUtil = rwt.util.Encoding;
       for( var i = 0; i < this._texts.length; i++ ) {
         var text = this._texts[ i ];
         if( text ) {

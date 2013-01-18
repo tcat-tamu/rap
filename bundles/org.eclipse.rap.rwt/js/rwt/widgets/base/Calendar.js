@@ -29,7 +29,7 @@
  * @state today {calendar-day}
  * @state selected {calendar-day}
  */
-qx.Class.define("rwt.widgets.base.Calendar", {
+rwt.qx.Class.define("rwt.widgets.base.Calendar", {
   extend : rwt.widgets.base.BoxLayout,
 
   /*
@@ -61,7 +61,7 @@ qx.Class.define("rwt.widgets.base.Calendar", {
     var nextMonthBt = new rwt.widgets.base.Button();
     var nextYearBt = new rwt.widgets.base.Button();
 
-    var wm = org.eclipse.swt.WidgetManager.getInstance();
+    var wm = rwt.remote.WidgetManager.getInstance();
     wm.setToolTip( lastYearBt, "Previous year" );
     wm.setToolTip( lastMonthBt, "Previous month" );
     wm.setToolTip( nextMonthBt, "Next month" );
@@ -226,7 +226,7 @@ qx.Class.define("rwt.widgets.base.Calendar", {
 
   events: {
     /** Fired when a date was selected. The event holds the new selected date in its data property.*/
-    "select"     : "qx.event.type.DataEvent"
+    "select"     : "rwt.event.DataEvent"
   },
 
   /*

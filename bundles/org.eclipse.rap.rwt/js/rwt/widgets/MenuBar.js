@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.MenuBar", {
+rwt.qx.Class.define( "rwt.widgets.MenuBar", {
   extend : rwt.widgets.base.HorizontalBoxLayout,
 
   construct : function() {
@@ -32,7 +32,7 @@ qx.Class.define( "rwt.widgets.MenuBar", {
   },
 
   events : {
-    "changeOpenItem" : "qx.event.type.Event"
+    "changeOpenItem" : "rwt.event.Event"
   },
 
   members : {
@@ -94,9 +94,8 @@ qx.Class.define( "rwt.widgets.MenuBar", {
         subMenu.setOpener( item );
         var itemNode = item.getElement();
         // the position is relative to the document, therefore we need helper
-        subMenu.setTop(   qx.bom.element.Location.getTop( itemNode )
-                        + qx.html.Dimension.getBoxHeight( itemNode ) );
-        subMenu.setLeft( qx.bom.element.Location.getLeft( itemNode ) );
+        subMenu.setTop( rwt.html.Location.getTop( itemNode ) + itemNode.offsetHeight );
+        subMenu.setLeft( rwt.html.Location.getLeft( itemNode ) );
         subMenu.show();
       } else {
         this._openItem = null;

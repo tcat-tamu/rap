@@ -13,9 +13,9 @@
 
 var Animation = rwt.animation.Animation;
 var AnimationRenderer = rwt.animation.AnimationRenderer;
-var EventHandlerUtil = org.eclipse.rwt.EventHandlerUtil;
+var EventHandlerUtil = rwt.event.EventHandlerUtil;
 
-qx.Mixin.define( "rwt.animation.VisibilityAnimationMixin", {
+rwt.qx.Mixin.define( "rwt.animation.VisibilityAnimationMixin", {
 
   properties : {
 
@@ -256,7 +256,7 @@ qx.Mixin.define( "rwt.animation.VisibilityAnimationMixin", {
     },
 
     _lockActiveState : function() {
-      //this._setActiveState = rwt.util.Function.returnNull;
+      //this._setActiveState = rwt.util.Functions.returnNull;
       this.getWindowManager().blockActiveState = true;
     },
 

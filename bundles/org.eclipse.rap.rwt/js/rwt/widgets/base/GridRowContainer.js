@@ -9,7 +9,7 @@
  *   EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.GridRowContainer", {
+rwt.qx.Class.define( "rwt.widgets.base.GridRowContainer", {
   extend : rwt.widgets.base.VerticalBoxLayout,
 
   construct : function() {
@@ -208,7 +208,7 @@ qx.Class.define( "rwt.widgets.base.GridRowContainer", {
 
     _getGridBorder : function( state ) {
       var tvGrid = new rwt.theme.ThemeValues( state );
-      var cssElement = rwt.util.String.toFirstUp( this._baseAppearance ) + "-GridLine";
+      var cssElement = rwt.util.Strings.toFirstUp( this._baseAppearance ) + "-GridLine";
       var gridColor = tvGrid.getCssColor( cssElement, "color" );
       tvGrid.dispose();
       var borderWidths = [ 0, 0, 0, 0 ];
@@ -218,7 +218,7 @@ qx.Class.define( "rwt.widgets.base.GridRowContainer", {
       } else if( state.vertical ) {
         borderWidths[ 1 ] = 1;
       }
-      return new org.eclipse.rwt.Border( borderWidths, "solid", gridColor );
+      return new rwt.html.Border( borderWidths, "solid", gridColor );
     },
 
     _getRowAppearance : function() {

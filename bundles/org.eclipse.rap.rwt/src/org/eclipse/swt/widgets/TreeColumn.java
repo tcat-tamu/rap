@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,7 +12,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -340,9 +340,9 @@ public class TreeColumn extends Item {
     Font font = parent.getHeaderFont();
     if( text.length() > 0 ) {
       if( text.indexOf( '\n' ) != -1 ) {
-        result = Graphics.textExtent( font, text, 0 ).x;
+        result = TextSizeUtil.textExtent( font, text, 0 ).x;
       } else {
-        result = Graphics.stringExtent( font, text ).x;
+        result = TextSizeUtil.stringExtent( font, text ).x;
       }
     }
     if( image != null ) {

@@ -9,22 +9,22 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-rwt.protocol.AdapterRegistry.add( "forms.widgets.Hyperlink", {
+rwt.remote.HandlerRegistry.add( "forms.widgets.Hyperlink", {
 
   factory : function( properties ) {
     var wrap = properties.style.indexOf( "WRAP" ) !== -1 ? "wrap" : "";
     var result = new org.eclipse.ui.forms.widgets.Hyperlink( wrap );
-    rwt.protocol.AdapterUtil.addStatesForStyles( result, properties.style );
+    rwt.remote.HandlerUtil.addStatesForStyles( result, properties.style );
     result.setUserData( "isControl", true );
-    rwt.protocol.AdapterUtil.setParent( result, properties.parent );
+    rwt.remote.HandlerUtil.setParent( result, properties.parent );
     return result;
   },
 
-  destructor : rwt.protocol.AdapterUtil.getControlDestructor(),
+  destructor : rwt.remote.HandlerUtil.getControlDestructor(),
 
-  getDestroyableChildren : rwt.protocol.AdapterUtil.getDestroyableChildrenFinder(),
+  getDestroyableChildren : rwt.remote.HandlerUtil.getDestroyableChildrenFinder(),
 
-  properties : rwt.protocol.AdapterUtil.extendControlProperties( [
+  properties : rwt.remote.HandlerUtil.extendControlProperties( [
     "text",
     "image",
     "underlined",
@@ -33,9 +33,9 @@ rwt.protocol.AdapterRegistry.add( "forms.widgets.Hyperlink", {
     "activeBackground"
   ] ),
 
-  propertyHandler : rwt.protocol.AdapterUtil.extendControlPropertyHandler( {
+  propertyHandler : rwt.remote.HandlerUtil.extendControlPropertyHandler( {
     "text" : function( widget, value ) {
-      var EncodingUtil = rwt.protocol.EncodingUtil;
+      var EncodingUtil = rwt.util.Encoding;
       var text = EncodingUtil.escapeText( value, false );
       widget.setText( text );
     },
@@ -50,23 +50,23 @@ rwt.protocol.AdapterRegistry.add( "forms.widgets.Hyperlink", {
       if( value === null ) {
         widget.setActiveTextColor( null );
       } else {
-        widget.setActiveTextColor( rwt.util.ColorUtil.rgbToRgbString( value ) );
+        widget.setActiveTextColor( rwt.util.Colors.rgbToRgbString( value ) );
       }
     },
     "activeBackground" : function( widget, value ) {
       if( value === null ) {
         widget.setActiveBackgroundColor( null );
       } else {
-        widget.setActiveBackgroundColor( rwt.util.ColorUtil.rgbToRgbString( value ) );
+        widget.setActiveBackgroundColor( rwt.util.Colors.rgbToRgbString( value ) );
       }
     }
   } ),
 
-  listeners : rwt.protocol.AdapterUtil.extendControlListeners( [
+  listeners : rwt.remote.HandlerUtil.extendControlListeners( [
     "DefaultSelection"
   ] ),
 
-  listenerHandler : rwt.protocol.AdapterUtil.extendControlListenerHandler( {} ),
+  listenerHandler : rwt.remote.HandlerUtil.extendControlListenerHandler( {} ),
 
   methods : []
 

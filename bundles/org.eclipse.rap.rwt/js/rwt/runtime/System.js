@@ -11,35 +11,35 @@
  *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
  ******************************************************************************/
 
-qx.Class.define( "rwt.runtime.System", {
+rwt.qx.Class.define( "rwt.runtime.System", {
 
   type : "singleton",
 
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
   construct : function() {
     if( this.isSupported() ) {
       this.base( arguments );
       this._startupTime = new Date().getTime();
       // Attach load/unload events
-      this._onloadWrapped = rwt.util.Function.bind( this._onload, this );
-      this._onbeforeunloadWrapped = rwt.util.Function.bind( this._onbeforeunload, this );
-      this._onunloadWrapped = rwt.util.Function.bind( this._onunload, this );
-      qx.html.EventRegistration.addEventListener( window, "load", this._onloadWrapped );
-      qx.html.EventRegistration.addEventListener( window, "beforeunload", this._onbeforeunloadWrapped );
-      qx.html.EventRegistration.addEventListener( window, "unload", this._onunloadWrapped );
+      this._onloadWrapped = rwt.util.Functions.bind( this._onload, this );
+      this._onbeforeunloadWrapped = rwt.util.Functions.bind( this._onbeforeunload, this );
+      this._onunloadWrapped = rwt.util.Functions.bind( this._onunload, this );
+      rwt.html.EventRegistration.addEventListener( window, "load", this._onloadWrapped );
+      rwt.html.EventRegistration.addEventListener( window, "beforeunload", this._onbeforeunloadWrapped );
+      rwt.html.EventRegistration.addEventListener( window, "unload", this._onunloadWrapped );
       this._applyPatches();
-      org.eclipse.rwt.GraphicsUtil.init();
-      var eventHandler = org.eclipse.rwt.EventHandler;
+      rwt.graphics.GraphicsUtil.init();
+      var eventHandler = rwt.event.EventHandler;
       eventHandler.setAllowContextMenu( rwt.widgets.Menu.getAllowContextMenu );
-      eventHandler.setMenuManager( org.eclipse.rwt.MenuManager.getInstance() );
+      eventHandler.setMenuManager( rwt.widgets.util.MenuManager.getInstance() );
     }
   },
 
   events : {
-    "beforeunload" : "qx.event.type.DomEvent",
-    "unload" : "qx.event.type.Event",
-    "uiready" : "qx.event.type.Event"
+    "beforeunload" : "rwt.event.DomEvent",
+    "unload" : "rwt.event.Event",
+    "uiready" : "rwt.event.Event"
   },
 
   members : {
@@ -65,14 +65,14 @@ qx.Class.define( "rwt.runtime.System", {
 
     _applyPatches : function() {
       if( !rwt.client.Client.supportsCss3() ) {
-        qx.Class.patch( rwt.widgets.base.Parent, org.eclipse.rwt.GraphicsMixin );
-        qx.Class.patch( rwt.widgets.base.BasicText, org.eclipse.rwt.GraphicsMixin );
-        qx.Class.patch( rwt.widgets.base.GridRow, org.eclipse.rwt.GraphicsMixin );
-        qx.Class.patch( rwt.widgets.base.MultiCellWidget, org.eclipse.rwt.GraphicsMixin );
+        rwt.qx.Class.patch( rwt.widgets.base.Parent, rwt.widgets.util.GraphicsMixin );
+        rwt.qx.Class.patch( rwt.widgets.base.BasicText, rwt.widgets.util.GraphicsMixin );
+        rwt.qx.Class.patch( rwt.widgets.base.GridRow, rwt.widgets.util.GraphicsMixin );
+        rwt.qx.Class.patch( rwt.widgets.base.MultiCellWidget, rwt.widgets.util.GraphicsMixin );
       } else {
-        qx.Class.patch( rwt.widgets.ProgressBar, org.eclipse.rwt.GraphicsMixin );
+        rwt.qx.Class.patch( rwt.widgets.ProgressBar, rwt.widgets.util.GraphicsMixin );
       }
-      qx.Class.patch( qx.event.type.DomEvent, org.eclipse.rwt.DomEventPatch );
+      rwt.qx.Class.patch( rwt.event.DomEvent, rwt.event.DomEventPatch );
     },
 
     getStartupTime : function() {
@@ -89,24 +89,24 @@ qx.Class.define( "rwt.runtime.System", {
     },
 
     _preload : function() {
-      var visibleImages = qx.io.image.Manager.getInstance().getVisibleImages();
-      this.__preloader = new qx.io.image.PreloaderSystem( visibleImages, this._preloaderDone, this );
+      var visibleImages = rwt.html.ImageManager.getInstance().getVisibleImages();
+      this.__preloader = new rwt.html.ImagePreloaderSystem( visibleImages, this._preloaderDone, this );
       this.__preloader.start();
     },
 
     _preloaderDone : function() {
       this.__preloader.dispose();
       this.__preloader = null;
-      org.eclipse.rwt.EventHandler.init();
-      org.eclipse.rwt.EventHandler.attachEvents();
+      rwt.event.EventHandler.init();
+      rwt.event.EventHandler.attachEvents();
       this.setUiReady( true );
       rwt.widgets.base.Widget.flushGlobalQueues();
       rwt.client.Timer.once( this._postload, this, 100 );
     },
 
     _postload : function() {
-      var hiddenImages = qx.io.image.Manager.getInstance().getHiddenImages();
-      this.__postloader = new qx.io.image.PreloaderSystem( hiddenImages, this._postloaderDone, this );
+      var hiddenImages = rwt.html.ImageManager.getInstance().getHiddenImages();
+      this.__postloader = new rwt.html.ImagePreloaderSystem( hiddenImages, this._postloaderDone, this );
       this.__postloader.start();
     },
 
@@ -116,7 +116,7 @@ qx.Class.define( "rwt.runtime.System", {
     },
 
     _onbeforeunload : function( e ) {
-      var event = new qx.event.type.DomEvent( "beforeunload", e, window, this );
+      var event = new rwt.event.DomEvent( "beforeunload", e, window, this );
       this.dispatchEvent( event, false );
       var msg = event.getUserData( "returnValue" );
       event.dispose();
@@ -125,9 +125,9 @@ qx.Class.define( "rwt.runtime.System", {
 
     _onunload : function( e ) {
       this.createDispatchEvent( "unload" );
-      org.eclipse.rwt.EventHandler.detachEvents();
-      org.eclipse.rwt.EventHandler.cleanUp();
-      qx.core.Object.dispose( true );
+      rwt.event.EventHandler.detachEvents();
+      rwt.event.EventHandler.cleanUp();
+      rwt.qx.Object.dispose( true );
     },
 
     _isBrowserSupported : function() {
@@ -156,9 +156,9 @@ qx.Class.define( "rwt.runtime.System", {
   },
 
   destruct : function() {
-    qx.html.EventRegistration.removeEventListener( window, "load", this._onloadWrapped );
-    qx.html.EventRegistration.removeEventListener( window, "beforeunload", this._onbeforeunloadWrapped );
-    qx.html.EventRegistration.removeEventListener( window, "unload", this._onunloadWrapped );
+    rwt.html.EventRegistration.removeEventListener( window, "load", this._onloadWrapped );
+    rwt.html.EventRegistration.removeEventListener( window, "beforeunload", this._onbeforeunloadWrapped );
+    rwt.html.EventRegistration.removeEventListener( window, "unload", this._onunloadWrapped );
   },
 
   defer : function( statics, proto, properties )  {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright: 2004, 2010 1&1 Internet AG, Germany, http://www.1und1.de,
+ *  Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
  *                        and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -11,7 +11,7 @@
  *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
  ******************************************************************************/
 
-qx.Class.define("rwt.widgets.base.BoxLayout",
+rwt.qx.Class.define("rwt.widgets.base.BoxLayout",
 {
   extend : rwt.widgets.base.Parent,
 
@@ -186,7 +186,7 @@ qx.Class.define("rwt.widgets.base.BoxLayout",
      * @return {rwt.widgets.base.BoxLayout} TODOC
      */
     _createLayoutImpl : function() {
-      return this.getOrientation() == "vertical" ? new qx.ui.layout.impl.VerticalBoxLayoutImpl(this) : new qx.ui.layout.impl.HorizontalBoxLayoutImpl(this);
+      return this.getOrientation() == "vertical" ? new rwt.widgets.util.VerticalBoxLayoutImpl(this) : new rwt.widgets.util.HorizontalBoxLayoutImpl(this);
     },
 
 

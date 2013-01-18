@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,8 +8,8 @@
  * Contributors:
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
-qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeDateTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeDateTest", {
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -186,7 +186,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeDateTest", {
     testDropDownCalendarNotEnoughSpace : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var dateTime = this._createDefaultDateTime( true );
-      var browserHeight = qx.html.Window.getInnerHeight( window );
+      var browserHeight = rwt.html.Window.getInnerHeight( window );
       dateTime.setTop( browserHeight - 40 );
       TestUtil.flush();
       TestUtil.click( dateTime._dropDownButton );
@@ -233,7 +233,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeDateTest", {
       if( dropdown ) {
         styles[ 2 ] = "DROP_DOWN";
       }
-      rwt.protocol.MessageProcessor.processOperation( {
+      rwt.remote.MessageProcessor.processOperation( {
         "target" : id,
         "action" : "create",
         "type" : "rwt.widgets.DateTime",
@@ -248,7 +248,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeDateTest", {
           "datePattern" : this.datePattern
         }
       } );
-      return rwt.protocol.ObjectRegistry.getObject( "w3" );
+      return rwt.remote.ObjectRegistry.getObject( "w3" );
     },
 
     _createDefaultDateTime : function( dropdown ) {
@@ -263,8 +263,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeDateTest", {
                                                                this.weekdayShortNames,
                                                                this.dateSeparator,
                                                                this.datePattern);
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
-      widgetManager.add( dateTime, "w3", true );
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
+      widgetManager.add( dateTime, "w3", true, rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.DateTime" ) );
       dateTime.setSpace( 3, 115, 3, 20 );
       dateTime.addToDocument();
       TestUtil.flush();

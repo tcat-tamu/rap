@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright: 2004, 2010 1&1 Internet AG, Germany, http://www.1und1.de,
+ *  Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
  *                        and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -14,7 +14,7 @@
 /**
  * @appearance tab-view
  */
-qx.Class.define("rwt.widgets.TabFolder",
+rwt.qx.Class.define("rwt.widgets.TabFolder",
 {
   extend : rwt.widgets.base.BoxLayout,
 
@@ -29,8 +29,8 @@ qx.Class.define("rwt.widgets.TabFolder",
 
   construct : function() {
     this.base( arguments );
-    this.addEventListener( "changeFocused", org.eclipse.swt.TabUtil.onTabFolderChangeFocused );
-    this.addEventListener( "keypress", org.eclipse.swt.TabUtil.onTabFolderKeyPress );
+    this.addEventListener( "changeFocused", rwt.widgets.util.TabUtil.onTabFolderChangeFocused );
+    this.addEventListener( "keypress", rwt.widgets.util.TabUtil.onTabFolderKeyPress );
     this._bar = new rwt.widgets.base.TabFolderBar();
     this._pane = new rwt.widgets.base.TabFolderPane();
     this.add( this._bar, this._pane );

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@
 package org.eclipse.swt.internal.browser.browserkit;
 
 import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readPropertyValue;
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
@@ -23,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.lifecycle.LifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
@@ -194,7 +195,7 @@ public final class BrowserLCA extends AbstractWidgetLCA {
 //      } );
 //      adapter.setExecutePending( true );
 //    }
-    
+
     //[ariddle] - Change browser to prevent hangs due to concurrent/stacked-up requests
     final IBrowserScript browserScript = adapter.getExecuteScript();
     if( browserScript != null ) {
@@ -203,11 +204,10 @@ public final class BrowserLCA extends AbstractWidgetLCA {
         // [if] Put the execution to the end of the rendered script. This is very
         // important when Browser#execute is called from within a BrowserFunction,
         // because then we have a synchronous requests.
-        RWTFactory.getLifeCycleFactory().getLifeCycle().addPhaseListener( new PhaseListener() {
-
+        final LifeCycle lifeCycle = getApplicationContext().getLifeCycleFactory().getLifeCycle();
+        lifeCycle.addPhaseListener( new PhaseListener() {
           public void beforePhase( PhaseEvent event ) {
           }
-
           public void afterPhase( PhaseEvent event ) {
             if( browser.getDisplay() == LifeCycleUtil.getSessionDisplay() ) {
               try {
@@ -216,7 +216,7 @@ public final class BrowserLCA extends AbstractWidgetLCA {
                 properties.put( PARAM_SCRIPT, browserScript.getScript() );
                 clientObject.call( METHOD_EVALUATE, properties );
               } finally {
-                RWTFactory.getLifeCycleFactory().getLifeCycle().removePhaseListener( this );
+                lifeCycle.removePhaseListener( this );
               }
             }
           }

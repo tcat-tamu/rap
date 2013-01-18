@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,15 +11,21 @@
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.swt.SWT;
@@ -31,27 +37,31 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.widgets.ITreeItemAdapter;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
 @SuppressWarnings("deprecation")
-public class TreeItem_Test extends TestCase {
+public class TreeItem_Test {
 
   private Display display;
   private Shell shell;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     display = new Display();
     shell = new Shell( display );
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
+  @Test
   public void testConstructor() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -91,6 +101,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testRemoveAll() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item1 = new TreeItem( tree, SWT.NONE );
@@ -100,14 +111,15 @@ public class TreeItem_Test extends TestCase {
 
     item1.removeAll();
 
-    assertEquals( false, item1.isDisposed() );
-    assertEquals( true, item11.isDisposed() );
-    assertEquals( true, item111.isDisposed() );
+    assertFalse( item1.isDisposed() );
+    assertTrue( item11.isDisposed() );
+    assertTrue( item111.isDisposed() );
     assertEquals( 0, item1.getItemCount() );
-    assertEquals( false, item2.isDisposed() );
+    assertFalse( item2.isDisposed() );
   }
 
 
+  @Test
   public void testVirtualRemoveAll() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.setItemCount( 1 );
@@ -122,6 +134,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( lastSubItem.isDisposed() );
   }
 
+  @Test
   public void testFont() {
     Tree tree = new Tree( shell, SWT.NONE );
     Font treeFont = Graphics.getFont( "BeautifullyCraftedTreeFont", 15, SWT.BOLD );
@@ -135,6 +148,7 @@ public class TreeItem_Test extends TestCase {
     assertSame( treeFont, item.getFont() );
   }
 
+  @Test
   public void testChecked() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -142,16 +156,17 @@ public class TreeItem_Test extends TestCase {
     TreeItem checkedItem = new TreeItem( checkedTree, SWT.NONE );
     // Ensure that checked-property on a treeItem cannot be changed when tree
     // is missing CHECK style
-    assertEquals( false, item.getChecked() );
+    assertFalse( item.getChecked() );
     item.setChecked( true );
-    assertEquals( false, item.getChecked() );
+    assertFalse( item.getChecked() );
     // The check-property for a treeItem on a tree with style CHECK may be
     // changed
-    assertEquals( false, checkedItem.getChecked() );
+    assertFalse( checkedItem.getChecked() );
     checkedItem.setChecked( true );
-    assertEquals( true, checkedItem.getChecked() );
+    assertTrue( checkedItem.getChecked() );
   }
 
+  @Test
   public void testGetExpanded() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -162,9 +177,10 @@ public class TreeItem_Test extends TestCase {
     treeItem.setExpanded( true );
     assertTrue( treeItem.getExpanded() );
     treeItem.setExpanded( false );
-    assertEquals( false, treeItem.getExpanded() );
+    assertFalse( treeItem.getExpanded() );
   }
 
+  @Test
   public void testBackgroundColor() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -176,6 +192,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( green, item.getBackground() );
   }
 
+  @Test
   public void testForegroundColor() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -187,6 +204,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( green, item.getForeground() );
   }
 
+  @Test
   public void testClear() {
     Tree tree = new Tree( shell, SWT.SINGLE | SWT.CHECK );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -209,6 +227,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( subItem.getChecked() );
   }
 
+  @Test
   public void testClearRecursive() {
     Tree tree = new Tree( shell, SWT.SINGLE | SWT.CHECK );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -221,6 +240,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( "", subSubItem.getText() );
   }
 
+  @Test
   public void testClearNonRecursive() {
     Tree tree = new Tree( shell, SWT.SINGLE | SWT.CHECK );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -233,6 +253,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( "bar", subSubItem.getText() );
   }
 
+  @Test
   public void testClearAll() {
     Tree tree = new Tree( shell, SWT.SINGLE | SWT.CHECK );
     TreeItem root = new TreeItem( tree, SWT.NONE );
@@ -258,17 +279,19 @@ public class TreeItem_Test extends TestCase {
     assertEquals( "", root.getItem( 1 ).getItem( 1 ).getText() );
   }
 
+  @Test
   public void testSetGrayed() {
     Tree newTree = new Tree( shell, SWT.CHECK );
     TreeItem tItem = new TreeItem( newTree, 0 );
-    assertEquals( false, tItem.getGrayed() );
+    assertFalse( tItem.getGrayed() );
     tItem.setGrayed( true );
     assertTrue( tItem.getGrayed() );
     tItem.setGrayed( false );
-    assertEquals( false, tItem.getGrayed() );
+    assertFalse( tItem.getGrayed() );
     newTree.dispose();
   }
 
+  @Test
   public void testSetTextOnCell() {
     Tree tree = new Tree( shell, SWT.CHECK );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -278,6 +301,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( "foo", treeItem.getText( 0 ) );
   }
 
+  @Test
   public void testSetText() {
     Tree tree = new Tree( shell, SWT.CHECK );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -335,6 +359,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetImage() {
     Tree tree = new Tree( shell, SWT.CHECK );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -402,6 +427,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetImageI() {
     Tree tree = new Tree( shell, SWT.CHECK );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -453,6 +479,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetForeground() {
     Tree tree = new Tree( shell, SWT.CHECK );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -471,6 +498,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetBackground() {
     Tree tree = new Tree( shell, SWT.CHECK );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -490,6 +518,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetForegroundI() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -530,6 +559,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetFontI() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -571,6 +601,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetFont() {
     Tree tree = new Tree( shell, SWT.NONE );
     Font treeFont = Graphics.getFont( "BeautifullyCraftedTreeFont", 15, SWT.BOLD );
@@ -593,6 +624,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetBackgroundI() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -634,6 +666,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testGetBoundsEmptyItem() {
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setSize( 200, 200 );
@@ -645,6 +678,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( treeItem.getBounds().width > 0 );
   }
 
+  @Test
   public void testGetBoundsForInvalidColumns() {
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setSize( 200, 200 );
@@ -657,6 +691,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( bounds.equals( new Rectangle( 0, 0, 0, 0 ) ) );
   }
 
+  @Test
   public void testGetBoundsCollapsedSubItem() {
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setSize( 200, 200 );
@@ -672,6 +707,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( bounds.equals( new Rectangle( 0, 0, 0, 0 ) ) );
   }
 
+  @Test
   public void testGetBoundsExpandedSubItem() {
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setSize( 200, 200 );
@@ -684,17 +720,18 @@ public class TreeItem_Test extends TestCase {
     Rectangle itemBounds = item.getBounds( 0 );
     assertTrue( subItemBounds.x > itemBounds.x );
     assertTrue( subItemBounds.y >= itemBounds.y + itemBounds.height );
-    Point stringExtent = Graphics.stringExtent( item.getFont(), "hello" );
+    Point stringExtent = TextSizeUtil.stringExtent( item.getFont(), "hello" );
     assertTrue( subItemBounds.height > stringExtent.y );
     assertTrue( subItemBounds.width > stringExtent.x );
   }
 
+  @Test
   public void testGetBoundsWithText() {
     String string = "hello";
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setSize( 200, 200 );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
-    Point stringExtent = Graphics.stringExtent( treeItem.getFont(), string );
+    Point stringExtent = TextSizeUtil.stringExtent( treeItem.getFont(), string );
     treeItem.setText( string );
     Rectangle withTextBounds = treeItem.getBounds( 0 );
     treeItem.setText( "" );
@@ -706,6 +743,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( noTextBounds.width < withTextBounds.width );
   }
 
+  @Test
   public void testGetBoundsWithImage() {
     Image image = Graphics.getImage( Fixture.IMAGE1 );
     Rectangle imageBounds = image.getBounds();
@@ -722,6 +760,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( boundsNoImage.x > 0 && boundsNoImage.height > 0 );
   }
 
+  @Test
   public void testGetBoundsWithTextAndImage() {
     Image image = Graphics.getImage( Fixture.IMAGE1 );
     Rectangle imageBounds = image.getBounds();
@@ -729,7 +768,7 @@ public class TreeItem_Test extends TestCase {
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setSize( 200, 200 );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
-    Point stringExtent = Graphics.stringExtent( treeItem.getFont(), string );
+    Point stringExtent = TextSizeUtil.stringExtent( treeItem.getFont(), string );
     treeItem.setText( string );
     Rectangle boundsTextOnly = treeItem.getBounds( 0 );
     treeItem.setImage( image );
@@ -741,6 +780,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( boundsBoth.height >= maxHeight );
   }
 
+  @Test
   public void testGetBoundsSubsequentRootItems() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem rootItem = new TreeItem( tree, SWT.NONE );
@@ -756,6 +796,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( rootItem2.getBounds().y >= subItem.getBounds().y + subItem.getBounds().height );
   }
 
+  @Test
   public void testGetBoundsSubsequentRootItems2() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item1 = new TreeItem( tree, SWT.NONE );
@@ -769,6 +810,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( after.y > before.y );
   }
 
+  @Test
   public void testGetBoundsWithColumns() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeColumn column1 = new TreeColumn( tree, SWT.NONE );
@@ -796,6 +838,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 200, rootItem.getBounds( 2 ).x );
   }
 
+  @Test
   public void testGetBoundsWithVisibleHeader() {
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setHeaderVisible( true );
@@ -804,6 +847,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( bounds.y >= tree.getHeaderHeight() );
   }
 
+  @Test
   public void testBoundsSubItemBug219374() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem root = new TreeItem( tree, SWT.NONE );
@@ -823,6 +867,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 32, sub2.getBounds().x );
   }
 
+  @Test
   public void testGetBoundsWithColumnsAndScrolling() {
     Tree tree = new Tree( shell, SWT.NONE );
     tree.setSize( 150, 200 );
@@ -847,6 +892,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 50, subItem.getBounds( 2 ).x );
   }
 
+  @Test
   public void testTreeItemAdapter() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     int columnCount = 3;
@@ -873,6 +919,7 @@ public class TreeItem_Test extends TestCase {
     assertNull( adapter.getCellFonts()[ 0 ] );
   }
 
+  @Test
   public void testGetImageBoundsInvalidIndex() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -880,6 +927,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( new Rectangle( 0, 0, 0, 0 ), item.getImageBounds( -1 ) );
   }
 
+  @Test
   public void testGetImageBoundsColumns() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -927,6 +975,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( col0Bounds.y < item2.getImageBounds( 0 ).y );
   }
 
+  @Test
   public void testGetImageBoundsIndexOutOfBoundsBug() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     new TreeItem( tree, SWT.NONE );
@@ -977,6 +1026,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( col0Bounds.y < item2.getImageBounds( 0 ).y );
   }
 
+  @Test
   public void testGetImageBoundsForTreeColumn() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     createColumns( tree, 1 );
@@ -986,6 +1036,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( treeItem.getImageBounds( 0 ).x, tree.getVisualCellLeft( 0, treeItem ) );
   }
 
+  @Test
   public void testDynamicColumnCountAttributes() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     createColumns( tree, 1 );
@@ -1001,6 +1052,7 @@ public class TreeItem_Test extends TestCase {
     treeItem.setImage( 1, Graphics.getImage( Fixture.IMAGE1 ) );
   }
 
+  @Test
   public void testTextBounds() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -1016,6 +1068,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( textBounds1.x + textBounds1.width <= textBounds2.x );
   }
 
+  @Test
   public void testTextBoundsWithInvalidIndex() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -1027,6 +1080,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( new Rectangle( 0, 0, 0, 0 ), item.getTextBounds( 123 ) );
   }
 
+  @Test
   public void testTextBoundsWithImageAndColumns() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -1040,6 +1094,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.getTextBounds( 0 ).x < image.getBounds().width );
   }
 
+  @Test
   public void testTextBoundsWithChangedFont() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -1053,6 +1108,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( origBounds, actualBounds );
   }
 
+  @Test
   public void testTextBoundsWithCheckboxTree() {
     Tree tree = new Tree( shell, SWT.CHECK );
     TreeColumn column = new TreeColumn( tree, SWT.LEFT );
@@ -1064,6 +1120,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( textBounds.width < 84 );
   }
 
+  @Test
   public void testTextBoundsWithCollapsedParentItem() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeColumn column = new TreeColumn( tree, SWT.LEFT );
@@ -1079,6 +1136,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( emptyBounds.equals( subitem.getTextBounds( 0 ) ) );
   }
 
+  @Test
   public void testNewItemWithIndex() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -1109,6 +1167,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testNewItemWithIndexAsChild() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem root = new TreeItem( tree, SWT.NONE );
@@ -1125,6 +1184,7 @@ public class TreeItem_Test extends TestCase {
   //////////
   // VIRTUAL
 
+  @Test
   public void testVirtualGetItemOutOfBounds() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -1137,6 +1197,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetItemDoesNotFireSetDataEvent() {
     final LoggingListener log = new LoggingListener();
     Tree tree = new Tree( shell, SWT.VIRTUAL );
@@ -1147,6 +1208,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 0, log.size() );
   }
 
+  @Test
   public void testVirtualGetters() {
     Tree tree = new Tree( shell, SWT.VIRTUAL | SWT.CHECK );
     tree.setItemCount( 100 );
@@ -1175,6 +1237,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( image, tree.getItem( 95 ).getImage() );
   }
 
+  @Test
   public void testGetterFireSetDataOnlyOnce() {
     final LoggingListener log = new LoggingListener();
     Tree tree = new Tree( shell, SWT.VIRTUAL );
@@ -1189,6 +1252,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 1, log.size() );
   }
 
+  @Test
   public void testVirtualSetDataEventItemIndexOnGetTextBounds() {
     final LoggingListener log = new LoggingListener();
     Tree tree = new Tree( shell, SWT.VIRTUAL );
@@ -1202,6 +1266,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 99, log.get( 0 ).index );
   }
 
+  @Test
   public void testVirtualSetExpanded() {
     final Tree tree = new Tree( shell, SWT.VIRTUAL );
     final LoggingListener log = new LoggingListener();
@@ -1219,6 +1284,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualSetExpandedWithoutSubItems() {
     final Tree tree = new Tree( shell, SWT.VIRTUAL );
     final LoggingListener log = new LoggingListener();
@@ -1236,6 +1302,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( item.isCached() );
   }
 
+  @Test
   public void testVirtualSetter() {
     Color color = display.getSystemColor( SWT.COLOR_RED );
     Font font = new Font( display, new FontData( "serif", 10, 0 ) );
@@ -1283,6 +1350,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 0, log.size() );
   }
 
+  @Test
   public void testVirtualNonCheckTreeSetter() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.setItemCount( 100 );
@@ -1294,6 +1362,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( tree.getItem( 94 ).isCached() );
   }
 
+  @Test
   public void testVirtualCheckTreeSetter() {
     Tree tree = new Tree( shell, SWT.VIRTUAL | SWT.CHECK );
     tree.setItemCount( 100 );
@@ -1305,6 +1374,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( tree.getItem( 94 ).isCached() );
   }
 
+  @Test
   public void testVirtualSetItemCount() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     LoggingListener log = new LoggingListener();
@@ -1323,6 +1393,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 1, log.size() );
   }
 
+  @Test
   public void testVirtualSetExpandedWithSetItemCount() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     LoggingListener log = new LoggingListener();
@@ -1339,6 +1410,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( tree.getItem( 99 ).getExpanded() );
   }
 
+  @Test
   public void testVirtualSetExpandedWithoutSetItemCount() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     TreeItem treeItem = new TreeItem( tree, SWT.NONE );
@@ -1349,12 +1421,14 @@ public class TreeItem_Test extends TestCase {
     assertTrue( treeItem.getExpanded() );
   }
 
+  @Test
   public void testVirtualSetItemCountNegative() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.setItemCount( -100 );
     assertEquals( 0, tree.getItemCount() );
   }
 
+  @Test
   public void testVirtualClear() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     TreeItem parentItem = new TreeItem( tree, SWT.NONE );
@@ -1365,6 +1439,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( item.isCached() );
   }
 
+  @Test
   public void testVirtualClearAll_DoesNotRequestData() {
     LoggingListener log = new LoggingListener();
     Tree tree = new Tree( shell, SWT.VIRTUAL );
@@ -1379,6 +1454,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( item.isCached() );
   }
 
+  @Test
   public void testVirtualSetDataEventsOnSetExpand() {
     LoggingListener log = new LoggingListener();
     final Tree tree = new Tree( shell, SWT.VIRTUAL );
@@ -1393,6 +1469,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 6, log.size() );
   }
 
+  @Test
   public void testInsertColumn_ShiftData_() {
     Tree tree = new Tree( shell, SWT.BORDER );
     createColumns( tree, 3 );
@@ -1415,6 +1492,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( "subcell2", subitem.getText( 3 ) );
   }
 
+  @Test
   public void testRemoveColumn_RemoveData_() {
     Tree tree = new Tree( shell, SWT.BORDER );
     createColumns( tree, 3 );
@@ -1433,6 +1511,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( "subcell2", subitem.getText( 1 ) );
   }
 
+  @Test
   public void testVirtualItemNotCachedInitially() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
 
@@ -1442,6 +1521,7 @@ public class TreeItem_Test extends TestCase {
     assertFalse( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetBackground() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new Listener() {
@@ -1458,6 +1538,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetBackgroundWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new DisposingSetDataListener() );
@@ -1473,6 +1554,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetCellBackground() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1490,6 +1572,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetCellBackgroundWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1506,6 +1589,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetForeground() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new Listener() {
@@ -1522,6 +1606,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetForegroundWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new DisposingSetDataListener() );
@@ -1537,6 +1622,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetCellForeground() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1554,6 +1640,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetCellForegroundWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1570,6 +1657,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetText() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new Listener() {
@@ -1586,6 +1674,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetTextWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new DisposingSetDataListener() );
@@ -1601,6 +1690,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetCellText() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1618,6 +1708,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetCellTextWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1634,6 +1725,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetFont() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new Listener() {
@@ -1650,6 +1742,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetFontWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new DisposingSetDataListener() );
@@ -1665,6 +1758,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetCellFont() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1682,6 +1776,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetCellFontWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1698,6 +1793,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetImage() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     final Image image = new Image( display, 100, 100 );
@@ -1715,6 +1811,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetImageWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new DisposingSetDataListener() );
@@ -1730,6 +1827,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetCellImage() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1748,6 +1846,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetCellImageWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1764,6 +1863,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetBoundsMaterializeItems() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new Listener() {
@@ -1779,6 +1879,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( bounds.width > 100 );
   }
 
+  @Test
   public void testVirtualGetBoundsWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1795,6 +1896,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetImageBoundsMaterializeItems() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new Listener() {
@@ -1811,6 +1913,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( bounds.width > 10 );
   }
 
+  @Test
   public void testVirtualGetImageBoundsWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1827,6 +1930,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetTextBoundsMaterializeItems() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.addListener( SWT.SetData, new Listener() {
@@ -1842,6 +1946,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( bounds.width > 100 );
   }
 
+  @Test
   public void testVirtualGetTextBoundsWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1858,6 +1963,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetItemCount() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1875,6 +1981,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetItemCountWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     createColumns( tree, 3 );
@@ -1891,6 +1998,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetChecked() {
     Tree tree = new Tree( shell, SWT.VIRTUAL | SWT.CHECK );
     createColumns( tree, 3 );
@@ -1908,6 +2016,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetCheckedWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL | SWT.CHECK );
     createColumns( tree, 3 );
@@ -1924,6 +2033,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testVirtualGetGrayed() {
     Tree tree = new Tree( shell, SWT.VIRTUAL | SWT.CHECK );
     createColumns( tree, 3 );
@@ -1941,6 +2051,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.isCached() );
   }
 
+  @Test
   public void testVirtualGetGrayedWithDisposedItem() {
     Tree tree = new Tree( shell, SWT.VIRTUAL | SWT.CHECK );
     createColumns( tree, 3 );
@@ -1957,6 +2068,7 @@ public class TreeItem_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSetExpandUpdatesFlatIndices() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.setSize( 100, 100 );
@@ -1969,6 +2081,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 1, item.getItem( 0 ).getFlatIndex() );
   }
 
+  @Test
   public void testUpdateFlatIndicesOnItemDispose() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item1 = new TreeItem( tree, SWT.NONE );
@@ -1981,6 +2094,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( 1, subItem.getFlatIndex() );
   }
 
+  @Test
   public void testGetCreatedItems_DoesNotContainNullItems() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.setSize( 100, 100 );
@@ -1993,6 +2107,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.getCreatedItems().length < 10 );
   }
 
+  @Test
   public void testGetCreatedItems_DoesNotContainPlaceholderItems() {
     Tree tree = new Tree( shell, SWT.VIRTUAL );
     tree.setSize( 100, 100 );
@@ -2006,6 +2121,7 @@ public class TreeItem_Test extends TestCase {
     assertTrue( item.getCreatedItems().length < 10 );
   }
 
+  @Test
   public void testUpdateSelectionOnRemoveAll() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem item = new TreeItem( tree, SWT.NONE );
@@ -2018,6 +2134,7 @@ public class TreeItem_Test extends TestCase {
   }
 
   // see bug 371860
+  @Test
   public void testClearSetDataOrder() {
     final List<String> log = new ArrayList<String>();
     Tree tree = new Tree( shell, SWT.VIRTUAL );
@@ -2053,6 +2170,7 @@ public class TreeItem_Test extends TestCase {
     assertEquals( "item0#SetData", log.get( 3 ) );
   }
 
+  @Test
   public void testSelectionOnItemCollapse_Single() {
     Tree tree = new Tree( shell, SWT.SINGLE );
     TreeItem rootItem = new TreeItem( tree, SWT.NONE );
@@ -2066,6 +2184,7 @@ public class TreeItem_Test extends TestCase {
     assertSame( rootItem, tree.getSelection()[ 0 ] );
   }
 
+  @Test
   public void testSelectionOnItemCollapse_Multi() {
     Tree tree = new Tree( shell, SWT.MULTI );
     TreeItem rootItem = new TreeItem( tree, SWT.NONE );
@@ -2080,6 +2199,7 @@ public class TreeItem_Test extends TestCase {
     assertSame( anotherRootItem, tree.getSelection()[ 0 ] );
   }
 
+  @Test
   public void testClearPreferredWidthBuffersRecursive() {
     Tree tree = new Tree( shell, SWT.NONE );
     TreeItem rootItem = new TreeItem( tree, SWT.NONE );

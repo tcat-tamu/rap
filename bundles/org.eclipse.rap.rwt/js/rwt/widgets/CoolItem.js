@@ -14,12 +14,12 @@
  * The parameter orientation must be one of "vertical" or "horizontal".
  * Note that updateHandleBounds must be called after each size manipulation.
  */
-qx.Class.define( "rwt.widgets.CoolItem", {
+rwt.qx.Class.define( "rwt.widgets.CoolItem", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( orientation ) {
     this.base( arguments );
-    this.setOverflow( qx.constant.Style.OVERFLOW_HIDDEN );
+    this.setOverflow( "hidden" );
     this.setAppearance( "coolitem" );
     this._orientation = orientation;
     // Create handle to drag this CoolItem around
@@ -47,7 +47,6 @@ qx.Class.define( "rwt.widgets.CoolItem", {
   },
 
   statics : {
-    // TODO [rh] move to a central place, e.g. qx.constant.Style or similar
     DRAG_CURSOR : "col-resize",
     CONTROL_OFFSET : 6
   },
@@ -134,8 +133,8 @@ qx.Class.define( "rwt.widgets.CoolItem", {
       this.resetBackgroundColor();
       this.getTopLevelWidget().setGlobalCursor( null );
       // Send request that informs about dragged CoolItem
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        rwt.remote.Server.getInstance().getServerObject( this ).call( "move", {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        rwt.remote.Server.getInstance().getRemoteObject( this ).call( "move", {
           "left" : this.getLeft()
         } );
       }

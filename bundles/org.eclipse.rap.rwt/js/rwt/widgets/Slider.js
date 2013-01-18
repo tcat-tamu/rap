@@ -14,7 +14,7 @@
  * This class provides the client-side counterpart for
  * rwt.widgets.Slider.
  */
-qx.Class.define( "rwt.widgets.Slider", {
+rwt.qx.Class.define( "rwt.widgets.Slider", {
   extend : rwt.widgets.base.AbstractSlider,
 
   construct : function( isHorizontal ) {
@@ -190,7 +190,7 @@ qx.Class.define( "rwt.widgets.Slider", {
 
     // TODO [tb] : refactor to use only this for scheduling
     _scheduleSendChanges : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         if( !this._requestScheduled ) {
           this._requestScheduled = true;
           // Send changes
@@ -203,12 +203,12 @@ qx.Class.define( "rwt.widgets.Slider", {
     },
 
     _sendChanges : function() {
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var req = rwt.remote.Server.getInstance();
       var id = widgetManager.findIdByWidget( this );
       req.addParameter( id + ".selection", this._selection );
       if( this._hasSelectionListener ) {
-        org.eclipse.swt.EventUtil.notifySelected( this );
+        rwt.remote.EventUtil.notifySelected( this );
       }
       this._requestScheduled = false;
     }

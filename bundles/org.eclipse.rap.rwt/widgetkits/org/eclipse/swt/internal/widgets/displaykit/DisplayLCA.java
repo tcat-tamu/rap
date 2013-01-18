@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,7 +21,7 @@ import org.eclipse.rap.rwt.client.service.ExitConfirmation;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.DisposedWidgets;
-import org.eclipse.rap.rwt.internal.lifecycle.RequestId;
+import org.eclipse.rap.rwt.internal.lifecycle.RequestCounter;
 import org.eclipse.rap.rwt.internal.lifecycle.UITestUtil;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
@@ -169,8 +169,8 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
 
   private static void renderRequestCounter() {
     ProtocolMessageWriter protocolWriter = ContextProvider.getProtocolWriter();
-    Integer requestId = RequestId.getInstance().nextRequestId();
-    protocolWriter.appendHead( PROP_REQUEST_COUNTER, requestId.intValue() );
+    int requestId = RequestCounter.getInstance().nextRequestId();
+    protocolWriter.appendHead( PROP_REQUEST_COUNTER, requestId );
   }
 
   private static void renderExitConfirmation( Display display ) {
@@ -217,9 +217,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
     //for( int i = disposedWidgets.length - 1; i >= 0; i-- ) {
     for( int i = 0; i < disposedWidgets.length; i++ ) {
       Widget toDispose = disposedWidgets[ i ];
-      if(    !( toDispose instanceof DragSource )
-          && !( toDispose instanceof DropTarget ) )
-      {
+      if( !( toDispose instanceof DragSource ) && !( toDispose instanceof DropTarget ) ) {
         AbstractWidgetLCA lca = WidgetUtil.getLCA( toDispose );
         lca.renderDispose( toDispose );
       }
@@ -239,8 +237,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
         Control focusControl = display.getFocusControl();
         if( focusControl != null ) {
           IClientObject clientObject = ClientObjectFactory.getClientObject( display );
-          clientObject.set( PROP_FOCUS_CONTROL,
-                                    WidgetUtil.getId( display.getFocusControl() ) );
+          clientObject.set( PROP_FOCUS_CONTROL, WidgetUtil.getId( display.getFocusControl() ) );
         }
       }
     }
@@ -333,7 +330,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
 
   static void readBounds( Display display ) {
     Rectangle oldBounds = display.getBounds();
-    Rectangle bounds = ProtocolUtil.readPropertyValueAsRectangle( "w1",  "bounds" );
+    Rectangle bounds = ProtocolUtil.readPropertyValueAsRectangle( getId( display ),  "bounds" );
     if( bounds == null ) {
       bounds = new Rectangle( 0, 0, oldBounds.width, oldBounds.height );
     }
@@ -377,8 +374,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
   }
 
   private static IDisplayAdapter getDisplayAdapter( Display display ) {
-    Object adapter = display.getAdapter( IDisplayAdapter.class );
-    return ( IDisplayAdapter )adapter;
+    return display.getAdapter( IDisplayAdapter.class );
   }
 
   private static Shell[] getShells( Display display ) {

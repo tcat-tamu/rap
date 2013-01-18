@@ -12,11 +12,11 @@
 (function(){
 
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-var ObjectManager = rwt.protocol.ObjectRegistry;
-var Processor = rwt.protocol.MessageProcessor;
+var ObjectManager = rwt.remote.ObjectRegistry;
+var Processor = rwt.remote.MessageProcessor;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
+  extend : rwt.qx.Object,
 
   members : {
 

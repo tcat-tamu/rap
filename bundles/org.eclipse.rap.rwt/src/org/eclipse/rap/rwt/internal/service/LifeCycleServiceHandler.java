@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -27,7 +27,7 @@ import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleFactory;
-import org.eclipse.rap.rwt.internal.lifecycle.RequestId;
+import org.eclipse.rap.rwt.internal.lifecycle.RequestCounter;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
@@ -116,7 +116,7 @@ public class LifeCycleServiceHandler implements ServiceHandler {
       // does not require RemoteObjectLifeCycleAdapter.readData to be called in different places.
       RemoteObjectLifeCycleAdapter.readData();
     }
-    LifeCycle lifeCycle = ( LifeCycle )lifeCycleFactory.getLifeCycle();
+    LifeCycle lifeCycle = lifeCycleFactory.getLifeCycle();
     lifeCycle.execute();
   }
 
@@ -124,7 +124,7 @@ public class LifeCycleServiceHandler implements ServiceHandler {
   // helping methods
 
   private static boolean isRequestCounterValid() {
-    return hasInitializeParameter() || RequestId.getInstance().isValid();
+    return hasInitializeParameter() || RequestCounter.getInstance().isValid();
   }
 
   private static void handleInvalidRequestCounter( HttpServletResponse response ) {
@@ -172,7 +172,7 @@ public class LifeCycleServiceHandler implements ServiceHandler {
 
   private static void reinitializeServiceStore() {
     ClientMessage clientMessage = ProtocolUtil.getClientMessage();
-    ServiceStore serviceStore = ( ServiceStore )ContextProvider.getServiceStore();
+    ServiceStore serviceStore = ContextProvider.getServiceStore();
     serviceStore.clear();
     ProtocolUtil.setClientMessage( clientMessage );
   }

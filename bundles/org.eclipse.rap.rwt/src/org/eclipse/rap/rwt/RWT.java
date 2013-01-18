@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,9 +25,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.rap.rwt.application.Application;
+import org.eclipse.rap.rwt.application.ApplicationConfiguration;
 import org.eclipse.rap.rwt.client.Client;
 import org.eclipse.rap.rwt.client.service.BrowserNavigation;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
@@ -36,11 +36,13 @@ import org.eclipse.rap.rwt.internal.service.ServletLog;
 import org.eclipse.rap.rwt.internal.util.ClassUtil;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
 import org.eclipse.rap.rwt.lifecycle.ILifeCycle;
+import org.eclipse.rap.rwt.lifecycle.PhaseListener;
+import org.eclipse.rap.rwt.remote.RemoteObject;
 import org.eclipse.rap.rwt.service.ApplicationContext;
 import org.eclipse.rap.rwt.service.IServiceStore;
-import org.eclipse.rap.rwt.service.SettingStore;
 import org.eclipse.rap.rwt.service.ResourceManager;
 import org.eclipse.rap.rwt.service.ServiceManager;
+import org.eclipse.rap.rwt.service.SettingStore;
 import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.widgets.IDisplayAdapter;
@@ -224,7 +226,6 @@ public final class RWT {
    * @see Display#setData(String,Object)
    * @see Display#addFilter(int, Listener)
    * @see RWT#CANCEL_KEYS
-   * @since 1.4
    */
   public static final String ACTIVE_KEYS = "org.eclipse.rap.rwt.activeKeys";
 
@@ -244,7 +245,6 @@ public final class RWT {
    *
    * @see Display#setData(String,Object)
    * @see RWT#ACTIVE_KEYS
-   * @since 1.5
    */
   public static final String CANCEL_KEYS = "org.eclipse.rap.rwt.cancelKeys";
 
@@ -263,7 +263,6 @@ public final class RWT {
    * </ul></p>
    *
    * @see Control#setData(String,Object)
-   * @since 1.5
    */
   public static final String CUSTOM_ITEM_HEIGHT = "org.eclipse.rap.rwt.customItemHeight";
 
@@ -346,7 +345,6 @@ public final class RWT {
    * </p>
    *
    * @see Control#setData(String,Object)
-   * @since 1.5
    */
   public static final String MARKUP_ENABLED = "org.eclipse.rap.rwt.markupEnabled";
 
@@ -369,7 +367,6 @@ public final class RWT {
    * </p>
    *
    * @see Control#setData(String,Object)
-   * @since 1.5
    */
   public static final String FIXED_COLUMNS = "org.eclipse.rap.rwt.fixedColumns";
 
@@ -379,7 +376,6 @@ public final class RWT {
    * contributions to the default theme.
    *
    * @see Application#addStyleSheet(String, String)
-   * @since 1.5
    */
   public static final String DEFAULT_THEME_ID = "org.eclipse.rap.rwt.theme.Default";
 
@@ -402,9 +398,14 @@ public final class RWT {
    * Returns the instance of the life cycle which is currently processed.
    *
    * @return instance of {@link ILifeCycle}
+   * @deprecated As of 2.0, PhaseListeners should only be registered in an
+   *             {@link ApplicationConfiguration}. For new applications and custom widgets, consider
+   *             the (provisional) {@link RemoteObject} API which is going to replace PhaseListener.
+   * @see Application#addPhaseListener(PhaseListener)
    */
+  @Deprecated
   public static ILifeCycle getLifeCycle() {
-    return RWTFactory.getLifeCycleFactory().getLifeCycle();
+    return ContextProvider.getApplicationContext().getLifeCycleFactory().getLifeCycle();
   }
 
   /**
@@ -436,7 +437,7 @@ public final class RWT {
    * @return the setting store for the current session, never <code>null</code>
    */
   public static SettingStore getSettingStore() {
-    return RWTFactory.getSettingStoreManager().getStore();
+    return ContextProvider.getApplicationContext().getSettingStoreManager().getStore();
   }
 
   /**
@@ -493,7 +494,7 @@ public final class RWT {
    */
   public static ApplicationContext getApplicationContext() {
     checkContext();
-    return RWTFactory.getApplicationContext();
+    return ContextProvider.getApplicationContext();
   }
 
   /**
@@ -507,8 +508,10 @@ public final class RWT {
   /**
    * Returns the <code>HttpServletRequest</code> that is currently processed.
    * <p>
-   * Typical application code rarely needs to call this method. It can be used to obtain request
-   * details, e.g. certain request headers.
+   * <strong>Note:</strong> This method is <strong>not recommended</strong>. Typical application
+   * code should not need to call this method. Processing requests from the client is up to the
+   * framework. In rare cases, an application may be wish to access request details such as certain
+   * HTTP headers.
    * </p>
    *
    * @return the currently processed request
@@ -522,7 +525,10 @@ public final class RWT {
    * Returns the <code>HttpServletResponse</code> that will be sent to the client after processing
    * the current request.
    * <p>
-   * Typical application code <em>never</em> needs to call this method.
+   * <strong>Note:</strong> This method is <strong>not recommended</strong>. Typical application
+   * code should not need to call this method. The response should only be written and modified by
+   * the framework. In rare cases, an application may wish to access the response, e.g. to add a
+   * Cookie.
    * </p>
    *
    * @return the response object that will be sent to the client
@@ -582,7 +588,7 @@ public final class RWT {
     if( display == null || display.isDisposed() ) {
       SWT.error( SWT.ERROR_DEVICE_DISPOSED );
     }
-    LifeCycle lifeCycle = ( LifeCycle )getLifeCycle();
+    LifeCycle lifeCycle = ContextProvider.getApplicationContext().getLifeCycleFactory().getLifeCycle();
     lifeCycle.requestThreadExec( runnable );
   }
 

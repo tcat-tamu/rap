@@ -11,42 +11,48 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.lifecycle;
 
-import junit.framework.TestCase;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Widget;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class UITestUtil_Test extends TestCase {
+public class UITestUtil_Test {
 
   private Display display;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
     display = new Display();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
     UITestUtil.enabled = false;
   }
 
-  public void testIsValidId() {
-    // Test with legal id
+  @Test
+  public void testIsValidId_trueForLegalIds() {
     assertTrue( UITestUtil.isValidId( "customId" ) );
     assertTrue( UITestUtil.isValidId( "custom-id" ) );
     assertTrue( UITestUtil.isValidId( "custom_id" ) );
     assertTrue( UITestUtil.isValidId( "custom:id" ) );
     assertTrue( UITestUtil.isValidId( "custom.id" ) );
     assertTrue( UITestUtil.isValidId( "custom123" ) );
-    // Test with illegal id's
+  }
+
+  @Test
+  public void testIsValidId_falseForIllegalIds() {
     assertFalse( UITestUtil.isValidId( null ) );
     assertFalse( UITestUtil.isValidId( "" ) );
     assertFalse( UITestUtil.isValidId( "1" ) );
@@ -56,29 +62,7 @@ public class UITestUtil_Test extends TestCase {
     assertFalse( UITestUtil.isValidId( "A/8" ) );
   }
 
-  public void testOverrideId() {
-    Widget widget = new Shell( display );
-    String customId = "customId";
-    String generatedId = WidgetUtil.getId( widget );
-    // ensure that generated id remains unchanged when UITests are disabled
-    widget.setData( WidgetUtil.CUSTOM_WIDGET_ID, customId );
-    assertEquals( generatedId, WidgetUtil.getId( widget ) );
-    // ensure that custom id is taken into account when UITests are enabled
-    UITestUtil.enabled = true;
-    assertEquals( customId, WidgetUtil.getId( widget ) );
-  }
-
-  public void testInvalidCustomId() {
-    UITestUtil.enabled = true;
-    Shell shell = new Shell( display, SWT.NONE );
-
-    try {
-      shell.setData( WidgetUtil.CUSTOM_WIDGET_ID, "a/8" );
-      fail( "widget id contains illegal characters" );
-    } catch( IllegalArgumentException iae ) {
-    }
-  }
-
+  @Test
   public void testGetIdAfterDispose() {
     // set up test scenario
     UITestUtil.enabled = true;

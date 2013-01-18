@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.GridColumnLabel", {
+rwt.qx.Class.define( "rwt.widgets.base.GridColumnLabel", {
   extend : rwt.widgets.base.MultiCellWidget,
 
   construct : function( baseAppearance ) {
@@ -46,7 +46,7 @@ qx.Class.define( "rwt.widgets.base.GridColumnLabel", {
     },
 
     setText : function( value ) {
-      var EncodingUtil = rwt.protocol.EncodingUtil;
+      var EncodingUtil = rwt.util.Encoding;
       var text = EncodingUtil.escapeText( value, false );
       text = EncodingUtil.replaceNewLines( text, "<br/>" );
       this.setCellContent( 1, text );
@@ -150,7 +150,7 @@ qx.Class.define( "rwt.widgets.base.GridColumnLabel", {
           this.setCapture( true );
           evt.stopPropagation();
           evt.preventDefault();
-          org.eclipse.swt.WidgetUtil._fakeMouseEvent( this, "mouseout" );
+          rwt.widgets.util.WidgetUtil._fakeMouseEvent( this, "mouseout" );
         } else if( this._allowMove() ) {
           this._inMove = true;
           this.setCapture( true );
@@ -158,7 +158,7 @@ qx.Class.define( "rwt.widgets.base.GridColumnLabel", {
           this._initialLeft = evt.getPageX();
           evt.stopPropagation();
           evt.preventDefault();
-          org.eclipse.swt.WidgetUtil._fakeMouseEvent( this, "mouseout" );
+          rwt.widgets.util.WidgetUtil._fakeMouseEvent( this, "mouseout" );
         }
       }
     },
@@ -188,7 +188,7 @@ qx.Class.define( "rwt.widgets.base.GridColumnLabel", {
     },
 
     _onMouseUp : function( evt ) {
-      var widgetUtil = org.eclipse.swt.WidgetUtil;
+      var widgetUtil = rwt.widgets.util.WidgetUtil;
       if( this._inResize ) {
         this.dispatchSimpleEvent( "hideResizeLine", null, true ); // bubbles: handled by grid
         this.getTopLevelWidget().setGlobalCursor( null );
@@ -271,7 +271,7 @@ qx.Class.define( "rwt.widgets.base.GridColumnLabel", {
      * column */
     _isResizeLocation : function( pageX ) {
       var result = false;
-      var columnRight = qx.bom.element.Location.getLeft( this.getElement() ) + this.getWidth();
+      var columnRight = rwt.html.Location.getLeft( this.getElement() ) + this.getWidth();
       if( pageX >= columnRight - 5 && pageX <= columnRight ) {
         result = true;
       }

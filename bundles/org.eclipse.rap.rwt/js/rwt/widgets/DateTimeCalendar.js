@@ -10,12 +10,12 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.DateTimeCalendar", {
+rwt.qx.Class.define( "rwt.widgets.DateTimeCalendar", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( style, monthNames, weekdayNames ) {
     this.base( arguments );
-    this.setOverflow( qx.constant.Style.OVERFLOW_HIDDEN );
+    this.setOverflow( "hidden" );
     this.setAppearance( "datetime-calendar" );
 
     // Has selection listener
@@ -109,15 +109,15 @@ qx.Class.define( "rwt.widgets.DateTimeCalendar", {
     },
 
     _sendChanges : function( date, month, year ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var req = rwt.remote.Server.getInstance();
         var id = widgetManager.findIdByWidget( this );
         req.addParameter( id + ".day", date );
         req.addParameter( id + ".month", month );
         req.addParameter( id + ".year", year );
         if( this._hasSelectionListener ) {
-          org.eclipse.swt.EventUtil.notifySelected( this );
+          rwt.remote.EventUtil.notifySelected( this );
         }
       }
     },

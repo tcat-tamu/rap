@@ -11,7 +11,7 @@
  *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.base.Scrollable", {
+rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( clientArea ) {
@@ -26,13 +26,13 @@ qx.Class.define( "rwt.widgets.base.Scrollable", {
     this.add( this._vertScrollBar );
     this._configureScrollBars();
     this._configureClientArea();
-    this.__onscroll = rwt.util.Function.bindEvent( this._onscroll, this );
+    this.__onscroll = rwt.util.Functions.bindEvent( this._onscroll, this );
   },
 
   destruct : function() {
     var el = this._clientArea._getTargetNode();
     if( el ) {
-      var eventUtil = qx.html.EventRegistration;
+      var eventUtil = rwt.html.EventRegistration;
       eventUtil.removeEventListener( el, "scroll", this.__onscroll );
       delete this.__onscroll;
     }
@@ -42,7 +42,7 @@ qx.Class.define( "rwt.widgets.base.Scrollable", {
   },
 
   events : {
-    "userScroll" : "qx.event.type.Event"
+    "userScroll" : "rwt.event.Event"
   },
 
   statics : {
@@ -127,7 +127,7 @@ qx.Class.define( "rwt.widgets.base.Scrollable", {
       this._clientArea.addEventListener( "create", this._onClientCreate, this );
       this._clientArea.addEventListener( "appear", this._onClientAppear, this );
       // TOOD [tb] : Do this with an eventlistner after fixing Bug 327023
-      this._clientArea._layoutPost = rwt.util.Function.bindEvent( this._onClientLayout, this );
+      this._clientArea._layoutPost = rwt.util.Functions.bindEvent( this._onClientLayout, this );
     },
 
     _configureScrollBars : function() {
@@ -180,9 +180,9 @@ qx.Class.define( "rwt.widgets.base.Scrollable", {
       this._clientArea.prepareEnhancedBorder();
       this._clientArea.setContainerOverflow( false );
       var el = this._clientArea._getTargetNode();
-      var eventUtil = qx.html.EventRegistration;
+      var eventUtil = rwt.html.EventRegistration;
       eventUtil.addEventListener( el, "scroll", this.__onscroll );
-      qx.html.Scroll.disableScrolling( this._clientArea.getElement() );
+      rwt.html.Scroll.disableScrolling( this._clientArea.getElement() );
     },
 
     _onClientLayout : rwt.util.Variant.select( "qx.client", {
@@ -251,7 +251,7 @@ qx.Class.define( "rwt.widgets.base.Scrollable", {
 
     _onscroll : function( evt ) {
       if( !this._internalChangeFlag ) {
-        org.eclipse.rwt.EventHandlerUtil.stopDomEvent( evt );
+        rwt.event.EventHandlerUtil.stopDomEvent( evt );
         var blockH = this._blockScrolling || !this._horzScrollBar.getDisplay();
         var blockV = this._blockScrolling || !this._vertScrollBar.getDisplay();
         this._internalChangeFlag = true;
@@ -267,12 +267,30 @@ qx.Class.define( "rwt.widgets.base.Scrollable", {
         if( this._clientArea.getScrollLeft() !== scrollX ) {
           this._clientArea.setScrollLeft( scrollX );
         }
+        if( this._clientArea.getScrollLeft() !== scrollX ) {
+          this.addToQueue( "hSync" );
+        }
       }
       if( vert ) {
         var scrollY = this._vertScrollBar.getValue();
         if( this._clientArea.getScrollTop() !== scrollY ) {
           this._clientArea.setScrollTop( scrollY );
         }
+        if( this._clientArea.getScrollTop() !== scrollY ) {
+          this.addToQueue( "vSync" );
+        }
+      }
+    },
+
+    _layoutPost : function( changes ) {
+      this.base( arguments, changes );
+      if( changes.hSync || changes.vSync ) {
+        // delay because this is still before the client area might get bigger in the display flush
+        rwt.client.Timer.once( function() {
+          this._internalChangeFlag = true;
+          this._syncClientArea( changes.hSync, changes.vSync );
+          this._internalChangeFlag = false;
+        }, this, 0 );
       }
     },
 

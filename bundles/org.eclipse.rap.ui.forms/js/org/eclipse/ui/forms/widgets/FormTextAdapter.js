@@ -9,25 +9,25 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-rwt.protocol.AdapterRegistry.add( "forms.widgets.FormText", {
+rwt.remote.HandlerRegistry.add( "forms.widgets.FormText", {
 
   factory : function( properties ) {
     var result = new org.eclipse.ui.forms.widgets.FormText();
     result.setUserData( "isControl", true );
-    rwt.protocol.AdapterUtil.setParent( result, properties.parent );
+    rwt.remote.HandlerUtil.setParent( result, properties.parent );
     return result;
   },
 
-  destructor : rwt.protocol.AdapterUtil.getControlDestructor(),
+  destructor : rwt.remote.HandlerUtil.getControlDestructor(),
 
-  getDestroyableChildren : rwt.protocol.AdapterUtil.getDestroyableChildrenFinder(),
+  getDestroyableChildren : rwt.remote.HandlerUtil.getDestroyableChildrenFinder(),
 
-  properties : rwt.protocol.AdapterUtil.extendControlProperties( [
+  properties : rwt.remote.HandlerUtil.extendControlProperties( [
     "text",
     "hyperlinkSettings"
   ] ),
 
-  propertyHandler : rwt.protocol.AdapterUtil.extendControlPropertyHandler( {
+  propertyHandler : rwt.remote.HandlerUtil.extendControlPropertyHandler( {
     "text" : function( widget, value ) {
       widget.clearContent();
       for( var i = 0; i < value.length; i++ ) {
@@ -54,16 +54,16 @@ rwt.protocol.AdapterRegistry.add( "forms.widgets.FormText", {
       widget.updateHyperlinks();
     },
     "hyperlinkSettings" : function( widget, value ) {
-      var ColorUtil = rwt.util.ColorUtil;
+      var ColorUtil = rwt.util.Colors;
       var foreground = value[ 1 ] !== null ? ColorUtil.rgbToRgbString( value[ 1 ] ) : null;
       var activeForeground = value[ 2 ] !== null ? ColorUtil.rgbToRgbString( value[ 2 ] ) : null;
       widget.setHyperlinkSettings( value[ 0 ], foreground, activeForeground );
     }
   } ),
 
-  listeners : rwt.protocol.AdapterUtil.extendControlListeners( [] ),
+  listeners : rwt.remote.HandlerUtil.extendControlListeners( [] ),
 
-  listenerHandler : rwt.protocol.AdapterUtil.extendControlListenerHandler( {} ),
+  listenerHandler : rwt.remote.HandlerUtil.extendControlListenerHandler( {} ),
 
   methods : []
 

@@ -18,7 +18,7 @@
  * If used directly it represents an rectangular area, which can be positioned
  * and sized using the layout managers.
  */
-qx.Class.define("rwt.widgets.base.Terminator",
+rwt.qx.Class.define("rwt.widgets.base.Terminator",
 {
   extend : rwt.widgets.base.Widget,
 
@@ -125,7 +125,7 @@ qx.Class.define("rwt.widgets.base.Terminator",
     /**
      * @signature function()
      */
-    _postApply : rwt.util.Function.returnTrue,
+    _postApply : rwt.util.Functions.returnTrue,
 
 
 
@@ -158,7 +158,7 @@ qx.Class.define("rwt.widgets.base.Terminator",
      * @return {Integer} the preffered inner width.
      * @signature function()
      */
-    _computePreferredInnerWidth : rwt.util.Function.returnZero,
+    _computePreferredInnerWidth : rwt.util.Functions.returnZero,
 
     /**
      * Returns the preferred inner height of the widget. This value is used
@@ -167,7 +167,7 @@ qx.Class.define("rwt.widgets.base.Terminator",
      * @return {Integer} the preffered inner height.
      * @signature function()
      */
-    _computePreferredInnerHeight : rwt.util.Function.returnZero,
+    _computePreferredInnerHeight : rwt.util.Functions.returnZero,
 
 
 

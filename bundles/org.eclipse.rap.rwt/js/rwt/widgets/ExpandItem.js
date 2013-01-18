@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.ExpandItem", {
+rwt.qx.Class.define( "rwt.widgets.ExpandItem", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( parent ) {
@@ -109,15 +109,15 @@ qx.Class.define( "rwt.widgets.ExpandItem", {
     },
 
     _onClick : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         this.setExpanded( !this._expanded );
-        var serverObject = rwt.remote.Server.getInstance().getServerObject( this );
-        serverObject.set( "expanded", this._expanded );
+        var remoteObject = rwt.remote.Server.getInstance().getRemoteObject( this );
+        remoteObject.set( "expanded", this._expanded );
         if(    ( this._expandBar._hasExpandListener && this._expanded )
             || ( this._expandBar._hasCollapseListener && !this._expanded ) )
         {
-          var serverBar = rwt.remote.Server.getInstance().getServerObject( this._expandBar );
-          var itemId = rwt.protocol.ObjectRegistry.getId( this );
+          var serverBar = rwt.remote.Server.getInstance().getRemoteObject( this._expandBar );
+          var itemId = rwt.remote.ObjectRegistry.getId( this );
           var eventName = this._expanded ? "Expand" : "Collapse";
           serverBar.notify( eventName, { "item" : itemId } );
         }

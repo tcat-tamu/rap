@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.CTabItem", {
+rwt.qx.Class.define( "rwt.widgets.CTabItem", {
   extend : rwt.widgets.base.Atom,
 
   construct : function( parent, canClose ) {
@@ -20,14 +20,14 @@ qx.Class.define( "rwt.widgets.CTabItem", {
     }
     this._parent = parent;
     this.setAppearance( "ctab-item" );
-    this.setVerticalChildrenAlign( qx.constant.Layout.ALIGN_MIDDLE );
-    this.setHorizontalChildrenAlign( qx.constant.Layout.ALIGN_LEFT );
-    this.setOverflow( qx.constant.Style.OVERFLOW_HIDDEN );
+    this.setVerticalChildrenAlign( rwt.widgets.util.Layout.ALIGN_MIDDLE );
+    this.setHorizontalChildrenAlign( rwt.widgets.util.Layout.ALIGN_LEFT );
+    this.setOverflow( "hidden" );
     this.setTabIndex( null );
     // Set the label part to 'html mode'
     this.setLabel( "(empty)" );
-    this.getLabelObject().setMode( qx.constant.Style.LABEL_MODE_HTML );
-    this.getLabelObject().setVerticalAlign( qx.constant.Layout.ALIGN_MIDDLE );
+    this.getLabelObject().setMode( "html" );
+    this.getLabelObject().setVerticalAlign( rwt.widgets.util.Layout.ALIGN_MIDDLE );
     this.setLabel( "" );
     this._selected = false;
     this._showClose = false;
@@ -45,7 +45,7 @@ qx.Class.define( "rwt.widgets.CTabItem", {
     this._closeButton.setAppearance( "ctab-close-button" );
     this._closeButton.setWidth( 20 );
     this._closeButton.addEventListener( "click", this._onClose, this );
-    var wm = org.eclipse.swt.WidgetManager.getInstance();
+    var wm = rwt.remote.WidgetManager.getInstance();
     wm.setToolTip( this._closeButton, rwt.widgets.CTabFolder.CLOSE_TOOLTIP );
     this.add( this._closeButton );
     this.updateCloseButton();
@@ -65,7 +65,7 @@ qx.Class.define( "rwt.widgets.CTabItem", {
     this.removeEventListener( "changeParent", this._onChangeParent, this );
     this.removeEventListener( "changeLeft", this._onChangeLeft, this );
     this._closeButton.removeEventListener( "click", this._onClose, this );
-    var wm = org.eclipse.swt.WidgetManager.getInstance();
+    var wm = rwt.remote.WidgetManager.getInstance();
     wm.setToolTip( this._closeButton, null );
     this._closeButton.dispose();
     this._closeButton = null;
@@ -201,7 +201,7 @@ qx.Class.define( "rwt.widgets.CTabItem", {
     },
 
     _onClick : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         if( evt.getTarget() != this._closeButton ) {
           evt.getTarget().getParent()._notifyItemClick( evt.getTarget() );
         }
@@ -215,11 +215,11 @@ qx.Class.define( "rwt.widgets.CTabItem", {
     },
 
     _onClose : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         var server = rwt.remote.Server.getInstance();
-        server.getServerObject( this.getParent() ).notify( "Folder", {
+        server.getRemoteObject( this.getParent() ).notify( "Folder", {
           "detail" : "close",
-          "item" : rwt.protocol.ObjectRegistry.getId( this )
+          "item" : rwt.remote.ObjectRegistry.getId( this )
         } );
       }
     },

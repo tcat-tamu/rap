@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,7 @@
  ******************************************************************************/
 package org.eclipse.swt.custom;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Font;
@@ -126,6 +126,7 @@ public class CTabItem extends Item {
     parent.createItem( this, index );
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public <T> T getAdapter( Class<T> adapter ) {
     T result;
@@ -162,6 +163,7 @@ public class CTabItem extends Item {
   /////////////////////////////////////////
   // Getter/setter for principal properties
 
+  @Override
   public void setText( String text ) {
     checkWidget();
     if( text == null ) {
@@ -175,6 +177,7 @@ public class CTabItem extends Item {
     }
   }
 
+  @Override
   public void setImage( Image image ) {
     checkWidget();
     if( image != getImage() ) {
@@ -413,6 +416,7 @@ public class CTabItem extends Item {
   ///////////////////
   // Widget overrides
 
+  @Override
   public void dispose() {
     if( !isDisposed() ) {
       // if (!isValidThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
@@ -428,7 +432,7 @@ public class CTabItem extends Item {
     Image image = getImage();
     int h = ( image == null ) ? 0 : image.getBounds().height;
     String text = getText();
-    h = Math.max( h, Graphics.textExtent( getFont(), text, 0 ).y );
+    h = Math.max( h, TextSizeUtil.textExtent( getFont(), text, 0 ).y );
     return h + parent.getItemPadding( isSelected ).height;
   }
 
@@ -462,13 +466,13 @@ public class CTabItem extends Item {
       if (w > 0) w += parent.getItemSpacing( isSelected );
       if (font == null) {
 //        w += gc.textExtent(text, FLAGS).x;
-        w += Graphics.stringExtent( getFont(), text ).x;
+        w += TextSizeUtil.stringExtent( getFont(), text ).x;
       } else {
 //        Font gcFont = gc.getFont();
 //        gc.setFont(font);
 //        w += gc.textExtent(text, FLAGS).x;
 //        gc.setFont(gcFont);
-        w += Graphics.stringExtent( getFont(), text ).x;
+        w += TextSizeUtil.stringExtent( getFont(), text ).x;
       }
     }
     if (parent.showClose || showClose) {
@@ -568,15 +572,15 @@ public class CTabItem extends Item {
 
   @SuppressWarnings("all")
   static String shortenText( Font font, String text, int width, String ellipses ) {
-    if( Graphics.stringExtent( font, text ).x <= width ) {
+    if( TextSizeUtil.stringExtent( font, text ).x <= width ) {
       return text;
     }
-    int ellipseWidth = Graphics.stringExtent( font, ellipses ).x;
+    int ellipseWidth = TextSizeUtil.stringExtent( font, ellipses ).x;
     int length = text.length();
     int end = length - 1;
     while( end > 0 ) {
       text = text.substring( 0, end );
-      int l = Graphics.stringExtent( font, text ).x;
+      int l = TextSizeUtil.stringExtent( font, text ).x;
       if( l + ellipseWidth <= width ) {
         return text + ellipses;
       }

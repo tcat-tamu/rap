@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.DateTimeDate", {
+rwt.qx.Class.define( "rwt.widgets.DateTimeDate", {
   extend : rwt.widgets.base.Parent,
 
   construct : function( style,
@@ -21,14 +21,14 @@ qx.Class.define( "rwt.widgets.DateTimeDate", {
                         datePattern )
   {
     this.base( arguments );
-    this.setOverflow( qx.constant.Style.OVERFLOW_HIDDEN );
+    this.setOverflow( "hidden" );
     this.setAppearance( "datetime-date" );
 
     // Get styles
-    this._short = rwt.util.String.contains( style, "short" );
-    this._medium = rwt.util.String.contains( style, "medium" );
-    this._long = rwt.util.String.contains( style, "long" );
-    this._drop_down = rwt.util.String.contains( style, "drop_down" );
+    this._short = rwt.util.Strings.contains( style, "short" );
+    this._medium = rwt.util.Strings.contains( style, "medium" );
+    this._long = rwt.util.Strings.contains( style, "long" );
+    this._drop_down = rwt.util.Strings.contains( style, "drop_down" );
 
     // Has selection listener
     this._hasSelectionListener = false;
@@ -214,7 +214,7 @@ qx.Class.define( "rwt.widgets.DateTimeDate", {
       this.removeEventListener( "mouseout", this._onMouseOut, this );
       this._dropDownButton.dispose();
       this._dropDownButton = null;
-      if( !qx.core.Object.inGlobalDispose() ) {
+      if( !rwt.qx.Object.inGlobalDispose() ) {
         this._calendar.setParent( null );
       }
       this._calendar.dispose();
@@ -658,8 +658,8 @@ qx.Class.define( "rwt.widgets.DateTimeDate", {
     },
 
     _sendChanges : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        var widgetManager = rwt.remote.WidgetManager.getInstance();
         var req = rwt.remote.Server.getInstance();
         var id = widgetManager.findIdByWidget( this );
         req.addParameter( id + ".day", this._removeLeadingZero( this._dayTextField.getText() ) );
@@ -673,7 +673,7 @@ qx.Class.define( "rwt.widgets.DateTimeDate", {
 
     _onInterval : function() {
       this._requestTimer.stop();
-      org.eclipse.swt.EventUtil.notifySelected( this );
+      rwt.remote.EventUtil.notifySelected( this );
     },
 
     setMonth : function( value ) {
@@ -853,8 +853,8 @@ qx.Class.define( "rwt.widgets.DateTimeDate", {
 
     _setCalendarLocation : function() {
       if( this.getElement() && this._calendar != null ){
-        var elementPos = qx.bom.element.Location.get( this.getElement() );
-        var browserHeight = qx.html.Window.getInnerHeight( window );
+        var elementPos = rwt.html.Location.get( this.getElement() );
+        var browserHeight = rwt.html.Window.getInnerHeight( window );
         var top = elementPos.top + this.getHeight();
         var height = this._calendar.getHeightValue();
         if( top + height > browserHeight ) {

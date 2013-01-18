@@ -9,9 +9,9 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeCalendarTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeCalendarTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -134,7 +134,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeCalendarTest", {
 
     _createDefaultDateTimeByProtocol : function( id, parentId ) {
       var styles =  [ "CALENDAR", "MEDIUM" ];
-      rwt.protocol.MessageProcessor.processOperation( {
+      rwt.remote.MessageProcessor.processOperation( {
         "target" : id,
         "action" : "create",
         "type" : "rwt.widgets.DateTime",
@@ -146,7 +146,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.DateTimeCalendarTest", {
           "weekdayShortNames" : this.weekdayShortNames
         }
       } );
-      return rwt.protocol.ObjectRegistry.getObject( "w3" );
+      return rwt.remote.ObjectRegistry.getObject( "w3" );
     }
 
   }

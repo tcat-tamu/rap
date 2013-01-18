@@ -13,7 +13,7 @@
  * This class provides the client-side implementation for
  * rwt.widgets.Link
  */
-qx.Class.define( "rwt.widgets.Link", {
+rwt.qx.Class.define( "rwt.widgets.Link", {
   extend : rwt.widgets.base.Parent,
 
   construct : function() {
@@ -30,10 +30,10 @@ qx.Class.define( "rwt.widgets.Link", {
     this.add( this._link );
     this.setSelectable( false );
     this.setHideFocus( true );
-    this.__onMouseDown = rwt.util.Function.bindEvent( this._onMouseDown, this );
-    this.__onMouseOver = rwt.util.Function.bindEvent( this._onMouseOver, this );
-    this.__onMouseOut = rwt.util.Function.bindEvent( this._onMouseOut, this );
-    this.__onKeyDown = rwt.util.Function.bindEvent( this._onKeyDown, this );
+    this.__onMouseDown = rwt.util.Functions.bindEvent( this._onMouseDown, this );
+    this.__onMouseOver = rwt.util.Functions.bindEvent( this._onMouseOver, this );
+    this.__onMouseOut = rwt.util.Functions.bindEvent( this._onMouseOut, this );
+    this.__onKeyDown = rwt.util.Functions.bindEvent( this._onKeyDown, this );
     this.addEventListener( "appear", this._onAppear, this );
     this.addEventListener( "changeEnabled", this._onChangeEnabled, this );
     this.addEventListener( "keypress", this._onKeyPress );
@@ -106,7 +106,7 @@ qx.Class.define( "rwt.widgets.Link", {
 
     addLink : function( text, index ) {
       var style = this._getHyperlinkStyle( false );
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var id = widgetManager.findIdByWidget( this ) + "#" + index;
       this._text += "<span tabIndex=\"1\" ";
       this._text += "style=\"";
@@ -139,9 +139,9 @@ qx.Class.define( "rwt.widgets.Link", {
       var style = this._getHyperlinkStyle( false );
       var hyperlinks = this._getHyperlinkElements();
       for( var i = 0; i < hyperlinks.length; i++ ) {
-        org.eclipse.rwt.HtmlUtil.setStyleProperty( hyperlinks[ i ], "color", style.textColor );
-        org.eclipse.rwt.HtmlUtil.setTextShadow( hyperlinks[ i ], style.textShadow );
-        org.eclipse.rwt.HtmlUtil.setStyleProperty( hyperlinks[ i ], "cursor", style.cursor );
+        rwt.html.Style.setStyleProperty( hyperlinks[ i ], "color", style.textColor );
+        rwt.html.Style.setTextShadow( hyperlinks[ i ], style.textShadow );
+        rwt.html.Style.setStyleProperty( hyperlinks[ i ], "cursor", style.cursor );
       }
     },
 
@@ -162,16 +162,16 @@ qx.Class.define( "rwt.widgets.Link", {
       var hyperlinks = this._getHyperlinkElements();
       if( hyperlinks.length > 0 && !this._hyperlinksHaveListeners ) {
         for( var i = 0; i < hyperlinks.length; i++ ) {
-          qx.html.EventRegistration.addEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.addEventListener( hyperlinks[ i ],
                                                       "mousedown",
                                                       this.__onMouseDown );
-          qx.html.EventRegistration.addEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.addEventListener( hyperlinks[ i ],
                                                       "mouseover",
                                                       this.__onMouseOver );
-          qx.html.EventRegistration.addEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.addEventListener( hyperlinks[ i ],
                                                       "mouseout",
                                                       this.__onMouseOut );
-          qx.html.EventRegistration.addEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.addEventListener( hyperlinks[ i ],
                                                       "keydown",
                                                       this.__onKeyDown );
         }
@@ -183,16 +183,16 @@ qx.Class.define( "rwt.widgets.Link", {
       var hyperlinks = this._getHyperlinkElements();
       if( hyperlinks.length > 0 && this._hyperlinksHaveListeners ) {
         for( var i = 0; i < hyperlinks.length; i++ ) {
-          qx.html.EventRegistration.removeEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.removeEventListener( hyperlinks[ i ],
                                                          "mousedown",
                                                          this.__onMouseDown );
-          qx.html.EventRegistration.removeEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.removeEventListener( hyperlinks[ i ],
                                                          "mouseover",
                                                          this.__onMouseOver );
-          qx.html.EventRegistration.removeEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.removeEventListener( hyperlinks[ i ],
                                                          "mouseout",
                                                          this.__onMouseOut );
-          qx.html.EventRegistration.removeEventListener( hyperlinks[ i ],
+          rwt.html.EventRegistration.removeEventListener( hyperlinks[ i ],
                                                          "keydown",
                                                          this.__onKeyDown );
         }
@@ -210,7 +210,7 @@ qx.Class.define( "rwt.widgets.Link", {
           this._readyToSendChanges = false;
           rwt.client.Timer.once( function() {
             this._sendChanges( index );
-          }, this, org.eclipse.swt.EventUtil.DOUBLE_CLICK_TIME );
+          }, this, rwt.remote.EventUtil.DOUBLE_CLICK_TIME );
         }
       }
     },
@@ -218,13 +218,13 @@ qx.Class.define( "rwt.widgets.Link", {
     _onMouseOver : function( evt ) {
       var target = this._getEventTarget( evt );
       var style = this._getHyperlinkStyle( true );
-      org.eclipse.rwt.HtmlUtil.setStyleProperty( target, "textDecoration", style.textDecoration );
+      rwt.html.Style.setStyleProperty( target, "textDecoration", style.textDecoration );
     },
 
     _onMouseOut : function( evt ) {
       var target = this._getEventTarget( evt );
       var style = this._getHyperlinkStyle( false );
-      org.eclipse.rwt.HtmlUtil.setStyleProperty( target, "textDecoration", style.textDecoration );
+      rwt.html.Style.setStyleProperty( target, "textDecoration", style.textDecoration );
     },
 
     _isLeftMouseButtonPressed : function( evt ) {
@@ -343,7 +343,7 @@ qx.Class.define( "rwt.widgets.Link", {
 
     _sendChanges : function( index ) {
       if( this._hasSelectionListener ) {
-        org.eclipse.swt.EventUtil.notifySelected( this, { "index" : index } );
+        rwt.remote.EventUtil.notifySelected( this, { "index" : index } );
       }
       this._readyToSendChanges = true;
     }

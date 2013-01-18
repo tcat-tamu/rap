@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.Shell", {
+rwt.qx.Class.define( "rwt.widgets.Shell", {
 
   extend : rwt.widgets.base.Window,
 
@@ -28,7 +28,7 @@ qx.Class.define( "rwt.widgets.Shell", {
     this.setResizableNorth( styles.RESIZE === true  );
     this.setResizableEast( styles.RESIZE === true  );
     this.setResizableSouth( styles.RESIZE === true  );
-    this.setOverflow( qx.constant.Style.OVERFLOW_HIDDEN );
+    this.setOverflow( "hidden" );
     // Note: This prevents a laoyut-glitch on the ipad:
     this.setRestrictToPageOnOpen( false );
     // TODO [rh] HACK to set mode on Label that shows the caption, _captionTitle
@@ -55,7 +55,7 @@ qx.Class.define( "rwt.widgets.Shell", {
     // [if] Listen for DOM event instead of qooxdoo event - see bug 294846.
     this.removeEventListener( "mousedown", this._onwindowmousedown );
     this.addEventListener( "create", this._onCreate, this );
-    this.__onwindowmousedown = rwt.util.Function.bind( this._onwindowmousedown, this );
+    this.__onwindowmousedown = rwt.util.Functions.bind( this._onwindowmousedown, this );
     this.addToDocument();
   },
 
@@ -72,13 +72,13 @@ qx.Class.define( "rwt.widgets.Shell", {
     ],
 
     _onParentClose : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         this.doClose();
       }
     },
 
     reorderShells : function( vWindowManager ) {
-      var shells = rwt.util.Object.getValues( vWindowManager.getAll() );
+      var shells = rwt.util.Objects.getValues( vWindowManager.getAll() );
       shells = shells.sort( rwt.widgets.Shell._compareShells );
       var vLength = shells.length;
       var upperModalShell = null;
@@ -161,15 +161,15 @@ qx.Class.define( "rwt.widgets.Shell", {
     var req = rwt.remote.Server.getInstance();
     req.removeEventListener( "send", this._onSend, this );
     if( this.isCreated() ) {
-      qx.html.EventRegistration.removeEventListener( this.getElement(),
+      rwt.html.EventRegistration.removeEventListener( this.getElement(),
                                                      "mousedown",
                                                      this.__onwindowmousedown );
     }
   },
 
   events : {
-    "close" : "qx.event.type.DataEvent",
-    "parentShellChanged" : "qx.event.type.Event"
+    "close" : "rwt.event.DataEvent",
+    "parentShellChanged" : "rwt.event.Event"
   },
 
   members : {
@@ -181,7 +181,7 @@ qx.Class.define( "rwt.widgets.Shell", {
     },
 
     _onCreate : function( evt ) {
-      qx.html.EventRegistration.addEventListener( this.getElement(),
+      rwt.html.EventRegistration.addEventListener( this.getElement(),
                                                   "mousedown",
                                                   this.__onwindowmousedown );
       this.removeEventListener( "create", this._onCreate, this );
@@ -191,7 +191,7 @@ qx.Class.define( "rwt.widgets.Shell", {
     // an active shell (see bug 297167).
     _beforeAppear : function() {
       rwt.widgets.base.Parent.prototype._beforeAppear.call( this );
-      qx.ui.popup.PopupManager.getInstance().update();
+      rwt.widgets.util.PopupManager.getInstance().update();
       var activeWindow = this.getWindowManager().getActiveWindow();
       this.getWindowManager().add( this );
       this.getWindowManager().setActiveWindow( activeWindow );
@@ -316,8 +316,8 @@ qx.Class.define( "rwt.widgets.Shell", {
      * Called when user tries to close the shell.
      */
     close : function() {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-        rwt.remote.Server.getInstance().getServerObject( this ).notify( "Close" );
+      if( !rwt.remote.EventUtil.getSuspended() ) {
+        rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Close" );
       }
     },
 
@@ -331,7 +331,7 @@ qx.Class.define( "rwt.widgets.Shell", {
       if( !this.isDisposed() ) {
         this.hide();
         if( this.hasEventListeners( "close" ) ) {
-          var event = new qx.event.type.DataEvent( "close", this );
+          var event = new rwt.event.DataEvent( "close", this );
           this.dispatchEvent( event, true );
         }
         var wm = this.getWindowManager();
@@ -343,14 +343,14 @@ qx.Class.define( "rwt.widgets.Shell", {
       // Work around qooxdoo bug #254: the changeActiveChild is fired twice when
       // a widget was activated by keyboard (getData() is null in this case)
       var widget = this._getParentControl( evt.getValue() );
-      if(    !org.eclipse.swt.EventUtil.getSuspended()
+      if(    !rwt.remote.EventUtil.getSuspended()
           && widget != null
           && widget !== this._activeControl )
       {
         this._notifyDeactivate( this._activeControl, widget );
-        var id = org.eclipse.swt.WidgetManager.getInstance().findIdByWidget( widget );
-        var serverObject = rwt.remote.Server.getInstance().getServerObject( this );
-        serverObject.set( "activeControl", id );
+        var id = rwt.remote.WidgetManager.getInstance().findIdByWidget( widget );
+        var remoteObject = rwt.remote.Server.getInstance().getRemoteObject( this );
+        remoteObject.set( "activeControl", id );
         this._notifyActivate( this._activeControl, widget );
         this._activeControl = widget;
       }
@@ -366,8 +366,8 @@ qx.Class.define( "rwt.widgets.Shell", {
         }
       }
       if( target != null && !target.contains( newActive ) ) {
-        var serverObject = rwt.remote.Server.getInstance().getServerObject( target );
-        serverObject.notify( "Deactivate" );
+        var remoteObject = rwt.remote.Server.getInstance().getRemoteObject( target );
+        remoteObject.notify( "Deactivate" );
       }
     },
 
@@ -381,8 +381,8 @@ qx.Class.define( "rwt.widgets.Shell", {
         }
       }
       if( target != null && !target.contains( oldActive ) ) {
-        var serverObject = rwt.remote.Server.getInstance().getServerObject( target );
-        serverObject.notify( "Activate" );
+        var remoteObject = rwt.remote.Server.getInstance().getRemoteObject( target );
+        remoteObject.notify( "Activate" );
       }
     },
 
@@ -395,7 +395,7 @@ qx.Class.define( "rwt.widgets.Shell", {
     },
 
     _onChangeFocusedChild : function( evt ) {
-      if( org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( rwt.remote.EventUtil.getSuspended() ) {
         this._focusControl = this.getFocusedChild();
       }
     },
@@ -408,8 +408,8 @@ qx.Class.define( "rwt.widgets.Shell", {
         this.setZIndex( 1e8 );
       }
       // end of workaround
-      if( !org.eclipse.swt.EventUtil.getSuspended() && this.getActive() ) {
-        rwt.remote.Server.getInstance().getServerObject( this ).notify( "Activate" );
+      if( !rwt.remote.EventUtil.getSuspended() && this.getActive() ) {
+        rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Activate" );
       }
       var active = evt.getValue();
       if( active ) {
@@ -425,28 +425,28 @@ qx.Class.define( "rwt.widgets.Shell", {
 
     _onChangeMode : function( evt ) {
       var value = evt.getValue();
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       var id = widgetManager.findIdByWidget( evt.getTarget() );
       var req = rwt.remote.Server.getInstance();
       req.addParameter( id + ".mode", value );
     },
 
     _onChangeSize : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         this._sendBounds();
         if( this._hasResizeListener ) {
           var server = rwt.remote.Server.getInstance();
-          server.getServerObject( this ).notify( "Resize", {} );
+          server.getRemoteObject( this ).notify( "Resize", {} );
         }
       }
     },
 
     _onChangeLocation : function( evt ) {
-      if( !org.eclipse.swt.EventUtil.getSuspended() ) {
+      if( !rwt.remote.EventUtil.getSuspended() ) {
         this._sendBounds();
         if( this._hasMoveListener ) {
           var server = rwt.remote.Server.getInstance();
-          server.getServerObject( this ).notify( "Move", {} );
+          server.getRemoteObject( this ).notify( "Move", {} );
         }
       }
     },
@@ -457,7 +457,7 @@ qx.Class.define( "rwt.widgets.Shell", {
       var top = this._parseNumber( this.getTop() );
       var height = this._parseNumber( this.getHeightValue() );
       var width = this._parseNumber( this.getWidthValue() );
-      server.getServerObject( this ).set( "bounds", [ left, top, width, height ] );
+      server.getRemoteObject( this ).set( "bounds", [ left, top, width, height ] );
     },
 
     _parseNumber : function( value ) {
@@ -487,10 +487,10 @@ qx.Class.define( "rwt.widgets.Shell", {
         var focusedChild = this.getFocusedChild();
         if( focusedChild != null && focusedChild != this._focusControl ) {
           this._focusControl = focusedChild;
-          var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+          var widgetManager = rwt.remote.WidgetManager.getInstance();
           var focusedChildId = widgetManager.findIdByWidget( focusedChild );
           var server = rwt.remote.Server.getInstance();
-          var serverDisplay = server.getServerObject( rwt.widgets.Display.getCurrent() );
+          var serverDisplay = server.getRemoteObject( rwt.widgets.Display.getCurrent() );
           serverDisplay.set( "focusControl", focusedChildId );
         }
       }
@@ -502,7 +502,7 @@ qx.Class.define( "rwt.widgets.Shell", {
      * if there is no parent
      */
     _getParentControl : function( widget ) {
-      var widgetMgr = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetMgr = rwt.remote.WidgetManager.getInstance();
       var result = widget;
       while( result != null && !widgetMgr.isControl( result ) ) {
         if( result.getParent ) {

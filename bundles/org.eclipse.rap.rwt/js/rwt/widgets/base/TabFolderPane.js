@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright: 2004, 2010 1&1 Internet AG, Germany, http://www.1und1.de,
+ *  Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
  *                        and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -14,7 +14,7 @@
 /**
  * @appearance tab-view-pane
  */
-qx.Class.define("rwt.widgets.base.TabFolderPane",
+rwt.qx.Class.define("rwt.widgets.base.TabFolderPane",
 {
   extend : rwt.widgets.base.Parent,
 

@@ -9,14 +9,14 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ObjectManagerTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ObjectManagerTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
   
   members : {
 
     testAdd : function() {
-      var manager = rwt.protocol.ObjectRegistry;
+      var manager = rwt.remote.ObjectRegistry;
       var obj = {};
 
       manager.add( "myId", obj, "myType" );
@@ -27,7 +27,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ObjectManagerTest", {
     },
 
     testRemove : function() {
-      var manager = rwt.protocol.ObjectRegistry;
+      var manager = rwt.remote.ObjectRegistry;
       var obj = {};
       manager.add( "myId", obj, "myType" );
 
@@ -39,7 +39,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ObjectManagerTest", {
     },
 
     testApplyObjectIdIsCalled : function() {
-      var manager = rwt.protocol.ObjectRegistry;
+      var manager = rwt.remote.ObjectRegistry;
       var log = "";
       var obj = {
         applyObjectId : function( id ) {
@@ -54,7 +54,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ObjectManagerTest", {
     },
 
     _clearObjectManager: function() {
-      var manager = rwt.protocol.ObjectRegistry;
+      var manager = rwt.remote.ObjectRegistry;
       manager._map = {};
       manager._callbacks = {};
     }

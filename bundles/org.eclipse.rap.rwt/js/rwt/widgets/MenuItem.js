@@ -10,7 +10,7 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 
-qx.Class.define("rwt.widgets.MenuItem",  {
+rwt.qx.Class.define("rwt.widgets.MenuItem",  {
   extend : rwt.widgets.base.MultiCellWidget,
 
   construct : function( menuItemType ) {
@@ -56,7 +56,7 @@ qx.Class.define("rwt.widgets.MenuItem",  {
        this._isSelectable = true;
        this._sendEvent = true;
        this.setNoRadioGroup( false );
-       org.eclipse.rwt.RadioButtonUtil.registerExecute( this );
+       rwt.widgets.util.RadioButtonUtil.registerExecute( this );
       break;
     }
     this._preferredCellWidths = [ 0, 0, 0, 13 ];
@@ -96,7 +96,7 @@ qx.Class.define("rwt.widgets.MenuItem",  {
   },
 
   events : {
-    "subMenuChanged" : "qx.event.type.Event"
+    "subMenuChanged" : "rwt.event.Event"
   },
 
   members : {
@@ -236,8 +236,8 @@ qx.Class.define("rwt.widgets.MenuItem",  {
         } else {
           this.removeState( "selected" );
         }
-        if( !org.eclipse.swt.EventUtil.getSuspended() ) {
-          var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+        if( !rwt.remote.EventUtil.getSuspended() ) {
+          var widgetManager = rwt.remote.WidgetManager.getInstance();
           var id = widgetManager.findIdByWidget( this );
           var req = rwt.remote.Server.getInstance();
           req.addParameter( id + ".selection", this._selected );
@@ -247,11 +247,11 @@ qx.Class.define("rwt.widgets.MenuItem",  {
 
     // Not using EventUtil since no event should be sent (for radio at least)
     _sendChanges : function() {
-      if(    !org.eclipse.swt.EventUtil.getSuspended()
+      if(    !rwt.remote.EventUtil.getSuspended()
           && this._hasSelectionListener
           && this._sendEvent )
       {
-        org.eclipse.swt.EventUtil.notifySelected( this );
+        rwt.remote.EventUtil.notifySelected( this );
       }
     },
 

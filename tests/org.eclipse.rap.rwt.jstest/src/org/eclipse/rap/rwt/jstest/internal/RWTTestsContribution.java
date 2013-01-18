@@ -40,12 +40,12 @@ public class RWTTestsContribution implements TestContribution {
     "tests/MessageProcessorTest.js",
     "tests/ProtocolWriterTest.js",
     "tests/RequestTest.js",
-    "tests/AdapterUtilTest.js",
+    "tests/HandlerUtilTest.js",
     "tests/EncodingUtilTest.js",
     "tests/DisplayTest.js",
     "tests/ThemeStoreTest.js",
     "tests/ShellProtocolIntegrationTest.js",
-    "tests/HtmlUtilTest.js",
+    "tests/StyleTest.js",
     "tests/BorderTest.js",
     "tests/WidgetTest.js",
     "tests/GroupTest.js",
@@ -109,8 +109,8 @@ public class RWTTestsContribution implements TestContribution {
     "tests/FontSizeCalculationTest.js",
     "tests/MessageTest.js",
     "tests/ServerTest.js",
-    "tests/ServerObjectTest.js",
-    "tests/ServerObjectFactoryTest.js"
+    "tests/RemoteObjectTest.js",
+    "tests/RemoteObjectFactoryTest.js"
   };
 
   public String getName() {

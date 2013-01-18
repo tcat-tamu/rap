@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.ui.forms.widgets.FormText", {
+rwt.qx.Class.define( "org.eclipse.ui.forms.widgets.FormText", {
   extend : rwt.widgets.base.Parent,
 
   construct : function() {
@@ -68,7 +68,7 @@ qx.Class.define( "org.eclipse.ui.forms.widgets.FormText", {
         width  : bounds[ 2 ],
         height : bounds[ 3 ]
       } );
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       widgetManager.setToolTip( textHyperlink, toolTip );
       if( font != null ) {
         widgetManager.setFont( textHyperlink, font[ 0 ], font[ 1 ], font[ 2 ], font[ 3 ] );
@@ -91,11 +91,10 @@ qx.Class.define( "org.eclipse.ui.forms.widgets.FormText", {
         height : bounds[ 3 ]
       } );
       if( font != null ) {
-        var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
-        widgetManager.setFont( textFragment, font[ 0 ], font[ 1 ], font[ 2 ], font[ 3 ] );
+        textFragment.setFont( rwt.html.Font.fromArray( font ) );
       }
       if( color != null ) {
-        textFragment.setTextColor( rwt.util.ColorUtil.rgbToRgbString( color ) );
+        textFragment.setTextColor( rwt.util.Colors.rgbToRgbString( color ) );
       }
       this._segments[ this._segments.length ] = textFragment;
       this.add( textFragment );
@@ -112,7 +111,7 @@ qx.Class.define( "org.eclipse.ui.forms.widgets.FormText", {
         height     : bounds[ 3 ],
         paddingTop : 2
       } );
-      var widgetManager = org.eclipse.swt.WidgetManager.getInstance();
+      var widgetManager = rwt.remote.WidgetManager.getInstance();
       widgetManager.setToolTip( imageHyperlink, toolTip );
       this._segments[ this._segments.length ] = imageHyperlink;
       this.add( imageHyperlink );

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,7 +9,7 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "rwt.widgets.Composite", {
+rwt.qx.Class.define( "rwt.widgets.Composite", {
 
   extend : rwt.widgets.base.Parent,
 
@@ -18,7 +18,7 @@ qx.Class.define( "rwt.widgets.Composite", {
   construct : function() {
     this.base( arguments );
     this.setAppearance( "composite" );
-    this.setOverflow( qx.constant.Style.OVERFLOW_HIDDEN );
+    this.setOverflow( "hidden" );
     this.setHideFocus( true );
     this.addEventListener( "mouseover", this._onMouseOver, this );
     this.addEventListener( "mouseout", this._onMouseOut, this );
@@ -32,14 +32,25 @@ qx.Class.define( "rwt.widgets.Composite", {
     }
     // Disable scrolling (see bug 345903)
     rwt.widgets.base.Widget.disableScrolling( this );
+    this._clientArea = [ 0, 0, 0, 0 ];
   },
 
   destruct : function() {
     this.removeEventListener( "mouseover", this._onMouseOver, this );
     this.removeEventListener( "mouseout", this._onMouseOut, this );
+    this._clientArea = null;
   },
 
   members : {
+
+    setClientArea : function( clientArea ) {
+      this._clientArea = clientArea;
+      this.dispatchSimpleEvent( "clientAreaChanged" );
+    },
+
+    getClientArea : function() {
+      return this._clientArea.concat();
+    },
 
     _onMouseOver : function( evt ) {
       this.addState( "over" );

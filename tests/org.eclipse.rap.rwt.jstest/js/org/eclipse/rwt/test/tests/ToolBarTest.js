@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,9 +9,9 @@
  *    EclipseSource - initial API and implementation
  ******************************************************************************/
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
 
   construct : function() {
     this.base( arguments );
@@ -23,7 +23,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
     testCreateTooBarByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -33,7 +33,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
           "parent" : "w2"
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertTrue( widget instanceof rwt.widgets.ToolBar );
       assertIdentical( shell, widget.getParent() );
@@ -47,7 +47,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
     testCreateTooBarWithFlatByProtocol : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var shell = TestUtil.createShellByProtocol( "w2" );
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : "w3",
         "action" : "create",
@@ -57,7 +57,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
           "parent" : "w2"
         }
       } );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       var widget = ObjectManager.getObject( "w3" );
       assertTrue( widget.hasState( "rwt_HORIZONTAL" ) );
       assertTrue( widget.hasState( "rwt_FLAT" ) );
@@ -183,13 +183,13 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
       var shell = TestUtil.createShellByProtocol( "w2" );
       var toolbar = this._createToolBarByProtocol( "w3", "w2", [] );
       var widget = this._createToolItemByProtocol( "w4", "w3", [ "PUSH" ] );
-      rwt.protocol.MessageProcessor.processOperation( {
+      rwt.remote.MessageProcessor.processOperation( {
         "target" : "w4",
         "action" : "destroy"
       } );
       TestUtil.flush();
       assertTrue( widget.isDisposed() );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       assertEquals( undefined, ObjectManager.getObject( "w4" ) );
       shell.destroy();
       toolbar.destroy();
@@ -201,7 +201,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
       var toolbar = this._createToolBarByProtocol( "w3", "w2", [] );
       var widget = this._createToolItemByProtocol( "w4", "w3", [ "PUSH" ] );
 
-      rwt.protocol.MessageProcessor.processOperation( {
+      rwt.remote.MessageProcessor.processOperation( {
         "target" : "w3",
         "action" : "destroy"
       } );
@@ -209,7 +209,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
 
       assertTrue( toolbar.isDisposed() );
       assertTrue( widget.isDisposed() );
-      var ObjectManager = rwt.protocol.ObjectRegistry;
+      var ObjectManager = rwt.remote.ObjectRegistry;
       assertEquals( undefined, ObjectManager.getObject( "w3" ) );
       assertEquals( undefined, ObjectManager.getObject( "w4" ) );
       shell.destroy();
@@ -366,7 +366,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
       item.addToDocument();
       rwt.widgets.base.Widget.flushGlobalQueues();
       var lineStyle = item.getCellNode( 3 ).style;
-      org.eclipse.swt.WidgetManager.getInstance().add( item, "w1" );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.ToolItem" );
+      rwt.remote.ObjectRegistry.add( "w1", item, handler );
       this.TestUtil.clearRequestLog();
       item.setHasSelectionListener( true );
       this.TestUtil.fakeMouseClick( item, 103, 103 );
@@ -429,7 +430,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
 
     testDropDownLineBorder : function() {
       var item = new rwt.widgets.ToolItem( "dropDown" );
-      var border = new org.eclipse.rwt.Border( 1, "outset", "black");
+      var border = new rwt.html.Border( 1, "outset", "black");
       this.item = item;
       item.setText( "hallo" );
       item.setSeparatorBorder( border );
@@ -601,7 +602,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
       item.addToDocument();
       rwt.widgets.base.Widget.flushGlobalQueues();
       var lineStyle = item.getCellNode( 3 ).style;
-      org.eclipse.swt.WidgetManager.getInstance().add( item, "w1" );
+      rwt.remote.WidgetManager.getInstance().add( item, "w1" );
       this.TestUtil.clearRequestLog();
       item.setHasSelectionListener( true );
       var log = 0;
@@ -650,7 +651,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
     },
 
     _createToolBarByProtocol : function( id, parentId, style ) {
-      rwt.protocol.MessageProcessor.processOperation( {
+      rwt.remote.MessageProcessor.processOperation( {
         "target" : id,
         "action" : "create",
         "type" : "rwt.widgets.ToolBar",
@@ -659,11 +660,11 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
           "parent" : parentId
         }
       } );
-      return rwt.protocol.ObjectRegistry.getObject( id );
+      return rwt.remote.ObjectRegistry.getObject( id );
     },
 
     _createToolItemByProtocol : function( id, parentId, style ) {
-      rwt.protocol.MessageProcessor.processOperation( {
+      rwt.remote.MessageProcessor.processOperation( {
         "target" : id,
         "action" : "create",
         "type" : "rwt.widgets.ToolItem",
@@ -673,11 +674,11 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
           "index" : 0
         }
       } );
-      return rwt.protocol.ObjectRegistry.getObject( id );
+      return rwt.remote.ObjectRegistry.getObject( id );
     },
 
     _setPropertyByProtocol : function( id, properties ) {
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : id,
         "action" : "set",
@@ -686,7 +687,7 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ToolBarTest", {
     },
 
     _setListenerByProtocol : function( id, listeners ) {
-      var processor = rwt.protocol.MessageProcessor;
+      var processor = rwt.remote.MessageProcessor;
       processor.processOperation( {
         "target" : id,
         "action" : "listen",

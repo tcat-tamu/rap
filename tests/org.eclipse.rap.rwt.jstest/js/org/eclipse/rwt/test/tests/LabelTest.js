@@ -11,16 +11,16 @@
 
 (function(){
 
-var Processor = rwt.protocol.MessageProcessor;
+var Processor = rwt.remote.MessageProcessor;
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-var ObjectManager = rwt.protocol.ObjectRegistry;
+var ObjectManager = rwt.remote.ObjectRegistry;
 
 var shell;
 var labelWidget;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.LabelTest", {
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.LabelTest", {
 
-  extend : qx.core.Object,
+  extend : rwt.qx.Object,
   
   members : {
 

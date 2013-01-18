@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,16 +14,16 @@
 
 var Client = rwt.client.Client;
 var Timer = rwt.client.Timer;
-var Processor = rwt.protocol.MessageProcessor;
+var Processor = rwt.remote.MessageProcessor;
 var ErrorHandler = rwt.runtime.ErrorHandler;
-var EventUtil = org.eclipse.swt.EventUtil;
+var EventUtil = rwt.remote.EventUtil;
 var ServerPush = rwt.client.ServerPush;
 var ClientDocument = rwt.widgets.base.ClientDocument;
 var Widget = rwt.widgets.base.Widget;
 
-qx.Class.define( "rwt.remote.Server", {
+rwt.qx.Class.define( "rwt.remote.Server", {
   type : "singleton",
-  extend : qx.core.Target,
+  extend : rwt.qx.Target,
 
   construct : function() {
     this.base( arguments );
@@ -171,6 +171,7 @@ qx.Class.define( "rwt.remote.Server", {
       } else {
         this._flushEvent();
         this.dispatchSimpleEvent( "send" );
+        rap._.notify( "send" );
         this._flushEvent();
         this._sendTimer.stop();
         if( this._requestCounter != null ) {
@@ -195,13 +196,13 @@ qx.Class.define( "rwt.remote.Server", {
 
     getMessageWriter : function() {
       if( this._writer === null ) {
-        this._writer = new rwt.protocol.MessageWriter();
+        this._writer = new rwt.remote.MessageWriter();
       }
       return this._writer;
     },
 
-    getServerObject : function( target ) {
-      return rwt.protocol.ServerObjectFactory.getServerObject( target );
+    getRemoteObject : function( target ) {
+      return rwt.remote.RemoteObjectFactory.getRemoteObject( target );
     },
 
     onNextSend : function( func, context ) {
@@ -253,7 +254,7 @@ qx.Class.define( "rwt.remote.Server", {
     _handleSuccess : function( event ) {
       try {
         var messageObject = JSON.parse( event.responseText );
-        org.eclipse.swt.EventUtil.setSuspended( true );
+        rwt.remote.EventUtil.setSuspended( true );
         //[ariddle] - added to support metrics gathering
         if ( this._generateMetrics ) {
           this._parseDuration = new Date().getTime();
@@ -271,6 +272,7 @@ qx.Class.define( "rwt.remote.Server", {
           if ( this._processDuration > 0 )
             this._processDuration = new Date().getTime()-this._processDuration;
         }
+        rap._.notify( "render" );
         EventUtil.setSuspended( false );
         ServerPush.getInstance().sendUICallBackRequest();
         this.dispatchSimpleEvent( "received" );
@@ -346,7 +348,7 @@ qx.Class.define( "rwt.remote.Server", {
 
     _showWaitHint : function() {
       this._waitHintTimer.stop();
-      ClientDocument.getInstance().setGlobalCursor( qx.constant.Style.CURSOR_PROGRESS );
+      ClientDocument.getInstance().setGlobalCursor( "progress" );
     },
 
     _hideWaitHint : function() {

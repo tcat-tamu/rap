@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 EclipseSource and others.
+ * Copyright (c) 2010, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,14 +10,17 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.canvaskit;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
-import junit.framework.TestCase;
+import java.io.IOException;
 
 import org.eclipse.rap.rwt.Adaptable;
 import org.eclipse.rap.rwt.internal.protocol.IClientObjectAdapter;
-import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
+import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
@@ -28,6 +31,7 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.graphics.GCAdapter;
 import org.eclipse.swt.internal.graphics.GCOperation.DrawLine;
 import org.eclipse.swt.internal.graphics.GCOperation.SetProperty;
@@ -40,17 +44,20 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class CanvasLCA_Test extends TestCase {
+public class CanvasLCA_Test {
 
   private Display display;
   private Shell shell;
   private CanvasLCA lca;
   private Canvas canvas;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     Fixture.setUp();
     display = new Display();
     shell = new Shell( display );
@@ -59,11 +66,12 @@ public class CanvasLCA_Test extends TestCase {
     canvas = new Canvas( shell, SWT.NONE );
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     Fixture.tearDown();
   }
 
+  @Test
   public void testControlListeners() throws IOException {
     ControlLCATestUtil.testActivateListener( canvas );
     ControlLCATestUtil.testFocusListener( canvas );
@@ -74,6 +82,7 @@ public class CanvasLCA_Test extends TestCase {
     ControlLCATestUtil.testHelpListener( canvas );
   }
 
+  @Test
   public void testRenderCreate() throws IOException {
     lca.renderInitialization( canvas );
 
@@ -87,6 +96,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( canvasId, gcCreate.getProperty( "parent" ) );
   }
 
+  @Test
   public void testWriqteSingleGCOperation() throws IOException, JSONException {
     canvas.setSize( 50, 50 );
     canvas.setFont( new Font( display, "Arial", 11, SWT.NORMAL ) );
@@ -115,6 +125,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( 4, operations.length() );
   }
 
+  @Test
   public void testWriteMultipleGCOperations() throws IOException {
     canvas.setSize( 50, 50 );
     canvas.setFont( new Font( display, "Arial", 11, SWT.NORMAL ) );
@@ -133,6 +144,7 @@ public class CanvasLCA_Test extends TestCase {
   }
 
   // see bug 323080
+  @Test
   public void testMultipleGC_SetFont() throws IOException {
     canvas.setSize( 50, 50 );
     canvas.setFont( new Font( display, "Arial", 11, SWT.NORMAL ) );
@@ -155,6 +167,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( 0, message.getOperationCount() );
   }
 
+  @Test
   public void testTrimTrailingSetOperations() throws IOException {
     canvas.setSize( 50, 50 );
     canvas.setFont( new Font( display, "Arial", 11, SWT.NORMAL ) );
@@ -177,6 +190,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( 0, adapter.getGCOperations().length );
   }
 
+  @Test
   public void testNoDrawOperations() throws IOException {
     canvas.setSize( 50, 50 );
     canvas.setFont( new Font( display, "Arial", 11, SWT.NORMAL ) );
@@ -195,6 +209,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( 0, adapter.getGCOperations().length );
   }
 
+  @Test
   public void testRenderOperations_empty() throws IOException {
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     canvas.setSize( 50, 50 );
@@ -216,6 +231,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( 0, message.getOperationCount() );
   }
 
+  @Test
   public void testRenderOperations_resize() throws IOException {
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     Canvas canvas = new Canvas( shell, SWT.NONE );
@@ -243,6 +259,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( 8, operations.length() );
   }
 
+  @Test
   public void testRenderOperations_redraw() throws IOException {
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     canvas.setSize( 50, 50 );
@@ -266,6 +283,7 @@ public class CanvasLCA_Test extends TestCase {
     assertEquals( 8, operations.length() );
   }
 
+  @Test
   public void testClearDrawing() throws IOException {
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     canvas.setSize( 50, 50 );
@@ -287,34 +305,50 @@ public class CanvasLCA_Test extends TestCase {
     assertNull( getGCOperation( canvas, "draw" ) );
   }
 
-//  TODO [tb] : re-enable
-//  public void testRenderOperations_DisposedFont() throws IOException {
-//    Fixture.fakePhase( PhaseId.PROCESS_ACTION );
-//    canvas.setSize( 50, 50 );
-//    canvas.setFont( new Font( display, "Arial", 11, SWT.NORMAL ) );
-//    Fixture.markInitialized( display );
-//    Fixture.markInitialized( canvas );
-//    Fixture.preserveWidgets();
-//
-//    canvas.addPaintListener( new PaintListener() {
-//      public void paintControl( PaintEvent event ) {
-//        Font font = new Font( display, "Verdana", 18, SWT.BOLD );
-//        event.gc.setFont( font );
-//        event.gc.drawLine( 1, 2, 3, 4 );
-//        font.dispose();
-//      }
-//    } );
-//
-//    Fixture.fakeResponseWriter();
-//    canvas.redraw();
-//    new CanvasLCA().renderChanges( canvas );
-//    String expected
-//      = "var gc = org.eclipse.rwt.protocol.ObjectRegistry.getObject( \"w2#gc\" );"
-//      + "gc.init( 50, 50, \"11px Arial\", \"#ffffff\", \"#4a4a4a\" );"
-//      + "gc.setProperty( \"font\", \"bold 18px Verdana\" );"
-//      + "gc.drawLine( 1, 2, 3, 4 );";
-//    assertTrue( Fixture.getAllMarkup().contains( expected ) );
-//  }
+  @Test
+  public void testRenderClientArea() throws JSONException {
+    canvas.setSize( 110, 120 );
+
+    lca.renderClientArea( canvas );
+
+    Message message = Fixture.getProtocolMessage();
+    Rectangle clientArea = canvas.getClientArea();
+    assertEquals( clientArea, toRectangle( message.findSetProperty( canvas, "clientArea" ) ) );
+  }
+
+  @Test
+  public void testRenderClientArea_SizeZero() throws JSONException {
+    canvas.setSize( 0, 0 );
+
+    lca.renderClientArea( canvas );
+
+    Message message = Fixture.getProtocolMessage();
+    Rectangle clientArea = new Rectangle( 0, 0, 0, 0 );
+    assertEquals( clientArea, toRectangle( message.findSetProperty( canvas, "clientArea" ) ) );
+  }
+
+  @Test
+  public void testRenderClientArea_SizeUnchanged() {
+    Fixture.markInitialized( canvas );
+    canvas.setSize( 110, 120 );
+
+    lca.preserveValues( canvas );
+    lca.renderClientArea( canvas );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( canvas, "clientArea" ) );
+  }
+
+  private Rectangle toRectangle( Object property ) throws JSONException {
+    JSONArray jsonArray = ( JSONArray )property;
+    Rectangle result = new Rectangle(
+      jsonArray.getInt( 0 ),
+      jsonArray.getInt( 1 ),
+      jsonArray.getInt( 2 ),
+      jsonArray.getInt( 3 )
+    );
+    return result;
+  }
 
   private static CallOperation getGCOperation( Canvas canvas, String method ) {
     Message message = Fixture.getProtocolMessage();

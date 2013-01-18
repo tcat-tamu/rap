@@ -19,7 +19,7 @@
  *
  * @appearance client-document
  */
-qx.Class.define("rwt.widgets.base.ClientDocument",
+rwt.qx.Class.define("rwt.widgets.base.ClientDocument",
 {
   type : "singleton",
   extend : rwt.widgets.base.Parent,
@@ -65,7 +65,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
     this.initSelectable();
 
     // Register as current focus root
-    org.eclipse.rwt.EventHandler.setFocusRoot(this);
+    rwt.event.EventHandler.setFocusRoot(this);
 
     // Gecko-specific settings
     if( rwt.client.Client.isGecko() ) {
@@ -86,17 +86,17 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
 
   events:
   {
-    /** (Fired by {@link org.eclipse.rwt.EventHandler}) */
-    "focus"         : "qx.event.type.Event",
+    /** (Fired by {@link rwt.event.EventHandler}) */
+    "focus"         : "rwt.event.Event",
 
-    /** Fired when the window looses the focus (Fired by {@link org.eclipse.rwt.EventHandler}) */
-    "windowblur"    : "qx.event.type.Event",
+    /** Fired when the window looses the focus (Fired by {@link rwt.event.EventHandler}) */
+    "windowblur"    : "rwt.event.Event",
 
-    /**  Fired when the window gets the focus (Fired by {@link org.eclipse.rwt.EventHandler}) */
-    "windowfocus"   : "qx.event.type.Event",
+    /**  Fired when the window gets the focus (Fired by {@link rwt.event.EventHandler}) */
+    "windowfocus"   : "rwt.event.Event",
 
-    /** Fired when the window has been resized (Fired by {@link org.eclipse.rwt.EventHandler}) */
-    "windowresize"  : "qx.event.type.Event"
+    /** Fired when the window has been resized (Fired by {@link rwt.event.EventHandler}) */
+    "windowresize"  : "rwt.event.Event"
   },
 
 
@@ -195,14 +195,14 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
     /**
      * @signature function()
      */
-    _applyParent : rwt.util.Function.returnTrue,
+    _applyParent : rwt.util.Functions.returnTrue,
 
 
     /**
      * @signature function()
      * @return {Object}
      */
-    getTopLevelWidget : rwt.util.Function.returnThis,
+    getTopLevelWidget : rwt.util.Functions.returnThis,
 
 
     /**
@@ -234,7 +234,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @return {rwt.widgets.base.Parent} TODOC
      * @signature function()
      */
-    getParent : rwt.util.Function.returnNull,
+    getParent : rwt.util.Functions.returnNull,
 
 
     /**
@@ -244,7 +244,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @return {rwt.widgets.base.ToolTip} TODOC
      * @signature function()
      */
-    getToolTip : rwt.util.Function.returnNull,
+    getToolTip : rwt.util.Functions.returnNull,
 
     /**
      * TODOC
@@ -253,7 +253,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @signature function()
      * @return {boolean}
      */
-    isSeeable : rwt.util.Function.returnTrue,
+    isSeeable : rwt.util.Functions.returnTrue,
 
 
     _isDisplayable : true,
@@ -323,7 +323,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
     {
       this._getBlocker().show();
 
-      if (qx.Class.isDefined("rwt.widgets.base.Window") && vActiveChild instanceof rwt.widgets.base.Window)
+      if (rwt.qx.Class.isDefined("rwt.widgets.base.Window") && vActiveChild instanceof rwt.widgets.base.Window)
       {
         this._modalWidgets.push(vActiveChild);
 
@@ -331,7 +331,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
         this._getBlocker().setZIndex(vOrigIndex);
         vActiveChild.setZIndex(vOrigIndex + 1);
       }
-      else if (qx.Class.isDefined("qx.client.NativeWindow") && vActiveChild instanceof qx.client.NativeWindow)
+      else if (rwt.qx.Class.isDefined("qx.client.NativeWindow") && vActiveChild instanceof qx.client.NativeWindow)
       {
         this._modalNativeWindow = vActiveChild;
         this._getBlocker().setZIndex(1e7);
@@ -348,12 +348,12 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      */
     release : function( vActiveChild ) {
       if( vActiveChild ) {
-        if(    qx.Class.isDefined( "qx.client.NativeWindow" )
+        if(    rwt.qx.Class.isDefined( "qx.client.NativeWindow" )
             && vActiveChild instanceof qx.client.NativeWindow )
         {
           this._modalNativeWindow = null;
         } else {
-          rwt.util.Array.remove( this._modalWidgets, vActiveChild );
+          rwt.util.Arrays.remove( this._modalWidgets, vActiveChild );
         }
       }
       var l = this._modalWidgets.length;
@@ -384,7 +384,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @return {var} TODOC
      */
     createStyleElement : function(vCssText) {
-      return qx.html.StyleSheet.createElement(vCssText);
+      return rwt.html.StyleSheet.createElement(vCssText);
     },
 
 
@@ -398,7 +398,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @return {var} TODOC
      */
     addCssRule : function(vSheet, vSelector, vStyle) {
-      return qx.html.StyleSheet.addRule(vSheet, vSelector, vStyle);
+      return rwt.html.StyleSheet.addRule(vSheet, vSelector, vStyle);
     },
 
 
@@ -411,7 +411,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @return {var} TODOC
      */
     removeCssRule : function(vSheet, vSelector) {
-      return qx.html.StyleSheet.removeRule(vSheet, vSelector);
+      return rwt.html.StyleSheet.removeRule(vSheet, vSelector);
     },
 
 
@@ -423,7 +423,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @return {var} TODOC
      */
     removeAllCssRules : function(vSheet) {
-      return qx.html.StyleSheet.removeAllRules(vSheet);
+      return rwt.html.StyleSheet.removeAllRules(vSheet);
     },
 
 
@@ -541,7 +541,7 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
      * @return {void}
      */
     _onwindowresize : function(e) {
-      qx.ui.popup.PopupManager.getInstance().update();
+      rwt.widgets.util.PopupManager.getInstance().update();
       this._recomputeInnerWidth();
       this._recomputeInnerHeight();
       rwt.widgets.base.Widget.flushGlobalQueues();
@@ -571,23 +571,6 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
   },
 
 
-
-
-  /*
-  *****************************************************************************
-     SETTINGS
-  *****************************************************************************
-  */
-
-  settings :
-  {
-    "qx.enableApplicationLayout" : true,
-    "qx.boxModelCorrection"      : true
-  },
-
-
-
-
   /*
   *****************************************************************************
      DEFER
@@ -601,14 +584,15 @@ qx.Class.define("rwt.widgets.base.ClientDocument",
     var borderBoxCss = boxSizingAttr.join(":border-box;") + ":border-box;";
     var contentBoxCss = boxSizingAttr.join(":content-box;") + ":content-box;";
 
-    qx.html.StyleSheet.createElement(
+    rwt.html.StyleSheet.createElement(
       "html,body { margin:0;border:0;padding:0; } " +
       "html { border:0 none; } " +
       "*{" + borderBoxCss +"} " +
       "img{" + contentBoxCss + "}"
     );
 
-    qx.html.StyleSheet.createElement("html,body{width:100%;height:100%;overflow:hidden;}");
+    rwt.html.StyleSheet.createElement("html,body{width:100%;height:100%;overflow:hidden;}");
+    rwt.widgets.base.ClientDocument.BOXSIZING = "border-box";
   },
 
 

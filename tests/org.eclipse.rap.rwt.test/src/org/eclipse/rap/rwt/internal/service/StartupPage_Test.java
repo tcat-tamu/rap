@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2008, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,10 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.service;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -22,23 +26,37 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.eclipse.rap.rwt.client.WebClient;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
-import org.eclipse.rap.rwt.internal.application.RWTFactory;
+import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
 import org.eclipse.rap.rwt.internal.lifecycle.TestEntryPoint;
 import org.eclipse.rap.rwt.internal.theme.QxImage;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestResponse;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.InOrder;
 
 
-public class StartupPage_Test extends TestCase {
+public class StartupPage_Test {
 
   private StartupPage startupPage;
   private TestResponse response;
 
+  @Before
+  public void setUp() {
+    Fixture.setUp();
+    startupPage = spy( new StartupPage( ApplicationContextUtil.getInstance() ) );
+    response = new TestResponse();
+  }
+
+  @After
+  public void tearDown() {
+    Fixture.tearDown();
+  }
+
+  @Test
   public void testSetResponseHeaders() {
     startupPage.activate();
 
@@ -48,6 +66,7 @@ public class StartupPage_Test extends TestCase {
     assertTrue( response.getHeader( "Cache-Control" ).contains( "no-store" ) );
   }
 
+  @Test
   public void testSend() throws IOException {
     startupPage.activate();
     registerEntryPoint( null, null );
@@ -59,6 +78,7 @@ public class StartupPage_Test extends TestCase {
     assertTrue( content.endsWith( "</html>\n" ) );
   }
 
+  @Test
   public void testSuccessiveMarkup() throws IOException {
     startupPage.activate();
     mockTemplate( "<some html>" );
@@ -70,6 +90,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( response.getContent(), subsequentResponse.getContent() );
   }
 
+  @Test
   public void testSendWithUnknownToken() throws IOException {
     startupPage.activate();
     mockTemplate( variableFrom( "unknown" ) );
@@ -81,6 +102,7 @@ public class StartupPage_Test extends TestCase {
     }
   }
 
+  @Test
   public void testSendReplacesTitleToken() throws IOException {
     registerEntryPoint( WebClient.PAGE_TITLE, "title" );
     startupPage.activate();
@@ -91,6 +113,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "title", response.getContent() );
   }
 
+  @Test
   public void testSendReplacesTitleTokenWithoutTitleProperty() throws IOException {
     registerEntryPoint( WebClient.PAGE_TITLE, null );
     startupPage.activate();
@@ -102,6 +125,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "", response.getContent() );
   }
 
+  @Test
   public void testSendReplacesHeaderTokenWithHeadHtml() throws IOException {
     registerEntryPoint( WebClient.HEAD_HTML, "<head />" );
     startupPage.activate();
@@ -112,6 +136,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "<head />", response.getContent() );
   }
 
+  @Test
   public void testSendReplacesHeaderTokenWithFavIcon() throws IOException {
     String favIcon = "icon.png";
     registerEntryPoint( WebClient.FAVICON, favIcon );
@@ -123,13 +148,15 @@ public class StartupPage_Test extends TestCase {
     assertTrue( response.getContent().contains( favIcon ) );
   }
 
+  @Test
   public void testSendReplacesHeaderTokenWithHeadHtmlAndFavIcon() throws IOException {
     Map<String,String> properties = new HashMap<String,String>();
     String favIcon = "icon.png";
     String head = "<head />";
     properties.put( WebClient.HEAD_HTML, head );
     properties.put( WebClient.FAVICON, favIcon );
-    RWTFactory.getEntryPointManager().register( "/rap", TestEntryPoint.class, properties );
+    EntryPointManager entryPointManager = getApplicationContext().getEntryPointManager();
+    entryPointManager.register( "/rap", TestEntryPoint.class, properties );
     startupPage.activate();
     mockTemplate( variableFrom( StartupPageTemplate.TOKEN_HEADERS ) );
 
@@ -141,6 +168,7 @@ public class StartupPage_Test extends TestCase {
     assertTrue( favIconIndex < headIndex );
   }
 
+  @Test
   public void testSendReplacesBodyToken() throws IOException {
     registerEntryPoint( WebClient.BODY_HTML, "<body />" );
     startupPage.activate();
@@ -151,6 +179,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "<body />", response.getContent() );
   }
 
+  @Test
   public void testSendReplacesBodyTokenWithoutBodyProperty() throws IOException {
     registerEntryPoint( WebClient.BODY_HTML, null );
     startupPage.activate();
@@ -162,6 +191,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "", response.getContent() );
   }
 
+  @Test
   public void testSendReplacesLibraryToken() throws IOException {
     startupPage.setClientJsLibrary( "client.js" );
     startupPage.activate();
@@ -172,6 +202,7 @@ public class StartupPage_Test extends TestCase {
     verify( startupPage ).writeScriptTag( response.getWriter(), "client.js" );
   }
 
+  @Test
   public void testAppendsJsLibrariesAfterClientLibrary() throws IOException {
     startupPage.addJsLibrary( "library.js" );
     startupPage.setClientJsLibrary( "client.js" );
@@ -185,6 +216,7 @@ public class StartupPage_Test extends TestCase {
     order.verify( startupPage ).writeScriptTag( response.getWriter(), "library.js" );
   }
 
+  @Test
   public void testSendReplacesBackgroundImageToken() throws IOException {
     startupPage.activate();
     mockTemplate( variableFrom( StartupPageTemplate.TOKEN_BACKGROUND_IMAGE ) );
@@ -194,6 +226,7 @@ public class StartupPage_Test extends TestCase {
     verify( startupPage ).writeBackgroundImage( response.getWriter() );
   }
 
+  @Test
   public void testSendReplacesNoScriptMessageToken() throws IOException {
     startupPage.activate();
     mockTemplate( variableFrom( StartupPageTemplate.TOKEN_NO_SCRIPT_MESSAGE ) );
@@ -203,6 +236,7 @@ public class StartupPage_Test extends TestCase {
     verify( startupPage ).writeNoScriptMessage( response.getWriter() );
   }
 
+  @Test
   public void testSendReplacesAppScriptToken() throws IOException {
     startupPage.activate();
     mockTemplate( variableFrom( StartupPageTemplate.TOKEN_APP_SCRIPT ) );
@@ -212,6 +246,7 @@ public class StartupPage_Test extends TestCase {
     verify( startupPage ).writeAppScript( response.getWriter() );
   }
 
+  @Test
   public void testGetBackgroundImageLocationWithNoneBackgroundImage() {
     doReturn( QxImage.NONE ).when( startupPage ).getBrackgroundImage();
 
@@ -220,6 +255,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "", backgroundImage );
   }
 
+  @Test
   public void testGetBackgroundImageLocationWithExistingBackgroundImage() {
     QxImage qxImage = mock( QxImage.class );
     doReturn( "image-location" ).when( qxImage ).getResourcePath();
@@ -230,6 +266,7 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "rwt-resources/image-location", backgroundImage );
   }
 
+  @Test
   public void testGetBackgroundImageLocationWithNonExistingBackgroundImage() {
     doReturn( mock( QxImage.class ) ).when( startupPage ).getBrackgroundImage();
 
@@ -238,23 +275,12 @@ public class StartupPage_Test extends TestCase {
     assertEquals( "", backgroundImage );
   }
 
+  @Test
   public void testWriteScriptTag() throws IOException {
     startupPage.writeScriptTag( response.getWriter(), "lib.js" );
 
     String tag = "<script type=\"text/javascript\" src=\"lib.js\" charset=\"UTF-8\"></script>";
     assertEquals( tag, response.getContent().trim() );
-  }
-
-  @Override
-  protected void setUp() {
-    Fixture.setUp();
-    startupPage = spy( new StartupPage( ApplicationContextUtil.getInstance() ) );
-    response = new TestResponse();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    Fixture.tearDown();
   }
 
   private void mockTemplate( String template ) {
@@ -270,7 +296,7 @@ public class StartupPage_Test extends TestCase {
     if( propertyName != null ) {
       properties.put( propertyName, propertyValue );
     }
-    RWTFactory.getEntryPointManager().register( "/rap", TestEntryPoint.class, properties );
+    getApplicationContext().getEntryPointManager().register( "/rap", TestEntryPoint.class, properties );
   }
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 EclipseSource and others.
+ * Copyright (c) 2010, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,11 +12,11 @@
 (function(){
 
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-var MessageProcessor = rwt.protocol.MessageProcessor;
-var ObjectRegistry = rwt.protocol.ObjectRegistry;
+var MessageProcessor = rwt.remote.MessageProcessor;
+var ObjectRegistry = rwt.remote.ObjectRegistry;
 
-qx.Class.define( "org.eclipse.rwt.test.tests.ShellTest", {
-  extend : qx.core.Object,
+rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ShellTest", {
+  extend : rwt.qx.Object,
 
   members : {
 
@@ -112,7 +112,8 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellTest", {
       } );
       TestUtil.fakeResponse( true );
       var shell = new rwt.widgets.Shell( [ "APPLICATION_MODAL" ] );
-      rwt.protocol.ObjectRegistry.add( "w222", shell );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Shell" );
+      rwt.remote.ObjectRegistry.add( "w222", shell, handler );
       shell.addState( "rwt_APPLICATION_MODAL" );
       shell.initialize();
       shell.open();
@@ -372,12 +373,13 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellTest", {
     },
 
     testNotifyShellActivate : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = new rwt.widgets.Shell( {} );
-      rwt.protocol.ObjectRegistry.add( "w222", shell );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Shell" );
+      rwt.remote.ObjectRegistry.add( "w222", shell, handler );
       shell.initialize();
       shell.open();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       shell.setActive( true );
 
@@ -387,12 +389,13 @@ qx.Class.define( "org.eclipse.rwt.test.tests.ShellTest", {
     },
 
     testNotifyShellClose : function() {
-      org.eclipse.swt.EventUtil.setSuspended( true );
+      rwt.remote.EventUtil.setSuspended( true );
       var shell = new rwt.widgets.Shell( {} );
-      rwt.protocol.ObjectRegistry.add( "w222", shell );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Shell" );
+      rwt.remote.ObjectRegistry.add( "w222", shell, handler );
       shell.initialize();
       shell.open();
-      org.eclipse.swt.EventUtil.setSuspended( false );
+      rwt.remote.EventUtil.setSuspended( false );
 
       shell.close();
 
