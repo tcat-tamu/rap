@@ -106,7 +106,7 @@ public class FastViewPane {
         }
 
         public void flushLayout() {
-        	
+            
         }
         
         public void close(IPresentablePart part) {
@@ -138,16 +138,15 @@ public class FastViewPane {
          */
         public void dragStart(Point initialPosition, boolean keyboard) {
             if (!isPartMoveable()) {
-				return;
-			}
+                return;
+            }
 
             PartPane pane = currentPane.getPane();
+            //[ariddle] - added for view dragging
+            Control control = this.getPresentation().getControl();
 
-            // RAP [bm]: 
-//            Control control = this.getPresentation().getControl();
-//
-//            Rectangle bounds = Geometry.toDisplay(clientComposite, control
-//                    .getBounds());
+            Rectangle bounds = Geometry.toDisplay(clientComposite, control
+                    .getBounds());
 
             WorkbenchPage page = pane.getPage();
 
@@ -155,9 +154,9 @@ public class FastViewPane {
             if (page.isZoomed()) {
                 page.zoomOut();
             }
-
-            // RAP [bm]: 
-//            DragUtil.performDrag(pane, bounds, initialPosition, !keyboard);
+            
+            //[ariddle] - added for view dragging
+            DragUtil.performDrag(pane, bounds, initialPosition, !keyboard);
         }
 
         public IPresentablePart getSelectedPart() {
@@ -165,18 +164,18 @@ public class FastViewPane {
         }
 
         public void addSystemActions(IMenuManager menuManager) {
-        	ViewStackTrimToolBar vstt = getTrim();
-        	
+            ViewStackTrimToolBar vstt = getTrim();
+            
             appendToGroupIfPossible(menuManager,
                     "misc", new SystemMenuFastViewOrientation(currentPane.getPane(), vstt)); //$NON-NLS-1$
 
             // Only add the 'Fast View' menu entry if the
-        	// pane is showing a 'legacy' fast view
-        	if (vstt == null) {
-	            appendToGroupIfPossible(menuManager,
-	                    "misc", new UpdatingActionContributionItem(fastViewAction)); //$NON-NLS-1$
-        	}
-        	
+            // pane is showing a 'legacy' fast view
+            if (vstt == null) {
+                appendToGroupIfPossible(menuManager,
+                        "misc", new UpdatingActionContributionItem(fastViewAction)); //$NON-NLS-1$
+            }
+            
             appendToGroupIfPossible(menuManager,
                     "size", new SystemMenuSizeFastView(FastViewPane.this)); //$NON-NLS-1$
         }
@@ -186,27 +185,27 @@ public class FastViewPane {
          * <code>null</code> then we can assume it was the legacy FastViewBar.
          */
         private ViewStackTrimToolBar getTrim() {
-        	if (currentPane == null || currentPane.getPane() == null)
-        		return null;
+            if (currentPane == null || currentPane.getPane() == null)
+                return null;
 
             ViewStackTrimToolBar trim = null;
 
-        	PartPane pane = currentPane.getPane();
-        	if (pane instanceof ViewPane) {
-        		ViewPane vp = (ViewPane) pane;
+            PartPane pane = currentPane.getPane();
+            if (pane instanceof ViewPane) {
+                ViewPane vp = (ViewPane) pane;
                 Perspective persp = vp.getPage().getActivePerspective();
                 IViewReference viewRef = vp.getViewReference();
                 FastViewManager fvm = persp.getFastViewManager();
                 
                 String trimId = null;
                 if (fvm != null)
-                	trimId = fvm.getIdForRef(viewRef);
+                    trimId = fvm.getIdForRef(viewRef);
 
                 if (trimId != null && !trimId.equals(FastViewBar.FASTVIEWBAR_ID))
-                	trim = fvm.getViewStackTrimToolbar(trimId);
-        	}
-        	
-        	return trim;
+                    trim = fvm.getViewStackTrimToolbar(trimId);
+            }
+            
+            return trim;
         }
         
         public boolean isPartMoveable(IPresentablePart toMove) {
@@ -220,8 +219,8 @@ public class FastViewPane {
 
         private boolean isPartMoveable() {
             if (currentPane == null) {
-				return false;
-			}
+                return false;
+            }
             Perspective perspective = currentPane.getPane().getPage()
                     .getActivePerspective();
             if (perspective == null) {
@@ -239,11 +238,11 @@ public class FastViewPane {
 
         public boolean supportsState(int newState) {
             if (currentPane == null) {
-				return false;
-			}
+                return false;
+            }
             if (currentPane.getPane().getPage().isFixedLayout()) {
-				return false;
-			}
+                return false;
+            }
             return true;
         }
 
@@ -285,14 +284,14 @@ public class FastViewPane {
                     Point pt = new Point(event.x, event.y);
                     ToolBar toolBar = (ToolBar) event.widget;
                     if (toolBar.getItem(pt) != null) {
-						return;
-					}
+                        return;
+                    }
                 }
 
                 Point loc = DragUtil.getEventLoc(event);
 
-            	// 'Extrude' the rect -before- converting to Display coords
-            	// to avoid Right-to-Left issues
+                // 'Extrude' the rect -before- converting to Display coords
+                // to avoid Right-to-Left issues
                 Rectangle bounds = clientComposite.getBounds();
                 if (site.getState() != IStackPresentationSite.STATE_MAXIMIZED) {
                     bounds = Geometry.getExtrudedEdge(bounds, size + getSashSize(), side);
@@ -309,7 +308,7 @@ public class FastViewPane {
     };
 
     public void moveSash() {
-    	// RAP [bm]: 
+        // RAP [bm]: 
 //        final KeyListener listener = new KeyAdapter() {
 //            public void keyPressed(KeyEvent e) {
 //                if (e.character == SWT.ESC || e.character == '\r') {
@@ -330,7 +329,7 @@ public class FastViewPane {
 //                sash.removeKeyListener(listener);
 //            }
 //        });
-    	// RAPEND: [bm] 
+        // RAPEND: [bm] 
 
         sash.setFocus();
     }
@@ -360,9 +359,9 @@ public class FastViewPane {
  
                 if (e.detail != SWT.DRAG) {
                     updateFastViewSashBounds();
-                    //					getPresentation().getControl().moveAbove(null);
-                    //					currentPane.moveAbove(null); 
-                    //					sash.moveAbove(null);
+                    //                  getPresentation().getControl().moveAbove(null);
+                    //                  currentPane.moveAbove(null); 
+                    //                  sash.moveAbove(null);
                     //currentPane.getControl().redraw();
                     sash.redraw();
                 }
@@ -470,9 +469,9 @@ public class FastViewPane {
         boolean horizontalResize = Geometry.isHorizontal(side); 
 
         minSize = presentation.computePreferredSize(horizontalResize,
-        		ISizeProvider.INFINITE,
-        		Geometry.getDimension(getClientArea(), horizontalResize),
-				0);
+                ISizeProvider.INFINITE,
+                Geometry.getDimension(getClientArea(), horizontalResize),
+                0);
         
         // Show pane fast.
         ctrl.setEnabled(true); // Add focus support.
@@ -482,10 +481,10 @@ public class FastViewPane {
 
         // Create a sash of the correct style using the factory
         int style = AbstractPresentationFactory.SASHTYPE_FLOATING;
-    	if (horizontal)
-    		style |= AbstractPresentationFactory.SASHORIENTATION_HORIZONTAL;
-    	else
-    		style |= AbstractPresentationFactory.SASHORIENTATION_VERTICAL;
+        if (horizontal)
+            style |= AbstractPresentationFactory.SASHORIENTATION_HORIZONTAL;
+        else
+            style |= AbstractPresentationFactory.SASHORIENTATION_VERTICAL;
         sash = factory.createSash(parent, style);
         
         sash.addSelectionListener(selectionListener);
@@ -601,11 +600,11 @@ public class FastViewPane {
     }
 
     public void setState(int newState) {
-    	site.setState(newState);
+        site.setState(newState);
     }
     
     public int getState() {
-    	return site.getState();
+        return site.getState();
     }
     
     /**
@@ -623,25 +622,25 @@ public class FastViewPane {
     }
     
     private int getSashSize() {
-    	AbstractPresentationFactory factory = getPresentationFactory();
-    	
-    	// Set up the correct 'style' bits
-    	int style = AbstractPresentationFactory.SASHTYPE_FLOATING;
-    	if (Geometry.isHorizontal(side))
-    		style |= AbstractPresentationFactory.SASHORIENTATION_HORIZONTAL;
-    	else
-    		style |= AbstractPresentationFactory.SASHORIENTATION_VERTICAL;
-    		
-    	int size = factory.getSashSize(style);
-    	
-    	return size;
+        AbstractPresentationFactory factory = getPresentationFactory();
+        
+        // Set up the correct 'style' bits
+        int style = AbstractPresentationFactory.SASHTYPE_FLOATING;
+        if (Geometry.isHorizontal(side))
+            style |= AbstractPresentationFactory.SASHORIENTATION_HORIZONTAL;
+        else
+            style |= AbstractPresentationFactory.SASHORIENTATION_VERTICAL;
+            
+        int size = factory.getSashSize(style);
+        
+        return size;
     }
     
     private AbstractPresentationFactory getPresentationFactory() {
-    	if (presFactory == null) {
-	    	presFactory = ((WorkbenchWindow) currentPane.getPane().getWorkbenchWindow())
-					.getWindowConfigurer().getPresentationFactory();
-    	}
+        if (presFactory == null) {
+            presFactory = ((WorkbenchWindow) currentPane.getPane().getWorkbenchWindow())
+                    .getWindowConfigurer().getPresentationFactory();
+        }
         return presFactory;
     }
 }

@@ -13,6 +13,7 @@ package org.eclipse.rap.rwt.lifecycle;
 
 
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_DETAIL;
+import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_INDEX;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readEventPropertyValue;
 
 import java.lang.reflect.Field;
@@ -23,6 +24,7 @@ import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.internal.util.ActiveKeysUtil;
 import org.eclipse.rap.rwt.internal.util.NumberFormatUtil;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Font;
@@ -564,6 +566,9 @@ public class ControlLCAUtil {
     } else if( "cancel".equals( detail ) ) {
       result.detail = SWT.ICON_CANCEL;
     }
+    String index = readEventPropertyValue( widget, eventName, EVENT_PARAM_INDEX );
+    if (index != null)
+      result.index = Integer.parseInt( index );
     return result;
   }
 
@@ -588,7 +593,13 @@ public class ControlLCAUtil {
   private static void checkAndProcessMouseEvent( Event event ) {
     boolean pass = false;
     Control control = ( Control )event.widget;
-    if( control instanceof Scrollable ) {
+    //[ariddle] - view drag implementation
+    if ( control instanceof CTabFolder ) {
+      CTabFolder tabFolder = ( CTabFolder )control;
+      Rectangle clientArea = tabFolder.getBounds();
+      pass = clientArea.contains( tabFolder.toDisplay( event.x, event.y ) );
+    } else if ( control instanceof Scrollable ) {
+    //if( control instanceof Scrollable ) {
       Scrollable scrollable = ( Scrollable )control;
       Rectangle clientArea = scrollable.getClientArea();
       pass = clientArea.contains( event.x, event.y );

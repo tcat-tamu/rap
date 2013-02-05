@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.presentations.util;
 
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.ui.presentations.StackDropResult;
 
 /**
  */
@@ -25,8 +28,9 @@ public abstract class TabDragHandler {
 //     * 			or -1 if dragging a tab from another stack. 
 //     * @return the StackDropResult for this drag location
 //     */
-//    public abstract StackDropResult dragOver(Control currentControl,
-//            Point location, int initialTab);
+ //[ariddle] - added for view dragging
+    public abstract StackDropResult dragOver(Control currentControl,
+            Point location, int initialTab);
 
     public abstract int getInsertionPosition(Object cookie);
 }

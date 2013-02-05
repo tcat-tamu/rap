@@ -40,6 +40,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.contexts.IContextService;
+import org.eclipse.ui.internal.DetachedWindow;
 import org.eclipse.ui.internal.WorkbenchWindow;
 import org.eclipse.ui.internal.util.Util;
 import org.eclipse.ui.part.IShowInSource;
@@ -287,9 +288,9 @@ public class WorkbenchSourceProvider extends AbstractSourceProvider implements
 			if (s.getData() instanceof WorkbenchWindow) {
 				window = (IWorkbenchWindow) s.getData();
 			// RAP [bm] DetachedWindow
-//			} else if (s.getData() instanceof DetachedWindow) {
-//				window = ((DetachedWindow) s.getData()).getWorkbenchPage()
-//						.getWorkbenchWindow();
+			} else if (s.getData() instanceof DetachedWindow) {
+				window = ((DetachedWindow) s.getData()).getWorkbenchPage()
+						.getWorkbenchWindow();
 			}
 			updateWindows(window);
 

@@ -973,7 +973,9 @@ public class Shell extends Decorations {
    */
   public void setMinimumSize( int width, int height ) {
     checkWidget();
-    minWidth = Math.max( MIN_WIDTH_LIMIT, width );
+    // [ariddle] - To fix some problem with shell ?
+    //minWidth = Math.max( MIN_WIDTH_LIMIT, width );
+    minWidth = Math.max( 0, width );
     minHeight = Math.max( getMinHeightLimit(), height );
     Point size = getSize();
     int newWidth = Math.max( size.x, minWidth );

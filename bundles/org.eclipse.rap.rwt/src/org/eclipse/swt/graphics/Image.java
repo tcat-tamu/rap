@@ -53,7 +53,9 @@ import org.eclipse.swt.widgets.Display;
  * @see org.eclipse.rap.rwt.graphics.Graphics#getImage(String, ClassLoader)
  * @see org.eclipse.rap.rwt.graphics.Graphics#getImage(String, java.io.InputStream)
  */
-public final class Image extends Resource {
+//[ariddle] - added for single sourcing
+//public final class Image extends Resource {
+public final class Image extends Resource implements Drawable {
 
   /**
    * The internal resource.

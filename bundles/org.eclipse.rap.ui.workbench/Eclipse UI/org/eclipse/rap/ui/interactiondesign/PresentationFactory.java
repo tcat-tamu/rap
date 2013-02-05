@@ -166,7 +166,8 @@ public abstract class PresentationFactory extends AbstractPresentationFactory
    *            the workbench.
    * @return a newly created part presentation proxy.
    */
-  public final StackPresentation createEditorPresentation( 
+  //[ariddle] - changed for better theme extension 
+  public StackPresentation createEditorPresentation( 
     final Composite parent,
     final IStackPresentationSite site )
   {
@@ -215,7 +216,8 @@ public abstract class PresentationFactory extends AbstractPresentationFactory
    *            <code>false</code> to hide it.
    * @return a newly created part presentation proxy
    */
-  public final StackPresentation createStandaloneViewPresentation( 
+  //[ariddle] - changed for better theme extension 
+  public StackPresentation createStandaloneViewPresentation( 
     final Composite parent,
     final IStackPresentationSite site,
     final boolean showTitle )
@@ -255,7 +257,8 @@ public abstract class PresentationFactory extends AbstractPresentationFactory
    *            the workbench.
    * @return a newly created part presentation proxy.
    */
-  public final StackPresentation createViewPresentation( 
+  //[ariddle] - changed for better theme extension 
+  public StackPresentation createViewPresentation( 
     final Composite parent, final IStackPresentationSite site )
   {
     ConfigurableStackProxy result 

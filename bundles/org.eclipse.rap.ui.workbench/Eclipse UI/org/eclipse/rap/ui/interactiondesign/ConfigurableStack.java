@@ -225,6 +225,11 @@ public abstract class ConfigurableStack extends StackPresentation {
     super( siteDummy );
   }
 
+  //[ariddle] - added for better theme extension
+  public ConfigurableStack(IStackPresentationSite site) {
+     super( site );
+  }
+
 
   public Control createPartToolBar() {
     Control result = null;

@@ -10,7 +10,10 @@
  *******************************************************************************/
 package org.eclipse.ui.actions;
 
+import org.eclipse.core.runtime.IProduct;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchCommandConstants;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -80,45 +83,45 @@ public abstract class ActionFactory {
 		}
 	}
 
-    // RAP [bm]: No about dialog yet
-//    /**
-//		* Workbench action (id: "about", commandId: "org.eclipse.ui.help.aboutAction"): Displays the
-//	 * About dialog. This action maintains its enablement state.
-//     */
-//    public static final ActionFactory ABOUT = new ActionFactory("about") { //$NON-NLS-1$
-//
-//		/*
-//		 * (non-Javadoc)
-//		 * 
-//		 * @see org.eclipse.ui.actions.ActionFactory#create(org.eclipse.ui.IWorkbenchWindow)
-//		 */
-//		public IWorkbenchAction create(IWorkbenchWindow window) {
-//			if (window == null) {
-//				throw new IllegalArgumentException();
-//			}
-//
-//			WorkbenchCommandAction action = new WorkbenchCommandAction(
-//					"org.eclipse.ui.help.aboutAction", window); //$NON-NLS-1$
-//
-//			action.setId(getId());
-//			IProduct product = Platform.getProduct();
-//			String productName = null;
-//			if (product != null) {
-//				productName = product.getName();
-//			}
-//			if (productName == null) {
-//				productName = ""; //$NON-NLS-1$
-//			}
-//
-//			action.setText(NLS.bind(WorkbenchMessages.AboutAction_text,
-//					productName));
-//			action.setToolTipText(NLS.bind(
-//					WorkbenchMessages.AboutAction_toolTip, productName));
-//			window.getWorkbench().getHelpSystem().setHelp(action,
-//					IWorkbenchHelpContextIds.ABOUT_ACTION);
-//			return action;
-//		}
-//	};
+    //[ariddle] - added for single sourcing  
+    /**
+		* Workbench action (id: "about", commandId: "org.eclipse.ui.help.aboutAction"): Displays the
+	 * About dialog. This action maintains its enablement state.
+     */
+    public static final ActionFactory ABOUT = new ActionFactory("about") { //$NON-NLS-1$
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see org.eclipse.ui.actions.ActionFactory#create(org.eclipse.ui.IWorkbenchWindow)
+		 */
+		public IWorkbenchAction create(IWorkbenchWindow window) {
+			if (window == null) {
+				throw new IllegalArgumentException();
+			}
+
+			WorkbenchCommandAction action = new WorkbenchCommandAction(
+					"org.eclipse.ui.help.aboutAction", window); //$NON-NLS-1$
+
+			action.setId(getId());
+			IProduct product = Platform.getProduct();
+			String productName = null;
+			if (product != null) {
+				productName = product.getName();
+			}
+			if (productName == null) {
+				productName = ""; //$NON-NLS-1$
+			}
+
+			action.setText(NLS.bind(WorkbenchMessages.get().AboutAction_text,
+					productName));
+			action.setToolTipText(NLS.bind(
+					WorkbenchMessages.get().AboutAction_toolTip, productName));
+			window.getWorkbench().getHelpSystem().setHelp(action,
+					IWorkbenchHelpContextIds.ABOUT_ACTION);
+			return action;
+		}
+	};
 
 	/**
 	 * Workbench action (id: "activateEditor", commandId: "org.eclipse.ui.window.activateEditor"):

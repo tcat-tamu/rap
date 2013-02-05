@@ -1547,4 +1547,9 @@ public class GC extends Resource {
   void writeObject( ObjectOutputStream stream ) throws IOException {
     throw new NotSerializableException( getClass().getName() );
   }
+  
+  //[ariddle] - added for single sourcing
+  public Point textExtent( String text, int style ) {
+    return textExtent( text );
+  }
 }

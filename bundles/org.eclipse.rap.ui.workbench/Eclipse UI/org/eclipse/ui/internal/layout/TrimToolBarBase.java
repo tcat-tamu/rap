@@ -16,10 +16,14 @@ import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.CoolBar;
 import org.eclipse.swt.widgets.CoolItem;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ToolBar;
@@ -30,7 +34,8 @@ import org.eclipse.ui.internal.RadioMenu;
 import org.eclipse.ui.internal.TrimFrame;
 import org.eclipse.ui.internal.WorkbenchMessages;
 import org.eclipse.ui.internal.WorkbenchWindow;
-import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.ui.internal.dnd.DragUtil;
+import org.eclipse.ui.presentations.PresentationUtil;
 
 /**
  * This control provides common UI functionality for trim elements
@@ -77,51 +82,55 @@ public abstract class TrimToolBarBase implements IWindowTrim {
 	private MenuItem dockCascade;
     private RadioMenu radioButtons;
     private IntModel radioVal = new IntModel(0);
-//	private Menu showMenu;
-//	private MenuItem showCascade;
+  //[ariddle] - added for view dragging
+	private Menu showMenu;
+	private MenuItem showCascade;
 
 	/*
 	 * Listeners...
 	 */
 
     // RAP [bm]: SWT.MenuDetect
-//    private Listener tbListener = new Listener() {
-//        public void handleEvent(Event event) {
-//            Point loc = new Point(event.x, event.y);
-//            if (event.type == SWT.MenuDetect) {
-//                showToolBarPopup(loc);
-//            }
-//        }
-//    };
-//
-//    /**
-//     * This listener brings up the context menu
-//     */
-//    private Listener cbListener = new Listener() {
-//        public void handleEvent(Event event) {
-//            Point loc = new Point(event.x, event.y);
-//            if (event.type == SWT.MenuDetect) {
-//                showDockTrimPopup(loc);
-//            }
-//        }
-//    };
+	//[ariddle] - added for view dragging
+    private Listener tbListener = new Listener() {
+        public void handleEvent(Event event) {
+            Point loc = new Point(event.x, event.y);
+            if (event.type == SWT.MenuDetect) {
+                showToolBarPopup(loc);
+            }
+        }
+    };
+
+    /**
+     * This listener brings up the context menu
+     */
+  //[ariddle] - added for view dragging
+    private Listener cbListener = new Listener() {
+        public void handleEvent(Event event) {
+            Point loc = new Point(event.x, event.y);
+            if (event.type == SWT.MenuDetect) {
+                showDockTrimPopup(loc);
+            }
+        }
+    };
     // RAPEND: [bm]
 
 
     // RAP [bm]: DnD
-//    /**
-//     * This listener starts a drag operation when
-//     * the Drag and Drop manager tells it to
-//     */
-//    private Listener dragListener = new Listener() {
-//        public void handleEvent(Event event) {
-//        	// Only allow 'left mouse' drags...
-//        	if (event.button != 3) {
-//	            Point position = DragUtil.getEventLoc(event);
-//	            startDraggingTrim(position);
-//        	}
-//        }
-//    };
+  //[ariddle] - added for view dragging
+    /**
+     * This listener starts a drag operation when
+     * the Drag and Drop manager tells it to
+     */
+    private Listener dragListener = new Listener() {
+        public void handleEvent(Event event) {
+        	// Only allow 'left mouse' drags...
+        	if (event.button != 3) {
+	            Point position = DragUtil.getEventLoc(event);
+	            startDraggingTrim(position);
+        	}
+        }
+    };
 
     /**
      * Create a new trim UI handle for a particular IWindowTrim item
@@ -140,16 +149,17 @@ public abstract class TrimToolBarBase implements IWindowTrim {
 	 * @param loc
 	 */
     // RAP [bm]:
-//	private void showToolBarPopup(Point loc) {
-//		Point tbLoc = tbMgr.getControl().toControl(loc);
-//		contextToolItem = tbMgr.getControl().getItem(tbLoc);
-//		MenuManager mm = tbMgr.getContextMenuManager();
-//		if (mm != null) {
-//			Menu menu = mm.createContextMenu(wbw.getShell());
-//	        menu.setLocation(loc.x, loc.y);
-//	        menu.setVisible(true);
-//		}
-//	}
+  //[ariddle] - added for view dragging
+	private void showToolBarPopup(Point loc) {
+		Point tbLoc = tbMgr.getControl().toControl(loc);
+		contextToolItem = tbMgr.getControl().getItem(tbLoc);
+		MenuManager mm = tbMgr.getContextMenuManager();
+		if (mm != null) {
+			Menu menu = mm.createContextMenu(wbw.getShell());
+	        menu.setLocation(loc.x, loc.y);
+	        menu.setVisible(true);
+		}
+	}
 
 	/**
      * Initialize the ToolBarManger for this instance. We create a
@@ -218,8 +228,9 @@ public abstract class TrimToolBarBase implements IWindowTrim {
     	//cb.setBackground(cb.getDisplay().getSystemColor(SWT.COLOR_RED));
 
         // Set up the dragging behaviour
-		// RAP [bm]: DnD
-//        PresentationUtil.addDragListener(cb, dragListener);
+//		 RAP [bm]: DnD
+		//[ariddle] - added for view dragging
+        PresentationUtil.addDragListener(cb, dragListener);
 
     	// Create the docking context menu
     	dockMenuManager = new MenuManager();
@@ -438,24 +449,26 @@ public abstract class TrimToolBarBase implements IWindowTrim {
     }
 
     // RAP [bm]:
-//    /**
-//     * Begins dragging the trim
-//     *
-//     * @param position initial mouse position
-//     */
-//    private void startDraggingTrim(Point position) {
-//    	Rectangle fakeBounds = new Rectangle(100000, 0,0,0);
-//        DragUtil.performDrag(this, fakeBounds, position, true);
-//    }
+  //[ariddle] - added for view dragging
+    /**
+     * Begins dragging the trim
+     *
+     * @param position initial mouse position
+     */
+    private void startDraggingTrim(Point position) {
+    	Rectangle fakeBounds = new Rectangle(100000, 0,0,0);
+        DragUtil.performDrag(this, fakeBounds, position, true);
+    }
 
-//    /**
-//     * Shows the popup menu for an item in the fast view bar.
-//     */
-//    private void showDockTrimPopup(Point pt) {
-//        Menu menu = dockMenuManager.createContextMenu(this.getControl());
-//        menu.setLocation(pt.x, pt.y);
-//        menu.setVisible(true);
-//    }
+  //[ariddle] - added for view dragging
+    /**
+     * Shows the popup menu for an item in the fast view bar.
+     */
+    private void showDockTrimPopup(Point pt) {
+        Menu menu = dockMenuManager.createContextMenu(this.getControl());
+        menu.setLocation(pt.x, pt.y);
+        menu.setVisible(true);
+    }
 
 	/* (non-Javadoc)
 	 * @see org.eclipse.ui.internal.layout.IWindowTrim#dock(int)

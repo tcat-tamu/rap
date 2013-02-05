@@ -82,6 +82,11 @@ public final class URLHelper {
   }
 
   private static String getServerURL() {
+    //[ariddle] - override for proxy compatibility
+    String serverPrefix = System.getProperty( "org.eclipse.rap.rwt.serverURL" );
+    if (serverPrefix != null) {
+      return serverPrefix;
+    }
     // TODO: [fappel] remove the creation of absolute addresses with
     //                relative ones, this should make this method obsolete
     HttpServletRequest request = ContextProvider.getRequest();

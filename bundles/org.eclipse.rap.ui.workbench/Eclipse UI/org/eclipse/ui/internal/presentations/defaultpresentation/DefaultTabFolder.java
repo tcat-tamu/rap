@@ -7,7 +7,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *     Remy Chi Jian Suen <remy.suen@gmail.com> - Bug 145557 [WorkbenchParts] Content description label needs a hover 
+ *     Remy Chi Jian Suen <remy.suen@gmail.com> - Bug 145557 [WorkbenchParts] Content description label needs a hover
  *     Semion Chichelnitsky <semion@il.ibm.com> - Bug 66889 [ViewMgmt] Package explorer message clipped
  *******************************************************************************/
 package org.eclipse.ui.internal.presentations.defaultpresentation;
@@ -18,6 +18,12 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabFolderEvent;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSource;
+import org.eclipse.swt.dnd.DragSourceAdapter;
+import org.eclipse.swt.dnd.DragSourceEvent;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Font;
@@ -61,7 +67,7 @@ public class DefaultTabFolder extends AbstractTabFolder {
 
         /**
          * Called when a close button is pressed.
-         *   
+         * 
          * @param item the tab whose close button was pressed
          */
         public void closeButtonPressed(CTabItem item) {
@@ -101,10 +107,10 @@ public class DefaultTabFolder extends AbstractTabFolder {
      * @param allowMax
      */
     public DefaultTabFolder(Composite parent, int flags, boolean allowMin, boolean allowMax) {
-    	// RAP [bm]: 
+    	// RAP [bm]:
 //        paneFolder = new PaneFolder(parent, flags | SWT.NO_BACKGROUND);
         paneFolder = new PaneFolder(parent, flags);
-        // RAPEND: [bm] 
+        // RAPEND: [bm]
         paneFolder.addButtonListener(buttonListener);
         paneFolder.setMinimizeVisible(allowMin);
         paneFolder.setMaximizeVisible(allowMax);
@@ -112,11 +118,11 @@ public class DefaultTabFolder extends AbstractTabFolder {
         paneFolder.setTopRight(null);
         
         // Initialize view menu dropdown
-        {            
+        {
         	// RAP [bm]: SWT.NO_BACKGROUND
 //        	ToolBar actualToolBar = new ToolBar(paneFolder.getControl(), SWT.FLAT | SWT.NO_BACKGROUND);
             ToolBar actualToolBar = new ToolBar(paneFolder.getControl(), SWT.FLAT);
-            // RAPEND: [bm] 
+            // RAPEND: [bm]
             viewToolBar = actualToolBar;
             
             // RAP [bm] Accessibility
@@ -131,7 +137,7 @@ public class DefaultTabFolder extends AbstractTabFolder {
 	                .getImage(IWorkbenchGraphicConstants.IMG_LCL_RENDERED_VIEW_MENU);
 	        pullDownButton.setDisabledImage(hoverImage);
 	        pullDownButton.setImage(hoverImage);
-	        pullDownButton.setToolTipText(WorkbenchMessages.get().Menu); 
+	        pullDownButton.setToolTipText(WorkbenchMessages.get().Menu);
 // RAP [rh] disabled MouseListener for the view menu dropdown
 //            actualToolBar.addMouseListener(new MouseAdapter() {
 //                public void mouseDown(MouseEvent e) {
@@ -147,13 +153,13 @@ public class DefaultTabFolder extends AbstractTabFolder {
             });
         }
 
-// RAP [rh] create ActivateListener, used below       
+// RAP [rh] create ActivateListener, used below
         activateListener = new Listener() {
           public void handleEvent( Event event ) {
             fireEvent( TabFolderEvent.EVENT_GIVE_FOCUS_TO_PART );
           }
         };
-// END RAP-specific        
+// END RAP-specific
         
         // Initialize content description label
         {
@@ -161,11 +167,11 @@ public class DefaultTabFolder extends AbstractTabFolder {
 	        titleLabel.moveAbove(null);
 	        titleLabel.setVisible(false);
             attachListeners(titleLabel, false);
-// RAP [rh] Mimic the part activation that is done via mouse listeners in attachListeners()  
+// RAP [rh] Mimic the part activation that is done via mouse listeners in attachListeners()
             titleLabel.addListener( SWT.Activate, activateListener );
         }
         
-// RAP [rh] Mimic the part activation that is done via mouse listeners in attachListeners()  
+// RAP [rh] Mimic the part activation that is done via mouse listeners in attachListeners()
         paneFolder.getControl().addListener( SWT.Activate, activateListener );
         paneFolder.getViewForm().addListener( SWT.Activate, activateListener );
 
@@ -173,6 +179,9 @@ public class DefaultTabFolder extends AbstractTabFolder {
         attachListeners(paneFolder.getViewForm(), false);
         
         paneFolder.setTabHeight(computeTabHeight());
+        
+        //[ariddle] - added for view dragging
+        createDNDSource(paneFolder.getControl());
         
         viewToolBar.moveAbove(null);
     }
@@ -478,8 +487,8 @@ public class DefaultTabFolder extends AbstractTabFolder {
      * 
      */
     public void updateColors() {
-        DefaultTabFolderColors currentColors = shellActive ? 
-                activeShellColors[getActive()] 
+        DefaultTabFolderColors currentColors = shellActive ?
+                activeShellColors[getActive()]
                 : inactiveShellColors[getActive()];
                 
         paneFolder.setSelectionForeground(currentColors.foreground);
@@ -556,5 +565,25 @@ public class DefaultTabFolder extends AbstractTabFolder {
 	 */
 	public void showMinMax(boolean show) {
         paneFolder.showMinMax(show);
+	}
+	
+	//[ariddle] - added for view dragging
+    /**
+     * Creates DND source for the list
+     */
+	private void createDNDSource(Control src) {
+	   DragSource ds = new DragSource(src, DND.DROP_MOVE);
+	   ds.setTransfer(new Transfer[] { TextTransfer.getInstance() });
+	   ds.addDragListener(new DragSourceAdapter() {
+	      public void dragSetData(DragSourceEvent event) {
+	         if (TextTransfer.getInstance().isSupportedType(event.dataType)) {
+	            event.data = "ViewPart";
+	         }
+	      }
+	      
+	      public void dragStart(DragSourceEvent event) {
+	         event.detail = DND.DROP_MOVE;
+	      }
+	   });
 	}
 }

@@ -444,12 +444,12 @@ public interface IWorkbenchPreferenceConstants {
 	 */
 	public static final String SHOW_FILTERED_TEXTS = "SHOW_FILTERED_TEXTS"; //$NON-NLS-1$
 
-	// RAP [bm]: detached views
-//	/**
-//	 * Stores whether or not views may be detached. The default is
-//	 * <code>true</code>.
-//	 */
-//	public static final String ENABLE_DETACHED_VIEWS = "ENABLE_DETACHED_VIEWS"; //$NON-NLS-1$
+	//[ariddle] - added for view dragging 
+	/**
+	 * Stores whether or not views may be detached. The default is
+	 * <code>true</code>.
+	 */
+	public static final String ENABLE_DETACHED_VIEWS = "ENABLE_DETACHED_VIEWS"; //$NON-NLS-1$
 
 	/**
 	 * Stores whether or not the workbench prompts for saving when a dirty
