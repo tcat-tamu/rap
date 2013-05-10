@@ -209,17 +209,17 @@ rwt.widgets.Display.prototype = {
     }
     else if (document.getElementsByTagName("html")[0].innerHTML != undefined) {
       clientCapture = '<xmp>'+document.getElementsByTagName("html")[0].innerHTML+'</xmp>';
-    } 
+    }
     else if (window.document.documentElement.outerHTML != undefined) {
       clientCapture = '<xmp>'+window.document.documentElement.outerHTML+'</xmp>';
-    } 
+    }
     else {
       alert('Your browser does not support client capture.');
-    } 
+    }
     var id = this._request.getUIRootId();
     this._request.addParameter( id + ".clientCapture", clientCapture );
     this._request.send();
-   }
+   },
 
   _appendTimezoneOffset : function() {
     // NOTE : using ObjectRegistry implicitly registers the ClientInfo service
