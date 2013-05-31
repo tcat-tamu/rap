@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,25 +10,31 @@
  ******************************************************************************/
 package org.eclipse.ui.forms.internal.widgets.imagehyperlinkkit;
 
+import static org.eclipse.rap.rwt.testfixture.internal.TestUtil.createImage;
+
 import java.io.IOException;
 
 import junit.framework.TestCase;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.forms.widgets.ImageHyperlink;
-import org.json.*;
 
+
+@SuppressWarnings( "restriction" )
 public class ImageHyperlinkLCA_Test extends TestCase {
 
   private Display display;
   private Shell shell;
   private ImageHyperlinkLCA lca;
 
+  @Override
   protected void setUp() {
     Fixture.setUp();
     display = new Display();
@@ -37,6 +43,7 @@ public class ImageHyperlinkLCA_Test extends TestCase {
     Fixture.fakeNewRequest();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     Fixture.tearDown();
   }
@@ -50,25 +57,25 @@ public class ImageHyperlinkLCA_Test extends TestCase {
     assertNull( message.findSetOperation( hyperlink, "image" ) );
   }
 
-  public void testRenderImage() throws IOException, JSONException {
+  public void testRenderImage() throws IOException {
     ImageHyperlink hyperlink = new ImageHyperlink( shell, SWT.NONE );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
 
     hyperlink.setImage( image );
     lca.renderChanges( hyperlink );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( hyperlink, "image" );
+    JsonArray actual = ( JsonArray )message.findSetProperty( hyperlink, "image" );
     assertNotNull( actual.get( 0 ) );
-    assertEquals( 100, actual.get( 1 ) );
-    assertEquals( 50, actual.get( 2 ) );
+    assertEquals( 100, actual.get( 1 ).asInt() );
+    assertEquals( 50, actual.get( 2 ).asInt() );
   }
 
   public void testRenderImageUnchanged() throws IOException {
     ImageHyperlink hyperlink = new ImageHyperlink( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( hyperlink );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
 
     hyperlink.setImage( image );
     Fixture.preserveWidgets();
@@ -82,7 +89,7 @@ public class ImageHyperlinkLCA_Test extends TestCase {
     ImageHyperlink hyperlink = new ImageHyperlink( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( hyperlink );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
     hyperlink.setImage( image );
 
     Fixture.preserveWidgets();
@@ -90,6 +97,6 @@ public class ImageHyperlinkLCA_Test extends TestCase {
     lca.renderChanges( hyperlink );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( hyperlink, "image" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( hyperlink, "image" ) );
   }
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,20 +10,23 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.protocol;
 
-import java.io.BufferedReader;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.jsonToJava;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.CallOperation;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.NotifyOperation;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.SetOperation;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
-import org.eclipse.rap.rwt.internal.util.HTTP;
 import org.eclipse.rap.rwt.internal.util.SharedInstanceBuffer;
 import org.eclipse.rap.rwt.internal.util.SharedInstanceBuffer.IInstanceCreator;
 import org.eclipse.swt.SWT;
@@ -59,22 +62,12 @@ public final class ProtocolUtil {
     ClientMessage clientMessage = ( ClientMessage )serviceStore.getAttribute( CLIENT_MESSAGE );
     if( clientMessage == null ) {
       HttpServletRequest request = ContextProvider.getRequest();
-      StringBuilder json = new StringBuilder();
       try {
-        InputStreamReader inputStreamReader
-          = new InputStreamReader( request.getInputStream(), HTTP.CHARSET_UTF_8 );
-        BufferedReader reader = new BufferedReader( inputStreamReader );
-        String line = reader.readLine();
-        while( line != null ) {
-          json.append( line );
-          json.append( '\n' );
-          line = reader.readLine();
-        }
-        reader.close();
+        JsonObject json = JsonObject.readFrom( request.getReader() );
+        clientMessage = new ClientMessage( json );
       } catch( IOException e ) {
         throw new IllegalStateException( "Unable to read the json message" );
       }
-      clientMessage = new ClientMessage( json.toString() );
       serviceStore.setAttribute( CLIENT_MESSAGE, clientMessage );
     }
     return clientMessage;
@@ -90,14 +83,8 @@ public final class ProtocolUtil {
     return serviceStore.getAttribute( CLIENT_MESSAGE ) != null;
   }
 
-  public static String readHeadPropertyValue( String property ) {
-    ClientMessage message = getClientMessage();
-    Object result = message.getHeadProperty( property );
-    return result == null ? null : result.toString();
-  }
-
-  public static Object readPropertyValue( String target, String property ) {
-    Object result = null;
+  public static JsonValue readPropertyValue( String target, String property ) {
+    JsonValue result = null;
     ClientMessage message = getClientMessage();
     SetOperation operation =  message.getLastSetOperationFor( target, property );
     if( operation != null ) {
@@ -136,7 +123,7 @@ public final class ProtocolUtil {
     ClientMessage message = getClientMessage();
     SetOperation operation =  message.getLastSetOperationFor( target, property );
     if( operation != null ) {
-      Object value = operation.getProperty( property );
+      Object value = jsonToJava( operation.getProperty( property ) );
       if( value != null ) {
         if( String.class.equals( clazz ) ) {
           result = ( T )value.toString();
@@ -166,7 +153,7 @@ public final class ProtocolUtil {
     ClientMessage message = getClientMessage();
     NotifyOperation operation = message.getLastNotifyOperationFor( target, eventName );
     if( operation != null ) {
-      Object value = operation.getProperty( property );
+      Object value = jsonToJava( operation.getProperty( property ) );
       if( value != null ) {
         result = value.toString();
       }
@@ -186,10 +173,10 @@ public final class ProtocolUtil {
   {
     String result = null;
     ClientMessage message = getClientMessage();
-    CallOperation[] operations = message.getAllCallOperationsFor( target, methodName );
-    if( operations.length > 0 ) {
-      CallOperation operation = operations[ operations.length - 1 ];
-      Object value = operation.getProperty( property );
+    List<CallOperation> operations = message.getAllCallOperationsFor( target, methodName );
+    if( !operations.isEmpty() ) {
+      CallOperation operation = operations.get( operations.size() - 1 );
+      Object value = jsonToJava( operation.getProperty( property ) );
       if( value != null ) {
         result = value.toString();
       }
@@ -197,28 +184,26 @@ public final class ProtocolUtil {
     return result;
   }
 
-  public static boolean wasCallSend( String target, String methodName ) {
+  public static boolean wasCallReceived( String target, String methodName ) {
     ClientMessage message = getClientMessage();
-    CallOperation[] operations = message.getAllCallOperationsFor( target, methodName );
-    return operations.length > 0;
+    List<CallOperation> operations = message.getAllCallOperationsFor( target, methodName );
+    return !operations.isEmpty();
   }
 
-  public static Object[] getFontAsArray( Font font ) {
+  public static JsonValue getJsonForFont( Font font ) {
     FontData fontData = font == null ? null : FontUtil.getData( font );
-    return getFontAsArray( fontData );
+    return getJsonForFont( fontData );
   }
 
-  public static Object[] getFontAsArray( FontData fontData ) {
-    Object[] result = null;
+  public static JsonValue getJsonForFont( FontData fontData ) {
     if( fontData != null ) {
-      result = new Object[] {
-        parseFontName( fontData.getName() ),
-        Integer.valueOf( fontData.getHeight() ),
-        Boolean.valueOf( ( fontData.getStyle() & SWT.BOLD ) != 0 ),
-        Boolean.valueOf( ( fontData.getStyle() & SWT.ITALIC ) != 0 )
-      };
+      return new JsonArray()
+        .add( JsonUtil.createJsonArray( parseFontName( fontData.getName() ) ) )
+        .add( fontData.getHeight() )
+        .add( ( fontData.getStyle() & SWT.BOLD ) != 0 )
+        .add( ( fontData.getStyle() & SWT.ITALIC ) != 0 );
     }
-    return result;
+    return JsonValue.NULL;
   }
 
   public static String[] parseFontName( final String name ) {
@@ -239,37 +224,72 @@ public final class ProtocolUtil {
     return result;
   }
 
-  public static Object[] getImageAsArray( Image image ) {
-    Object[] result = null;
+  public static JsonValue getJsonForImage( Image image ) {
+    JsonValue result = JsonValue.NULL;
     if( image != null ) {
       String imagePath = ImageFactory.getImagePath( image );
       Rectangle bounds = image.getBounds();
-      result = new Object[] {
-        imagePath,
-        Integer.valueOf( bounds.width ),
-        Integer.valueOf( bounds.height )
-      };
+      result = new JsonArray()
+        .add( imagePath )
+        .add( bounds.width )
+        .add( bounds.height );
     }
     return result;
   }
 
-  public static int[] getColorAsArray( Color color, boolean transparent ) {
+  public static JsonValue getJsonForColor( Color color, boolean transparent ) {
     RGB rgb = color == null ? null : color.getRGB();
-    return getColorAsArray( rgb, transparent );
+    return getJsonForColor( rgb, transparent );
   }
 
-  public static int[] getColorAsArray( RGB rgb, boolean transparent ) {
-    int[] result = null;
+  public static JsonValue getJsonForColor( RGB rgb, boolean transparent ) {
     if( rgb != null ) {
-      result = new int[ 4 ];
-      result[ 0 ] = rgb.red;
-      result[ 1 ] = rgb.green;
-      result[ 2 ] = rgb.blue;
-      result[ 3 ] = transparent ? 0 : 255;
+      int transparency = transparent ? 0 : 255;
+      return new JsonArray().add( rgb.red ).add( rgb.green ).add( rgb.blue ).add( transparency );
     } else if( transparent ) {
-      result = new int[] { 0, 0, 0, 0 };
+      return new JsonArray().add( 0 ).add( 0 ).add( 0 ).add( 0 );
     }
-    return result;
+    return JsonValue.NULL;
+  }
+
+  public static JsonValue getJsonForPoint( Point point ) {
+    return point == null ? JsonValue.NULL : new JsonArray().add( point.x ).add( point.y );
+  }
+
+  public static JsonValue getJsonForRectangle( Rectangle rect ) {
+    if( rect == null ) {
+      return JsonValue.NULL;
+    }
+    return new JsonArray().add( rect.x ).add( rect.y ).add( rect.width ).add( rect.height );
+  }
+
+  public static Point toPoint( JsonValue value ) {
+    try {
+      JsonArray array = value.asArray();
+      if( array.size() != 2 ) {
+        throw new IllegalArgumentException( "Expected array of size 2" );
+      }
+      return new Point( array.get( 0 ).asInt(), array.get( 1 ).asInt() );
+    } catch( Exception exception ) {
+      String message = "Could not convert property to Point: " + value;
+      throw new IllegalArgumentException( message, exception );
+    }
+  }
+
+  public static Rectangle toRectangle( JsonValue value ) {
+    try {
+      JsonArray array = value.asArray();
+      if( array.size() != 4 ) {
+        throw new IllegalArgumentException( "Expected array of size 4" );
+      }
+      return new Rectangle( array.get( 0 ).asInt(),
+                            array.get( 1 ).asInt(),
+                            array.get( 2 ).asInt(),
+                            array.get( 3 ).asInt() );
+    } catch( Exception exception ) {
+      String message = "Could not convert property to Rectangle: " + value;
+      throw new IllegalArgumentException( message, exception );
+    }
   }
 
   public static Rectangle toRectangle( Object value ) {

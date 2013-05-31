@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,16 +11,18 @@
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import static org.eclipse.rap.rwt.internal.clientscripting.ClientScriptingSupport.addClientListenerTo;
+import static org.eclipse.rap.rwt.internal.clientscripting.ClientScriptingSupport.removeClientListenerFrom;
+
 import org.eclipse.rap.rwt.Adaptable;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleAdapterFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObjectAdapter;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
 import org.eclipse.rap.rwt.internal.theme.ThemeManager;
-import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
+import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
@@ -196,7 +198,7 @@ public abstract class Widget implements Adaptable, SerializableCompatibility {
 
   private ApplicationContextImpl getApplicationContext() {
     IDisplayAdapter displayAdapter = display.getAdapter( IDisplayAdapter.class );
-    return ApplicationContextUtil.get( displayAdapter.getUISession() );
+    return ( ApplicationContextImpl )displayAdapter.getUISession().getApplicationContext();
   }
 
   /**
@@ -530,6 +532,7 @@ public abstract class Widget implements Adaptable, SerializableCompatibility {
     }
     ensureEventTable();
     eventTable.hook( eventType, listener );
+    addClientListenerTo( this, eventType, listener );
   }
 
   /**
@@ -563,6 +566,7 @@ public abstract class Widget implements Adaptable, SerializableCompatibility {
     if( eventTable != null ) {
       eventTable.unhook( eventType, listener );
     }
+    removeClientListenerFrom( this, eventType, listener );
   }
 
   /**

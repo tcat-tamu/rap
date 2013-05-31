@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,21 +11,31 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.tablekit;
 
+import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_ITEM;
+import static org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory.getClientObject;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
 import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readCallPropertyValueAsString;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readPropertyValueAsStringArray;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.wasCallReceived;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.hasChanged;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readEventPropertyValue;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readPropertyValue;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.wasEventSent;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.find;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import java.io.IOException;
 
+import org.eclipse.rap.json.JsonArray;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
 import org.eclipse.rap.rwt.internal.util.NumberFormatUtil;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.ControlLCAUtil;
@@ -106,11 +116,11 @@ public final class TableLCA extends AbstractWidgetLCA {
     preserveProperty( table, PROP_SELECTION, getSelection( table ) );
     preserveProperty( table, PROP_SORT_DIRECTION, getSortDirection( table ) );
     preserveProperty( table, PROP_SORT_COLUMN, table.getSortColumn() );
-    preserveListener( table, PROP_SELECTION_LISTENER, table.isListening( SWT.Selection ) );
+    preserveListener( table, PROP_SELECTION_LISTENER, isListening( table, SWT.Selection ) );
     preserveListener( table, PROP_SETDATA_LISTENER, listensToSetData( table ) );
     preserveListener( table,
                       PROP_DEFAULT_SELECTION_LISTENER,
-                      table.isListening( SWT.DefaultSelection ) );
+                      isListening( table, SWT.DefaultSelection ) );
     preserveProperty( table, PROP_ALWAYS_HIDE_SELECTION, hasAlwaysHideSelection( table ) );
     preserveProperty( table, PROP_ENABLE_CELL_TOOLTIP, CellToolTipUtil.isEnabledFor( table ) );
     preserveProperty( table, PROP_CELL_TOOLTIP_TEXT, null );
@@ -135,15 +145,17 @@ public final class TableLCA extends AbstractWidgetLCA {
   @Override
   public void renderInitialization( Widget widget ) throws IOException {
     Table table = ( Table )widget;
-    IClientObject clientObject = ClientObjectFactory.getClientObject( table );
+    IClientObject clientObject = getClientObject( table );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( table.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( table, ALLOWED_STYLES ) );
+    clientObject.set( "parent", getId( table.getParent() ) );
+    clientObject.set( "style", createJsonArray( getStyles( table, ALLOWED_STYLES ) ) );
     clientObject.set( "appearance", "table" );
     ITableAdapter adapter = getTableAdapter( table );
     if( ( table.getStyle() & SWT.CHECK ) != 0 ) {
-      int[] checkMetrics = new int[] { adapter.getCheckLeft(), adapter.getCheckWidth() };
-      clientObject.set( "checkBoxMetrics", checkMetrics );
+      JsonArray metrics = new JsonArray()
+        .add( adapter.getCheckLeft() )
+        .add( adapter.getCheckWidth() );
+      clientObject.set( "checkBoxMetrics", metrics );
     }
     if( getFixedColumns( table ) >= 0 ) {
       clientObject.set( "splitContainer", true );
@@ -173,11 +185,11 @@ public final class TableLCA extends AbstractWidgetLCA {
     renderProperty( table, PROP_SELECTION, getSelection( table ), DEFAULT_SELECTION );
     renderProperty( table, PROP_SORT_DIRECTION, getSortDirection( table ), DEFAULT_SORT_DIRECTION );
     renderProperty( table, PROP_SORT_COLUMN, table.getSortColumn(), null );
-    renderListener( table, PROP_SELECTION_LISTENER, table.isListening( SWT.Selection ), false );
+    renderListener( table, PROP_SELECTION_LISTENER, isListening( table, SWT.Selection ), false );
     renderListener( table, PROP_SETDATA_LISTENER, listensToSetData( table ), false );
     renderListener( table,
                     PROP_DEFAULT_SELECTION_LISTENER,
-                    table.isListening( SWT.DefaultSelection ),
+                    isListening( table, SWT.DefaultSelection ),
                     false );
     renderProperty( table, PROP_ALWAYS_HIDE_SELECTION, hasAlwaysHideSelection( table ), false );
     renderProperty( table, PROP_ENABLE_CELL_TOOLTIP, CellToolTipUtil.isEnabledFor( table ), false );
@@ -195,7 +207,7 @@ public final class TableLCA extends AbstractWidgetLCA {
   // Helping methods to read client-side state changes
 
   private static void readSelection( Table table ) {
-    String[] values = ProtocolUtil.readPropertyValueAsStringArray( getId( table ), "selection" );
+    String[] values = readPropertyValueAsStringArray( getId( table ), "selection" );
     if( values != null ) {
       int[] newSelection = new int[ values.length ];
       for( int i = 0; i < values.length; i++ ) {
@@ -213,7 +225,7 @@ public final class TableLCA extends AbstractWidgetLCA {
   }
 
   private static void readTopItemIndex( Table table ) {
-    String value = WidgetLCAUtil.readPropertyValue( table, "topItemIndex" );
+    String value = readPropertyValue( table, "topItemIndex" );
     if( value != null ) {
       int topIndex = NumberFormatUtil.parseInt( value );
       table.setTopIndex( topIndex );
@@ -221,7 +233,7 @@ public final class TableLCA extends AbstractWidgetLCA {
   }
 
   private static void readFocusIndex( Table table ) {
-    String value = WidgetLCAUtil.readPropertyValue( table, "focusItem" );
+    String value = readPropertyValue( table, "focusItem" );
     if( value != null ) {
       TableItem item = getItem( table, value );
       if( item != null ) {
@@ -231,7 +243,7 @@ public final class TableLCA extends AbstractWidgetLCA {
   }
 
   private static void readScrollLeft( Table table ) {
-    String value = WidgetLCAUtil.readPropertyValue( table, "scrollLeft" );
+    String value = readPropertyValue( table, "scrollLeft" );
     if( value != null ) {
       int leftOffset = NumberFormatUtil.parseInt( value );
       table.getAdapter( ITableAdapter.class ).setLeftOffset( leftOffset );
@@ -240,8 +252,8 @@ public final class TableLCA extends AbstractWidgetLCA {
 
   private static void readWidgetSelected( Table table ) {
     String eventName = ClientMessageConst.EVENT_SELECTION;
-    if( WidgetLCAUtil.wasEventSent( table, eventName ) ) {
-      String value = readEventPropertyValue( table, eventName, ClientMessageConst.EVENT_PARAM_ITEM );
+    if( wasEventSent( table, eventName ) ) {
+      String value = readEventPropertyValue( table, eventName, EVENT_PARAM_ITEM );
       TableItem item = getItem( table, value );
       // Bugfix: check if index is valid before firing event to avoid problems with fast scrolling
       // TODO [tb] : Still useful? bugzilla id?
@@ -253,11 +265,11 @@ public final class TableLCA extends AbstractWidgetLCA {
 
   private static void readWidgetDefaultSelected( Table table ) {
     String eventName = ClientMessageConst.EVENT_DEFAULT_SELECTION;
-    if( WidgetLCAUtil.wasEventSent( table, eventName ) ) {
+    if( wasEventSent( table, eventName ) ) {
       // A default-selected event can occur without a selection being present.
       // In this case the event.item field points to the focused item
       TableItem item = getFocusItem( table );
-      String value = readEventPropertyValue( table, eventName, ClientMessageConst.EVENT_PARAM_ITEM );
+      String value = readEventPropertyValue( table, eventName, EVENT_PARAM_ITEM );
       TableItem selectedItem = getItem( table, value );
       if( selectedItem != null ) {
         // TODO [rh] do something about when index points to unresolved item!
@@ -275,7 +287,7 @@ public final class TableLCA extends AbstractWidgetLCA {
     adapter.setCellToolTipText( null );
     ICellToolTipProvider provider = adapter.getCellToolTipProvider();
     String methodName = "renderToolTipText";
-    if( provider != null && ProtocolUtil.wasCallSend( getId( table ), methodName ) ) {
+    if( provider != null && wasCallReceived( getId( table ), methodName ) ) {
       String itemId = readCallPropertyValueAsString( getId( table ), methodName, "item" );
       String column = readCallPropertyValueAsString( getId( table ), methodName, "column" );
       int columnIndex = NumberFormatUtil.parseInt( column );
@@ -287,8 +299,7 @@ public final class TableLCA extends AbstractWidgetLCA {
   }
 
   private static String getCellToolTipText( Table table ) {
-    ICellToolTipAdapter adapter = CellToolTipUtil.getAdapter( table );
-    return adapter.getCellToolTipText();
+    return CellToolTipUtil.getAdapter( table ).getCellToolTipText();
   }
 
   //////////////////
@@ -351,7 +362,7 @@ public final class TableLCA extends AbstractWidgetLCA {
       int index = Integer.parseInt( idParts[ 1 ] );
       item = table.getItem( index );
     } else {
-      item = ( TableItem )WidgetUtil.find( table, itemId );
+      item = ( TableItem )find( table, itemId );
     }
     return item;
   }
@@ -365,21 +376,18 @@ public final class TableLCA extends AbstractWidgetLCA {
 
   private static void renderItemMetrics( Table table ) {
     ItemMetrics[] itemMetrics = getItemMetrics( table );
-    if( WidgetLCAUtil.hasChanged( table, PROP_ITEM_METRICS, itemMetrics ) ) {
-      int[][] metrics = new int[ itemMetrics.length ][ 7 ];
+    if( hasChanged( table, PROP_ITEM_METRICS, itemMetrics ) ) {
+      JsonArray metrics = new JsonArray();
       for( int i = 0; i < itemMetrics.length; i++ ) {
-        metrics[ i ] = new int[] {
-          i,
-          itemMetrics[ i ].left,
-          itemMetrics[ i ].width,
-          itemMetrics[ i ].imageLeft,
-          itemMetrics[ i ].imageWidth,
-          itemMetrics[ i ].textLeft,
-          itemMetrics[ i ].textWidth
-        };
+        metrics.add( new JsonArray().add( i )
+                                    .add( itemMetrics[ i ].left )
+                                    .add( itemMetrics[ i ].width )
+                                    .add( itemMetrics[ i ].imageLeft )
+                                    .add( itemMetrics[ i ].imageWidth )
+                                    .add( itemMetrics[ i ].textLeft )
+                                    .add( itemMetrics[ i ].textWidth ) );
       }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( table );
-      clientObject.set( PROP_ITEM_METRICS, metrics );
+      getClientObject( table ).set( PROP_ITEM_METRICS, metrics );
     }
   }
 

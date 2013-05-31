@@ -10,11 +10,15 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.theme;
 
-import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
+import org.eclipse.rap.rwt.internal.protocol.JsonUtil;
 import org.eclipse.rap.rwt.internal.theme.QxAnimation.Animation;
 import org.eclipse.rap.rwt.service.ApplicationContext;
 
@@ -85,10 +89,10 @@ public final class ThemePropertyAdapterRegistry {
     public JsonValue getValue( QxType value ) {
       QxBoxDimensions boxdim = ( QxBoxDimensions )value;
       JsonArray result = new JsonArray();
-      result.append( boxdim.top );
-      result.append( boxdim.right );
-      result.append( boxdim.bottom );
-      result.append( boxdim.left );
+      result.add( boxdim.top );
+      result.add( boxdim.right );
+      result.add( boxdim.bottom );
+      result.add( boxdim.left );
       return result;
     }
   }
@@ -106,10 +110,10 @@ public final class ThemePropertyAdapterRegistry {
     public JsonValue getValue( QxType value ) {
       QxFont font = ( QxFont )value;
       JsonObject result = new JsonObject();
-      result.append( "family", JsonArray.valueOf( font.family ) );
-      result.append( "size", font.size );
-      result.append( "bold", font.bold );
-      result.append( "italic", font.italic );
+      result.add( "family", JsonUtil.createJsonArray( font.family ) );
+      result.add( "size", font.size );
+      result.add( "bold", font.bold );
+      result.add( "italic", font.italic );
       return result;
     }
   }
@@ -137,16 +141,16 @@ public final class ThemePropertyAdapterRegistry {
       if( image.isGradient() ) {
         JsonObject gradientObject = null;
         gradientObject = new JsonObject();
-        JsonArray percents = JsonArray.valueOf( image.gradientPercents );
-        gradientObject.append( "percents", percents );
-        JsonArray colors = JsonArray.valueOf( image.gradientColors );
-        gradientObject.append( "colors", colors );
-        gradientObject.append( "vertical", image.vertical );
+        JsonValue percents = createJsonArray( image.gradientPercents );
+        gradientObject.add( "percents", percents );
+        JsonValue colors = createJsonArray( image.gradientColors );
+        gradientObject.add( "colors", colors );
+        gradientObject.add( "vertical", image.vertical );
         result = gradientObject;
       } else if( !image.none ) {
         JsonArray imageArray = new JsonArray();
-        imageArray.append( image.width );
-        imageArray.append( image.height );
+        imageArray.add( image.width );
+        imageArray.add( image.height );
         result = imageArray;
       }
       return result;
@@ -181,7 +185,12 @@ public final class ThemePropertyAdapterRegistry {
       if( color.isTransparent() ) {
         result = JsonValue.valueOf( "undefined" );
       } else {
-        result = JsonValue.valueOf( QxColor.toHtmlString( color.red, color.green, color.blue ) );
+        JsonArray colorArray = new JsonArray();
+        colorArray.add( color.red );
+        colorArray.add( color.green );
+        colorArray.add( color.blue );
+        colorArray.add( color.alpha );
+        result = colorArray;
       }
       return result;
     }
@@ -200,9 +209,9 @@ public final class ThemePropertyAdapterRegistry {
     public JsonValue getValue( QxType value ) {
       QxBorder border = ( QxBorder )value;
       JsonObject result = new JsonObject();
-      result.append( "width", border.width );
-      result.append( "style", border.style );
-      result.append( "color", border.color );
+      result.add( "width", border.width );
+      result.add( "style", border.style );
+      result.add( "color", border.color );
       return result;
     }
   }
@@ -257,10 +266,10 @@ public final class ThemePropertyAdapterRegistry {
       for( int j = 0; j < animation.animations.length; j++ ) {
         Animation currentAnimation = animation.animations[ j ];
         JsonArray currentAnimationArray = new JsonArray();
-        currentAnimationArray.append( currentAnimation.duration );
+        currentAnimationArray.add( currentAnimation.duration );
         String timingFunction = QxAnimation.toCamelCaseString( currentAnimation.timingFunction );
-        currentAnimationArray.append( timingFunction );
-        result.append( currentAnimation.name, currentAnimationArray );
+        currentAnimationArray.add( timingFunction );
+        result.add( currentAnimation.name, currentAnimationArray );
       }
       return result;
     }
@@ -283,13 +292,13 @@ public final class ThemePropertyAdapterRegistry {
         result = JsonValue.NULL;
       } else {
         JsonArray array = new JsonArray();
-        array.append( shadow.inset );
-        array.append( shadow.offsetX );
-        array.append( shadow.offsetY );
-        array.append( shadow.blur );
-        array.append( shadow.spread );
-        array.append( shadow.color );
-        array.append( shadow.opacity );
+        array.add( shadow.inset );
+        array.add( shadow.offsetX );
+        array.add( shadow.offsetY );
+        array.add( shadow.blur );
+        array.add( shadow.spread );
+        array.add( shadow.color );
+        array.add( shadow.opacity );
         result = array;
       }
       return result;
@@ -301,9 +310,8 @@ public final class ThemePropertyAdapterRegistry {
   private static final String ATTR_NAME
     = ThemePropertyAdapterRegistry.class.getName() + "#instance";
 
-  public static ThemePropertyAdapterRegistry getInstance() {
+  public static ThemePropertyAdapterRegistry getInstance( ApplicationContext applicationContext ) {
     ThemePropertyAdapterRegistry result;
-    ApplicationContext applicationContext = getApplicationContext();
     synchronized( LOCK ) {
       result = ( ThemePropertyAdapterRegistry )applicationContext.getAttribute( ATTR_NAME );
       if( result == null ) {
@@ -335,4 +343,5 @@ public final class ThemePropertyAdapterRegistry {
   public ThemePropertyAdapter getPropertyAdapter( Class key ) {
     return map.get( key );
   }
+
 }

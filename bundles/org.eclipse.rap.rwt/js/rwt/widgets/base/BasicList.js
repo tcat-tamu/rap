@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
+ * Copyright: 2004, 2013 1&1 Internet AG, Germany, http://www.1und1.de,
  *                       and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -8,7 +8,7 @@
  *
  * Contributors:
  *    1&1 Internet AG and others - original API and implementation
- *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
+ *    EclipseSource - adaptation for the Eclipse Remote Application Platform
  ******************************************************************************/
 
 rwt.qx.Class.define( "rwt.widgets.base.BasicList", {
@@ -95,30 +95,38 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicList", {
     },
 
     _onmousedown : function( event ) {
-      var vItem = this.getListItemTarget( event.getTarget() );
-      if( vItem ) {
-        this._manager.handleMouseDown( vItem, event );
+      if( !this._isHyperlinkTarget( event ) ) {
+        var vItem = this.getListItemTarget( event.getTarget() );
+        if( vItem ) {
+          this._manager.handleMouseDown( vItem, event );
+        }
       }
     },
 
     _onmouseup : function( event ) {
-      var vItem = this.getListItemTarget( event.getTarget() );
-      if( vItem ) {
-        this._manager.handleMouseUp( vItem, event );
+      if( !this._isHyperlinkTarget( event ) ) {
+        var vItem = this.getListItemTarget( event.getTarget() );
+        if( vItem ) {
+          this._manager.handleMouseUp( vItem, event );
+        }
       }
     },
 
     _onclick : function( event ) {
-      var vItem = this.getListItemTarget( event.getTarget() );
-      if( vItem ) {
-        this._manager.handleClick( vItem, event );
+      if( !this._isHyperlinkTarget( event ) ) {
+        var vItem = this.getListItemTarget( event.getTarget() );
+        if( vItem ) {
+          this._manager.handleClick( vItem, event );
+        }
       }
     },
 
     _ondblclick : function( event ) {
-      var vItem = this.getListItemTarget( event.getTarget() );
-      if( vItem ) {
-        this._manager.handleDblClick( vItem, event );
+      if( !this._isHyperlinkTarget( event ) ) {
+        var vItem = this.getListItemTarget( event.getTarget() );
+        if( vItem ) {
+          this._manager.handleDblClick( vItem, event );
+        }
       }
     },
 
@@ -210,11 +218,13 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicList", {
           // TODO [rh] optimize this: context menu should be handled by the List
           //      itself for all its ListItems
           var item = new rwt.widgets.ListItem();
+          if( this._markupEnabled ) {
+            item.setFlexibleCell( 0 );
+          }
           item.addEventListener( "mouseover", this._onListItemMouseOver, this );
           item.addEventListener( "mouseout", this._onListItemMouseOut, this );
           // prevent items from being drawn outside the list
-          item.setWidth( this._itemWidth );
-          item.setHeight( this._itemHeight );
+          this._renderItemDimension( item );
           item.setContextMenu( this.getContextMenu() );
           item.setTabIndex( null );
           item.setLabel( items[ i ] );
@@ -287,7 +297,7 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicList", {
         // the assumtion is that if 'this' is visible, the item to scroll into
         // view is also visible
         if ( this._clientArea.isCreated() && this._clientArea.isDisplayable() ) {
-          this.getManager().scrollItemIntoView( item, true );
+          this.getManager().scrollItemIntoView( item, undefined );
         }
       }
     },
@@ -329,8 +339,7 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicList", {
       this._itemHeight = height;
       var items = this.getItems();
       for( var i = 0; i < items.length; i++ ) {
-        items[ i ].setWidth( this._itemWidth );
-        items[ i ].setHeight( this._itemHeight );
+        this._renderItemDimension( items[ i ] );
       }
       this._vertScrollBar.setIncrement( height );
       this._updateScrollDimension();
@@ -355,12 +364,21 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicList", {
       this.base( arguments, value );
     },
 
+    _renderItemDimension : function( item ) {
+      item.setWidth( this._itemWidth );
+      item.setHeight( this._itemHeight );
+    },
+
     _onListItemMouseOver : function( evt ) {
       evt.getTarget().addState( "over" );
     },
 
     _onListItemMouseOut : function( evt ) {
       evt.getTarget().removeState( "over" );
+    },
+
+    _isHyperlinkTarget : function( event ) {
+      return event.getDomTarget().tagName.toLowerCase() === "a";
     }
 
   }

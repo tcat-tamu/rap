@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -425,10 +425,7 @@ rwt.qx.Class.define( "rwt.widgets.Shell", {
 
     _onChangeMode : function( evt ) {
       var value = evt.getValue();
-      var widgetManager = rwt.remote.WidgetManager.getInstance();
-      var id = widgetManager.findIdByWidget( evt.getTarget() );
-      var req = rwt.remote.Server.getInstance();
-      req.addParameter( id + ".mode", value );
+      rwt.remote.Server.getInstance().getRemoteObject( evt.getTarget() ).set( "mode", value );
     },
 
     _onChangeSize : function( evt ) {
@@ -475,6 +472,7 @@ rwt.qx.Class.define( "rwt.widgets.Shell", {
       {
         var defButton = this.getDefaultButton();
         if( defButton != null && defButton.isSeeable() ) {
+          defButton.setFocused( true );
           defButton.execute();
         }
       } else if( keyId == "Escape" && this._parentShell != null ) {

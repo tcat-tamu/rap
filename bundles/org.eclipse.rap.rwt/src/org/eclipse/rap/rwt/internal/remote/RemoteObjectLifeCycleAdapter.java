@@ -10,21 +10,20 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.remote;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.getClientMessage;
 
+import java.util.List;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.CallOperation;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.NotifyOperation;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.Operation;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.SetOperation;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
 import org.eclipse.rap.rwt.remote.OperationHandler;
+import org.eclipse.rap.rwt.remote.RemoteObject;
 
 
 public class RemoteObjectLifeCycleAdapter {
@@ -64,42 +63,31 @@ public class RemoteObjectLifeCycleAdapter {
     return handler;
   }
 
-  private static List<ClientMessage.Operation> getOperations( RemoteObjectImpl remoteObject ) {
-    ClientMessage message = ProtocolUtil.getClientMessage();
-    Operation[] operations = message.getAllOperationsFor( remoteObject.getId() );
-    return Arrays.asList( operations );
+  private static List<ClientMessage.Operation> getOperations( RemoteObject remoteObject ) {
+    return getClientMessage().getAllOperationsFor( remoteObject.getId() );
   }
 
   public static void dispatchOperation( OperationHandler handler, Operation operation ) {
     if( operation instanceof SetOperation ) {
-      handler.handleSet( getProperties( operation ) );
+      handler.handleSet( operation.getProperties() );
     } else if( operation instanceof CallOperation ) {
       CallOperation callOperation = ( CallOperation )operation;
-      handler.handleCall( callOperation.getMethodName(), getProperties( operation ) );
+      handler.handleCall( callOperation.getMethodName(), operation.getProperties() );
     } else if( operation instanceof NotifyOperation ) {
       NotifyOperation notifyOperation = ( NotifyOperation )operation;
-      scheduleHandleNotify( handler, notifyOperation.getEventName(), getProperties( operation ) );
+      scheduleHandleNotify( handler, notifyOperation.getEventName(), operation.getProperties() );
     }
   }
 
   private static void scheduleHandleNotify( final OperationHandler handler,
                                             final String event,
-                                            final Map<String, Object> properties )
+                                            final JsonObject properties )
   {
     ProcessActionRunner.add( new Runnable() {
       public void run() {
         handler.handleNotify( event, properties );
       }
     } );
-  }
-
-  private static Map<String, Object> getProperties( ClientMessage.Operation operation ) {
-    Map<String, Object> result = new HashMap<String, Object>();
-    List<String> propertyNames = operation.getPropertyNames();
-    for( String name : propertyNames ) {
-      result.put( name, operation.getProperty( name ) );
-    }
-    return result;
   }
 
 }

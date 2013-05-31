@@ -10,14 +10,13 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.client;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
-import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.client.service.ClientInfo;
 import org.eclipse.rap.rwt.internal.remote.ConnectionImpl;
@@ -26,7 +25,7 @@ import org.eclipse.rap.rwt.remote.AbstractOperationHandler;
 import org.eclipse.rap.rwt.remote.RemoteObject;
 
 
-public class ClientInfoImpl implements ClientInfo, Serializable {
+public class ClientInfoImpl implements ClientInfo {
 
   private Integer timezoneOffset;
   private Locale[] locales;
@@ -63,9 +62,10 @@ public class ClientInfoImpl implements ClientInfo, Serializable {
 
   private final class InfoOperationHandler extends AbstractOperationHandler {
     @Override
-    public void handleSet( Map<String, Object> properties ) {
-      if( properties.containsKey( "timezoneOffset" ) ) {
-        timezoneOffset = ( Integer )properties.get( "timezoneOffset" );
+    public void handleSet( JsonObject properties ) {
+      JsonValue value = properties.get( "timezoneOffset" );
+      if( value != null ) {
+        timezoneOffset = Integer.valueOf( value.asInt() );
       }
     }
   }

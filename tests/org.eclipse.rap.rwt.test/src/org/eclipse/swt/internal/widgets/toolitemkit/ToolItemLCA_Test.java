@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,51 +13,50 @@ package org.eclipse.swt.internal.widgets.toolitemkit;
 
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CreateOperation;
+import org.eclipse.rap.rwt.testfixture.internal.TestUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.graphics.ImageFactory;
+import org.eclipse.swt.internal.widgets.WidgetDataUtil;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 
-@SuppressWarnings("deprecation")
 public class ToolItemLCA_Test {
 
   private Display display;
   private Shell shell;
   private ToolBar toolbar;
+  private ToolItem toolitem;
   private ToolItemLCA lca;
 
   @Before
@@ -66,6 +65,7 @@ public class ToolItemLCA_Test {
     display = new Display();
     shell = new Shell( display );
     toolbar = new ToolBar( shell, SWT.NONE );
+    toolitem = new ToolItem( toolbar, SWT.PUSH );
     lca = new ToolItemLCA();
     Fixture.fakeNewRequest();
   }
@@ -76,33 +76,69 @@ public class ToolItemLCA_Test {
   }
 
   @Test
-  public void testCheckItemSelected() {
-    final boolean[] wasEventFired = { false };
-    final ToolItem item = new ToolItem( toolbar, SWT.CHECK );
-    item.addSelectionListener( new SelectionAdapter() {
-      @Override
-      public void widgetSelected( SelectionEvent event ) {
-        wasEventFired[ 0 ] = true;
-        assertEquals( null, event.item );
-        assertSame( item, event.getSource() );
-        assertTrue( event.doit );
-        assertEquals( 0, event.x );
-        assertEquals( 0, event.y );
-        assertEquals( 0, event.width );
-        assertEquals( 0, event.height );
-        assertTrue( item.getSelection() );
-        assertTrue( ( event.stateMask & SWT.ALT ) != 0 );
-      }
-    } );
-    shell.open();
+  public void testReadSelection_Check() {
+    ToolItem item = new ToolItem( toolbar, SWT.CHECK );
 
-    Fixture.fakeSetParameter( getId( item ), "selection", Boolean.TRUE );
-    Map<String,Object> params = new HashMap<String,Object>();
-    params.put( "altKey", "true" );
+    Fixture.fakeSetProperty( getId( item ), "selection", true );
+    lca.readData( item );
+
+    assertTrue( item.getSelection() );
+  }
+
+  @Test
+  public void testFireSelectionEvent_Check() {
+    ToolItem item = new ToolItem( toolbar, SWT.CHECK );
+    Listener listener = mock( Listener.class );
+    item.addListener( SWT.Selection, listener );
+
+    JsonObject params = new JsonObject().add( "altKey", "true" );
     Fixture.fakeNotifyOperation( getId( item ), ClientMessageConst.EVENT_SELECTION, params );
     Fixture.readDataAndProcessAction( display );
 
-    assertTrue( wasEventFired[ 0 ] );
+    ArgumentCaptor<Event> captor = ArgumentCaptor.forClass( Event.class );
+    verify( listener ).handleEvent( captor.capture() );
+    Event event = captor.getValue();
+    assertEquals( null, event.item );
+    assertSame( item, event.widget );
+    assertTrue( event.doit );
+    assertEquals( 0, event.x );
+    assertEquals( 0, event.y );
+    assertEquals( 0, event.width );
+    assertEquals( 0, event.height );
+    assertTrue( ( event.stateMask & SWT.ALT ) != 0 );
+  }
+
+  @Test
+  public void testReadSelection_Radio() {
+    ToolItem item = new ToolItem( toolbar, SWT.RADIO );
+
+    Fixture.fakeSetProperty( getId( item ), "selection", true );
+    lca.readData( item );
+
+    assertTrue( item.getSelection() );
+  }
+
+  @Test
+  public void testFireSelectionEvent_Radio() {
+    ToolItem item = new ToolItem( toolbar, SWT.RADIO );
+    Listener listener = mock( Listener.class );
+    item.addListener( SWT.Selection, listener );
+
+    JsonObject params = new JsonObject().add( "altKey", "true" );
+    Fixture.fakeNotifyOperation( getId( item ), ClientMessageConst.EVENT_SELECTION, params );
+    Fixture.readDataAndProcessAction( display );
+
+    ArgumentCaptor<Event> captor = ArgumentCaptor.forClass( Event.class );
+    verify( listener ).handleEvent( captor.capture() );
+    Event event = captor.getValue();
+    assertEquals( null, event.item );
+    assertSame( item, event.widget );
+    assertTrue( event.doit );
+    assertEquals( 0, event.x );
+    assertEquals( 0, event.y );
+    assertEquals( 0, event.width );
+    assertEquals( 0, event.height );
+    assertTrue( ( event.stateMask & SWT.ALT ) != 0 );
   }
 
   @Test
@@ -127,10 +163,10 @@ public class ToolItemLCA_Test {
     } );
     shell.open();
 
-    Fixture.fakeSetParameter( getId( item ), "selection", Boolean.TRUE );
-    Map<String,Object> params = new HashMap<String,Object>();
-    params.put( "altKey", "true" );
-    params.put( ClientMessageConst.EVENT_PARAM_DETAIL, "arrow" );
+    Fixture.fakeSetProperty( getId( item ), "selection", true );
+    JsonObject params = new JsonObject()
+      .add( "altKey", "true" )
+      .add( ClientMessageConst.EVENT_PARAM_DETAIL, "arrow" );
     Fixture.fakeNotifyOperation( getId( item ), ClientMessageConst.EVENT_SELECTION, params );
     Fixture.readDataAndProcessAction( display );
 
@@ -138,43 +174,11 @@ public class ToolItemLCA_Test {
   }
 
   @Test
-  public void testRadioItemSelected() {
-    ToolItem item0 = new ToolItem( toolbar, SWT.RADIO );
-    item0.setSelection( true );
-    ToolItem item1 = new ToolItem( toolbar, SWT.RADIO );
-
-    Fixture.fakeSetParameter( getId( item1 ), "selection", Boolean.TRUE );
-    Fixture.fakeSetParameter( getId( item0 ), "selection", Boolean.FALSE );
-    Fixture.readDataAndProcessAction( display );
-
-    assertFalse( item0.getSelection() );
-    assertTrue( item1.getSelection() );
-  }
-
-  @Test
-  public void testReadData() {
+  public void testGetImage() throws IOException {
     ToolItem item = new ToolItem( toolbar, SWT.CHECK );
 
-    Fixture.fakeSetParameter( getId( item ), "selection", Boolean.TRUE );
-    Fixture.fakeNotifyOperation( getId( item ), ClientMessageConst.EVENT_SELECTION, null );
-    WidgetUtil.getLCA( item ).readData( item );
-
-    assertEquals( Boolean.TRUE, Boolean.valueOf( item.getSelection() ) );
-
-    Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( item ), "selection", Boolean.FALSE );
-    Fixture.fakeNotifyOperation( getId( item ), ClientMessageConst.EVENT_SELECTION, null );
-    WidgetUtil.getLCA( item ).readData( item );
-
-    assertEquals( Boolean.FALSE, Boolean.valueOf( item.getSelection() ) );
-  }
-
-  @Test
-  public void testGetImage() {
-    ToolItem item = new ToolItem( toolbar, SWT.CHECK );
-
-    Image enabledImage = Graphics.getImage( Fixture.IMAGE1 );
-    Image disabledImage = Graphics.getImage( Fixture.IMAGE2 );
+    Image enabledImage = TestUtil.createImage( display, Fixture.IMAGE1 );
+    Image disabledImage = TestUtil.createImage( display, Fixture.IMAGE2 );
     assertNull( ToolItemLCAUtil.getImage( item ) );
 
     item.setImage( enabledImage );
@@ -193,78 +197,74 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderCreatePush() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.renderInitialization( toolitem );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( toolitem );
     assertEquals( "rwt.widgets.ToolItem", operation.getType() );
-    assertEquals( Integer.valueOf( 0 ), operation.getProperty( "index" ) );
+    assertEquals( 0, operation.getProperty( "index" ).asInt() );
     Object[] styles = operation.getStyles();
     assertTrue( Arrays.asList( styles ).contains( "PUSH" ) );
   }
 
   @Test
   public void testRenderCreateCheck() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.CHECK );
+    toolitem = new ToolItem( toolbar, SWT.CHECK );
 
     lca.renderInitialization( toolitem );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( toolitem );
     assertEquals( "rwt.widgets.ToolItem", operation.getType() );
-    assertEquals( Integer.valueOf( 0 ), operation.getProperty( "index" ) );
+    assertEquals( 1, operation.getProperty( "index" ).asInt() );
     Object[] styles = operation.getStyles();
     assertTrue( Arrays.asList( styles ).contains( "CHECK" ) );
   }
 
   @Test
   public void testRenderCreateRadio() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.RADIO );
+    toolitem = new ToolItem( toolbar, SWT.RADIO );
 
     lca.renderInitialization( toolitem );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( toolitem );
     assertEquals( "rwt.widgets.ToolItem", operation.getType() );
-    assertEquals( Integer.valueOf( 0 ), operation.getProperty( "index" ) );
+    assertEquals( 1, operation.getProperty( "index" ).asInt() );
     Object[] styles = operation.getStyles();
     assertTrue( Arrays.asList( styles ).contains( "RADIO" ) );
   }
 
   @Test
   public void testRenderCreateDropDown() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.DROP_DOWN );
+    toolitem = new ToolItem( toolbar, SWT.DROP_DOWN );
 
     lca.renderInitialization( toolitem );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( toolitem );
     assertEquals( "rwt.widgets.ToolItem", operation.getType() );
-    assertEquals( Integer.valueOf( 0 ), operation.getProperty( "index" ) );
+    assertEquals( 1, operation.getProperty( "index" ).asInt() );
     Object[] styles = operation.getStyles();
     assertTrue( Arrays.asList( styles ).contains( "DROP_DOWN" ) );
   }
 
   @Test
   public void testRenderCreateSeparator() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
+    toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
 
     lca.renderInitialization( toolitem );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( toolitem );
     assertEquals( "rwt.widgets.ToolItem", operation.getType() );
-    assertEquals( Integer.valueOf( 0 ), operation.getProperty( "index" ) );
+    assertEquals( 1, operation.getProperty( "index" ).asInt() );
     Object[] styles = operation.getStyles();
     assertTrue( Arrays.asList( styles ).contains( "SEPARATOR" ) );
   }
 
   @Test
   public void testRenderParent() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.renderInitialization( toolitem );
 
     Message message = Fixture.getProtocolMessage();
@@ -274,8 +274,6 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderInitialEnabled() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.render( toolitem );
 
     Message message = Fixture.getProtocolMessage();
@@ -285,18 +283,15 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderEnabled() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     toolitem.setEnabled( false );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findSetProperty( toolitem, "enabled" ) );
+    assertEquals( JsonValue.FALSE, message.findSetProperty( toolitem, "enabled" ) );
   }
 
   @Test
   public void testRenderEnabledUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
 
@@ -310,8 +305,6 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderInitialToolTip() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.render( toolitem );
 
     Message message = Fixture.getProtocolMessage();
@@ -321,18 +314,15 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderToolTip() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     toolitem.setToolTipText( "foo" );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( toolitem, "toolTip" ) );
+    assertEquals( "foo", message.findSetProperty( toolitem, "toolTip" ).asString() );
   }
 
   @Test
   public void testRenderToolTipUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
 
@@ -346,8 +336,6 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderInitialCustomVariant() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.render( toolitem );
 
     Message message = Fixture.getProtocolMessage();
@@ -357,18 +345,15 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderCustomVariant() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     toolitem.setData( RWT.CUSTOM_VARIANT, "blue" );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "variant_blue", message.findSetProperty( toolitem, "customVariant" ) );
+    assertEquals( "variant_blue", message.findSetProperty( toolitem, "customVariant" ).asString() );
   }
 
   @Test
   public void testRenderCustomVariantUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
 
@@ -383,7 +368,6 @@ public class ToolItemLCA_Test {
   @Test
   public void testRenderInitialVisible() throws IOException {
     toolbar.setSize( 20, 25 );
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
 
     lca.render( toolitem );
 
@@ -395,19 +379,17 @@ public class ToolItemLCA_Test {
   @Test
   public void testRenderVisible() throws IOException {
     toolbar.setSize( 20, 25 );
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
 
     toolitem.setText( "foo bar" );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findSetProperty( toolitem, "visible" ) );
+    assertEquals( JsonValue.FALSE, message.findSetProperty( toolitem, "visible" ) );
   }
 
   @Test
   public void testRenderVisibleUnchanged() throws IOException {
     toolbar.setSize( 20, 25 );
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
 
@@ -421,8 +403,6 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderInitialText() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.render( toolitem );
 
     Message message = Fixture.getProtocolMessage();
@@ -432,18 +412,24 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderText() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     toolitem.setText( "foo" );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( toolitem, "text" ) );
+    assertEquals( "foo", message.findSetProperty( toolitem, "text" ).asString() );
+  }
+
+  @Test
+  public void testRenderText_WithMnemonic() throws IOException {
+    toolitem.setText( "fo&o" );
+    lca.renderChanges( toolitem );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( "foo", message.findSetProperty( toolitem, "text" ).asString() );
   }
 
   @Test
   public void testRenderTextUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
 
@@ -457,8 +443,6 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderInitialImage() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
@@ -466,26 +450,23 @@ public class ToolItemLCA_Test {
   }
 
   @Test
-  public void testRenderImage() throws IOException, JSONException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+  public void testRenderImage() throws IOException {
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     toolitem.setImage( image );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( image );
-    String expected = "[\"" + imageLocation + "\", 100, 50 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( toolitem, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 100 ).add( 50 );
+    assertEquals( expected, message.findSetProperty( toolitem, "image" ) );
   }
 
   @Test
   public void testRenderImageUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     toolitem.setImage( image );
     Fixture.preserveWidgets();
@@ -497,8 +478,6 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderInitialHotImage() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
@@ -506,26 +485,23 @@ public class ToolItemLCA_Test {
   }
 
   @Test
-  public void testRenderHotImage() throws IOException, JSONException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+  public void testRenderHotImage() throws IOException {
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     toolitem.setHotImage( image );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( image );
-    String expected = "[\"" + imageLocation + "\", 100, 50 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( toolitem, "hotImage" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 100 ).add( 50 );
+    assertEquals( expected, message.findSetProperty( toolitem, "hotImage" ) );
   }
 
   @Test
   public void testRenderHotImageUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     toolitem.setHotImage( image );
     Fixture.preserveWidgets();
@@ -537,10 +513,9 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderImageReset() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
     toolitem.setImage( image );
 
     Fixture.preserveWidgets();
@@ -548,12 +523,12 @@ public class ToolItemLCA_Test {
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( toolitem, "image" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( toolitem, "image" ) );
   }
 
   @Test
   public void testRenderInitialControl() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
+    toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
 
     lca.render( toolitem );
 
@@ -564,7 +539,7 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderControl() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
+    toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
     Composite control = new Composite( toolbar, SWT.NONE );
     String controlId = WidgetUtil.getId( control );
 
@@ -572,12 +547,12 @@ public class ToolItemLCA_Test {
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( controlId, message.findSetProperty( toolitem, "control" ) );
+    assertEquals( controlId, message.findSetProperty( toolitem, "control" ).asString() );
   }
 
   @Test
   public void testRenderControlUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
+    toolitem = new ToolItem( toolbar, SWT.SEPARATOR );
     Composite control = new Composite( toolbar, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
@@ -592,7 +567,7 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderInitialSelection() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.CHECK );
+    toolitem = new ToolItem( toolbar, SWT.CHECK );
 
     lca.render( toolitem );
 
@@ -603,18 +578,18 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderSelection() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.CHECK );
+    toolitem = new ToolItem( toolbar, SWT.CHECK );
 
     toolitem.setSelection( true );
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( toolitem, "selection" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( toolitem, "selection" ) );
   }
 
   @Test
   public void testRenderSelectionUnchanged() throws IOException {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.CHECK );
+    toolitem = new ToolItem( toolbar, SWT.CHECK );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
 
@@ -628,7 +603,6 @@ public class ToolItemLCA_Test {
 
   @Test
   public void testRenderAddSelectionListener() throws Exception {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
     Fixture.preserveWidgets();
@@ -637,12 +611,11 @@ public class ToolItemLCA_Test {
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( toolitem, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( toolitem, "Selection" ) );
   }
 
   @Test
   public void testRenderRemoveSelectionListener() throws Exception {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Listener listener = mock( Listener.class );
     toolitem.addListener( SWT.Selection, listener );
     Fixture.markInitialized( display );
@@ -653,12 +626,11 @@ public class ToolItemLCA_Test {
     lca.renderChanges( toolitem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( toolitem, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( toolitem, "Selection" ) );
   }
 
   @Test
   public void testRenderSelectionListenerUnchanged() throws Exception {
-    ToolItem toolitem = new ToolItem( toolbar, SWT.PUSH );
     Fixture.markInitialized( display );
     Fixture.markInitialized( toolitem );
     Fixture.preserveWidgets();
@@ -670,4 +642,77 @@ public class ToolItemLCA_Test {
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findListenOperation( toolitem, "Selection" ) );
   }
+
+  @Test
+  public void testRenderInitialMnemonicIndex() throws IOException {
+    lca.renderChanges( toolitem );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( toolitem, "mnemonicIndex" ) );
+  }
+
+  @Test
+  public void testRenderMnemonicIndex() throws IOException {
+    toolitem.setText( "te&st" );
+    lca.renderChanges( toolitem );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 2, message.findSetProperty( toolitem, "mnemonicIndex" ).asInt() );
+  }
+
+  @Test
+  public void testRenderMnemonic_OnTextChange() throws IOException {
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( toolitem );
+
+    toolitem.setText( "te&st" );
+    Fixture.preserveWidgets();
+    toolitem.setText( "aa&bb" );
+    lca.renderChanges( toolitem );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 2, message.findSetProperty( toolitem, "mnemonicIndex" ).asInt() );
+  }
+
+  @Test
+  public void testRenderMnemonicIndexUnchanged() throws IOException {
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( toolitem );
+
+    toolitem.setText( "te&st" );
+    Fixture.preserveWidgets();
+    lca.renderChanges( toolitem );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( toolitem, "mnemonicIndex" ) );
+  }
+
+  @Test
+  public void testRenderData() throws IOException {
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo", "bar" } );
+    toolitem.setData( "foo", "string" );
+    toolitem.setData( "bar", Integer.valueOf( 1 ) );
+
+    lca.renderChanges( toolitem );
+
+    Message message = Fixture.getProtocolMessage();
+    JsonObject data = ( JsonObject )message.findSetProperty( toolitem, "data" );
+    assertEquals( "string", data.get( "foo" ).asString() );
+    assertEquals( 1, data.get( "bar" ).asInt() );
+  }
+
+  @Test
+  public void testRenderDataUnchanged() throws IOException {
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo" } );
+    toolitem.setData( "foo", "string" );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( toolitem );
+
+    Fixture.preserveWidgets();
+    lca.renderChanges( toolitem );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 0, message.getOperationCount() );
+  }
+
 }

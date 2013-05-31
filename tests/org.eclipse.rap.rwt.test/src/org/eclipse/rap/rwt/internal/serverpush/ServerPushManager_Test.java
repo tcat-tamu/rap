@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -29,11 +29,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionBindingListener;
 
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
 import org.eclipse.rap.rwt.testfixture.TestResponse;
@@ -58,7 +60,7 @@ public class ServerPushManager_Test {
 
   static {
     String sleepTimeProp = System.getProperty( SYS_PROP_SLEEP_TIME );
-    SLEEP_TIME = sleepTimeProp == null ? 200 : Integer.parseInt( sleepTimeProp );
+    SLEEP_TIME = sleepTimeProp == null ? 50 : Integer.parseInt( sleepTimeProp );
   }
 
   private volatile String log = "";
@@ -557,12 +559,13 @@ public class ServerPushManager_Test {
   }
 
   private static ServiceContext createServiceContext( TestResponse response ) {
-    HttpSession httpSession = ContextProvider.getContext().getUISession().getHttpSession();
+    UISession uiSession = ContextProvider.getContext().getUISession();
     TestRequest request = new TestRequest();
-    request.setSession( httpSession );
-    ServiceContext result = new ServiceContext( request, response );
-    result.setServiceStore( new ServiceStore() );
-    return result;
+    ApplicationContextImpl applicationContext = mock( ApplicationContextImpl.class );
+    ServiceContext serviceContext = new ServiceContext( request, response, applicationContext );
+    serviceContext.setServiceStore( new ServiceStore() );
+    serviceContext.setUISession( uiSession );
+    return serviceContext;
   }
 
   private class AsyncExecRunnable implements Runnable {

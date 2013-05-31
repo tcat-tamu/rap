@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.rap.equinox.target.feature"
       label="RAP Basic Equinox Target"
-      version="2.0.0.qualifier"
+      version="2.1.0.qualifier"
       provider-name="Eclipse.org - RAP">
 
    <description url="http://eclipse.org/rap/">
@@ -18,11 +18,11 @@
    </license>
 
    <url>
-      <update label="Rich Ajax Platform (RAP) 2.0 Repository" url="http://download.eclipse.org/rt/rap/2.0/"/>
+      <update label="RAP 2.1 Repository" url="http://download.eclipse.org/rt/rap/2.1/"/>
    </url>
 
    <requires>
-      <import feature="org.eclipse.rap.feature" version="2.0.0" match="greaterOrEqual"/>
+      <import feature="org.eclipse.rap.feature" version="2.1.0" match="greaterOrEqual"/>
    </requires>
 
    <plugin
@@ -334,14 +334,6 @@
          unpack="false"/>
 
    <plugin
-         id="org.eclipse.equinox.servletbridge.extensionbundle"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"
-         unpack="false"/>
-
-   <plugin
          id="org.eclipse.equinox.console"
          download-size="0"
          install-size="0"
@@ -443,13 +435,13 @@
          id="org.junit"
          download-size="0"
          install-size="0"
-         version="3.8.2.v3_8_2_v20100427-1100"/>
+         version="0.0.0"/>
 
    <plugin
          id="org.junit.source"
          download-size="0"
          install-size="0"
-         version="3.8.2.v3_8_2_v20100427-1100"
+         version="0.0.0"
          unpack="false"/>
 
    <plugin
@@ -551,14 +543,21 @@
          unpack="false"/>
 
    <plugin
-         id="org.json"
+         id="javax.xml"
          download-size="0"
          install-size="0"
          version="0.0.0"
          unpack="false"/>
 
    <plugin
-         id="javax.xml"
+         id="org.hamcrest.core"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.hamcrest.core.source"
          download-size="0"
          install-size="0"
          version="0.0.0"

@@ -5,10 +5,10 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" >
-    <!--- IE9 render in standard mode, all older versions in quirksmode ---> 
-    <meta http-equiv="X-UA-Compatible" content="IE=5,9;" >
+    <!--- IE9 render in standard mode, all older versions in quirksmode --->
+    <meta http-equiv="X-UA-Compatible" content="IE=5,9,10;" >
     ${headers}
-    <!-- Default presentation for supported markup elements --> 
+    <!-- Default presentation for supported markup elements -->
     <style type="text/css">
       big {
         font-size: 1.2em;
@@ -38,6 +38,12 @@
         border-bottom: 1px dotted;
       }
     </style>
+    <!-- IE 10 specific styles -->
+    <style type="text/css">
+      input::-ms-clear, input::-ms-reveal {
+        display: none;
+      }
+    </style>
   </head>
 
   <body background="${backgroundImage}">
@@ -49,7 +55,7 @@
 
     <!-- BODY_HTML -->
 ${body}
-    <!-- /BODY_HTML --> 
+    <!-- /BODY_HTML -->
 
 ${libraries}
 

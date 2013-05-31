@@ -52,14 +52,18 @@ rwt.client.ServerPush.prototype = {
   // workaround for bug 353819 - send UICallBackRequest with a timer
   _doSendUICallBackRequest : function() {
     this._requestTimer.stop();
-    var url = rwt.remote.Server.getInstance().getUrl();
-    var request = new rwt.remote.Request( url, "GET", "application/javascript" );
+    this._createRequest().send();
+  },
+
+  _createRequest : function() {
+    var server = rwt.remote.Server.getInstance();
+    var request = new rwt.remote.Request( server.getUrl(), "GET", "application/javascript" );
     request.setSuccessHandler( this._handleSuccess, this );
     request.setErrorHandler( this._handleError, this );
     // [mbarry] request counter is required to prevent IE from caching the response
     // HTTP "Cache-Control: no-cache" header would be more correct, but IE ignores it
-    request.setData( "servicehandler=org.eclipse.rap.serverpush&id=" + this._requestCounter++ );
-    request.send();
+    request.setData( "servicehandler=org.eclipse.rap.serverpush&cid=" + server.getConnectionId() + "&id=" + this._requestCounter++ );
+    return request;
   },
 
   _handleSuccess : function( event ) {

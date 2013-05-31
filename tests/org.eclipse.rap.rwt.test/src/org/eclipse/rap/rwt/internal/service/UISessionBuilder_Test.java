@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@ package org.eclipse.rap.rwt.internal.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
@@ -24,6 +25,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.eclipse.rap.rwt.RWT;
@@ -32,13 +34,11 @@ import org.eclipse.rap.rwt.application.EntryPointFactory;
 import org.eclipse.rap.rwt.client.WebClient;
 import org.eclipse.rap.rwt.internal.SingletonManager;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
 import org.eclipse.rap.rwt.internal.theme.Theme;
 import org.eclipse.rap.rwt.internal.theme.ThemeUtil;
 import org.eclipse.rap.rwt.service.UISession;
-import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.TestRequest;
 import org.eclipse.rap.rwt.testfixture.TestSession;
 import org.junit.After;
@@ -55,32 +55,36 @@ public class UISessionBuilder_Test {
   private TestRequest request;
   private ApplicationConfiguration configuration;
   private ApplicationContextImpl applicationContext;
+  private ServiceContext serviceContext;
 
   @Before
   public void setUp() {
-    Fixture.setUp();
     httpSession = new TestSession();
     request = new TestRequest();
     request.setSession( httpSession );
+    HttpServletResponse response = mock( HttpServletResponse.class );
     servletContext = httpSession.getServletContext();
     configuration = mock( ApplicationConfiguration.class );
     applicationContext = new ApplicationContextImpl( configuration, servletContext );
-    applicationContext.getClientSelector().activate();
+    applicationContext.getThemeManager().registerTheme( createCustomTheme( CUSTOM_THEME_ID ) );
+    applicationContext.activate();
+    serviceContext = new ServiceContext( request, response, applicationContext );
+    ContextProvider.setContext( serviceContext );
   }
 
   @After
   public void tearDown() {
-    Fixture.tearDown();
+    ContextProvider.disposeContext();
   }
 
   @Test
   public void testUISessionReferencesApplicationContext() {
     registerEntryPoint( null );
 
-    UISessionBuilder builder = new UISessionBuilder( applicationContext, request );
-    UISession uiSession = builder.buildUISession();
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
+    UISessionImpl uiSession = builder.buildUISession();
 
-    assertEquals( applicationContext, ApplicationContextUtil.get( uiSession ) );
+    assertEquals( applicationContext, uiSession.getApplicationContext() );
   }
 
   @Test
@@ -89,7 +93,7 @@ public class UISessionBuilder_Test {
     httpSession = mock( HttpSession.class );
     request.setSession( httpSession );
 
-    UISessionBuilder builder = new UISessionBuilder( applicationContext, request );
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
     UISession uiSession = builder.buildUISession();
 
     assertSame( httpSession, uiSession.getHttpSession() );
@@ -100,7 +104,7 @@ public class UISessionBuilder_Test {
   public void testSingletonManagerIsInstalled() {
     registerEntryPoint( null );
 
-    UISessionBuilder builder = new UISessionBuilder( applicationContext, request );
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
     UISession uiSession = builder.buildUISession();
 
     assertSingletonManagerIsInstalled( uiSession );
@@ -110,7 +114,7 @@ public class UISessionBuilder_Test {
   public void testDefaultThemeIsSelected() {
     registerEntryPoint( null );
 
-    UISessionBuilder builder = new UISessionBuilder( applicationContext, request );
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
     UISession uiSession = builder.buildUISession();
 
     assertEquals( RWT.DEFAULT_THEME_ID, uiSession.getAttribute( ThemeUtil.CURR_THEME_ATTR ) );
@@ -118,14 +122,11 @@ public class UISessionBuilder_Test {
 
   @Test
   public void testCustomThemeIsSelected() {
-    Theme theme = mock( Theme.class );
-    when( theme.getId() ).thenReturn( CUSTOM_THEME_ID );
-    applicationContext.getThemeManager().registerTheme( theme );
     HashMap<String, String> properties = new HashMap<String,String>();
     properties.put( WebClient.THEME_ID, CUSTOM_THEME_ID );
     registerEntryPoint( properties );
 
-    UISessionBuilder builder = new UISessionBuilder( applicationContext, request );
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
     UISession uiSession = builder.buildUISession();
 
     assertEquals( CUSTOM_THEME_ID, uiSession.getAttribute( ThemeUtil.CURR_THEME_ATTR ) );
@@ -137,7 +138,7 @@ public class UISessionBuilder_Test {
     properties.put( WebClient.THEME_ID, "does.not.exist" );
     registerEntryPoint( properties );
 
-    UISessionBuilder builder = new UISessionBuilder( applicationContext, request );
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
     try {
       builder.buildUISession();
       fail();
@@ -146,10 +147,31 @@ public class UISessionBuilder_Test {
   }
 
   @Test
+  public void testUISessionContainsConnectionId() {
+    registerEntryPoint( null );
+    request.setParameter( "cid", "foo" );
+
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
+    UISessionImpl uiSession = builder.buildUISession();
+
+    assertEquals( "foo", uiSession.getConnectionId() );
+  }
+
+  @Test
+  public void testUISessionContainsNullConnectionId() {
+    registerEntryPoint( null );
+
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
+    UISessionImpl uiSession = builder.buildUISession();
+
+    assertNull( uiSession.getConnectionId() );
+  }
+
+  @Test
   public void testClientIsSelected() {
     registerEntryPoint( null );
 
-    UISessionBuilder builder = new UISessionBuilder( applicationContext, request );
+    UISessionBuilder builder = new UISessionBuilder( serviceContext );
     UISession uiSession = builder.buildUISession();
 
     ClientSelector clientSelector = applicationContext.getClientSelector();
@@ -159,7 +181,7 @@ public class UISessionBuilder_Test {
   private void registerEntryPoint( HashMap<String, String> properties ) {
     EntryPointManager entryPointManager = applicationContext.getEntryPointManager();
     EntryPointFactory factory = mock( EntryPointFactory.class );
-    entryPointManager.register( EntryPointManager.DEFAULT_PATH, factory, properties );
+    entryPointManager.register( TestRequest.DEFAULT_SERVLET_PATH, factory, properties );
   }
 
   private void assertSingletonManagerIsInstalled( UISession uiSession ) {
@@ -174,6 +196,12 @@ public class UISessionBuilder_Test {
     if( !found ) {
       fail( "No SingletonManager found in session store" );
     }
+  }
+
+  private static Theme createCustomTheme( String id ) {
+    Theme theme = mock( Theme.class );
+    when( theme.getId() ).thenReturn( id );
+    return theme;
   }
 
 }

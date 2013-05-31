@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,10 +16,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -133,11 +131,11 @@ public final class CoolBarLCA_Test {
     assertEquals( rectangle, adapter.getPreserved( Props.BOUNDS ) );
     Fixture.clearPreserved();
     // foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     bar.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     bar.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     bar.setFont( font );
     lca.preserveValues( bar );
     adapter = WidgetUtil.getAdapter( bar );
@@ -182,7 +180,7 @@ public final class CoolBarLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     SetOperation operation = message.findSetOperation( bar, "locked" );
-    assertEquals( Boolean.TRUE, operation.getProperty( "locked" ) );
+    assertEquals( JsonValue.TRUE, operation.getProperty( "locked" ) );
   }
 
   @Test
@@ -301,9 +299,7 @@ public final class CoolBarLCA_Test {
 
   private void fakeMove( CoolItem coolItem, int x, int y ) {
     Fixture.fakeNewRequest();
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( "left", Integer.valueOf( x ) );
-    Fixture.fakeCallOperation( getId( coolItem ), "move", parameters );
+    Fixture.fakeCallOperation( getId( coolItem ), "move", new JsonObject().add( "left", x ) );
   }
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@
 var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
 
 var server = rwt.remote.Server.getInstance();
+var ClientDocument = rwt.widgets.base.ClientDocument;
 
 rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ServerTest", {
 
@@ -25,100 +26,6 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ServerTest", {
       server.send();
 
       assertEquals( "number", typeof TestUtil.getMessageObject().getHead()[ "requestCounter" ] );
-    },
-
-    testSendSetParameter : function() {
-      server.addParameter( "w3.myProp", 42 );
-
-      server.send();
-
-      assertEquals( 1, TestUtil.getRequestsSend() );
-      var message = TestUtil.getMessageObject();
-      assertEquals( 2, message.getOperationCount() );
-      var op = message.getOperation( 0 );
-      assertEquals( "set", op.type );
-      assertEquals( "w3", op.target );
-      assertEquals( 42, op.properties.myProp );
-    },
-
-    testSendSetParameterTwice : function() {
-      server.addParameter( "w3.myProp", 42 );
-      server.send();
-      TestUtil.clearRequestLog();
-
-      server.send();
-
-      var message = TestUtil.getMessageObject();
-      assertEquals( 1, message.getOperationCount() );
-    },
-
-    testSendSetParameterWithDot : function() {
-      server.addParameter( "w3.my.Prop", 42 );
-
-      server.send();
-
-      assertEquals( 1, TestUtil.getRequestsSend() );
-      var message = TestUtil.getMessageObject();
-      assertEquals( 2, message.getOperationCount() );
-      var op = message.getOperation( 0 );
-      assertEquals( "set", op.type );
-      assertEquals( "w3", op.target );
-      assertEquals( 42, op.properties[ "my.Prop" ] );
-    },
-
-    testSendEvent : function() {
-      server.addEvent( "org.eclipse.swt.events.Selection", "w3" );
-
-      server.send();
-
-      var op = TestUtil.getMessageObject().getOperation( 0 );
-      assertEquals( "notify", op.type );
-      assertEquals( "w3", op.target );
-      assertEquals( "Selection", op.eventType );
-    },
-
-    testSendEventWithParam : function() {
-      server.addEvent( "org.eclipse.swt.events.Selection", "w3" );
-      server.addParameter( "org.eclipse.swt.events.Selection.text", "foo" );
-
-      server.send();
-
-      var op = TestUtil.getMessageObject().getOperation( 0 );
-      assertEquals( "w3", op.target );
-      assertEquals( "foo", op.properties[ "text" ] );
-    },
-
-    testSendEventWithParamAndSet : function() {
-      server.addEvent( "org.eclipse.swt.events.Selection", "w3" );
-      server.addParameter( "org.eclipse.swt.events.Selection.text", "foo" );
-      server.addParameter( "w3.myProp", 42 );
-
-      server.send();
-
-      var notify = TestUtil.getMessageObject().getOperation( 0 );
-      assertEquals( "notify", notify.type );
-      assertEquals( "w3", notify.target );
-      assertEquals( "foo", notify.properties[ "text" ] );
-      var set = TestUtil.getMessageObject().getOperation( 1 );
-      assertEquals( "set", set.type );
-      assertEquals( "w3", set.target );
-      assertEquals( 42, set.properties.myProp );
-    },
-
-    testSendTwoEventsInOneRequest : function() {
-      server.addEvent( "org.eclipse.swt.events.Selection", "w3" );
-      server.addEvent( "org.eclipse.swt.events.DefaultSelection", "w3" );
-
-      server.send();
-
-      var op1 = TestUtil.getMessageObject().getOperation( 0 );
-      assertEquals( "notify", op1.type );
-      assertEquals( "w3", op1.target );
-      assertEquals( "Selection", op1.eventType );
-      var op2 = TestUtil.getMessageObject().getOperation( 1 );
-      assertEquals( "notify", op2.type );
-      assertEquals( "w3", op2.target );
-      assertEquals( "DefaultSelection", op2.eventType );
     },
 
     testGetServerObject : function() {
@@ -197,6 +104,50 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ServerTest", {
       }
 
       assertEquals( 1, logger.getLog().length );
+    },
+
+    testWaitHintChangesCursor : function() {
+      server.getWaitHintTimer().setEnabled( true );
+
+      TestUtil.forceInterval( server.getWaitHintTimer() );
+
+      assertEquals( "progress", ClientDocument.getInstance().getGlobalCursor() );
+      server._hideWaitHint();
+      assertNull( ClientDocument.getInstance().getGlobalCursor() );
+    },
+
+    testWaitHintShowsErrorOverlay : function() {
+      server.getWaitHintTimer().setEnabled( true );
+
+      TestUtil.forceInterval( server.getWaitHintTimer() );
+
+      assertIdentical( document.body, rwt.runtime.ErrorHandler._overlay.parentNode );
+      var overlay = rwt.runtime.ErrorHandler._overlay;
+      server._hideWaitHint();
+      assertTrue( overlay.parentNode != document.body );
+      assertNull( rwt.runtime.ErrorHandler._overlay );
+    },
+
+    testSetWaitHintTimeoutByProtocol : function() {
+      TestUtil.protocolSet( "rwt.client.ConnectionMessages", { "waitHintTimeout" : 1999 } );
+
+      assertEquals( 1999, server.getWaitHintTimer().getInterval() );
+    },
+
+    testRequestUrl : function() {
+      server.setUrl( "foo" );
+      var request = server._createRequest();
+
+      var expected = "foo?cid=" + server.getConnectionId();
+      assertEquals( expected, request._url );
+    },
+
+    testRequestUrlWithParameters : function() {
+      server.setUrl( "foo?bar=23" );
+      var request = server._createRequest();
+
+      var expected = "foo?bar=23&cid=" + server.getConnectionId();
+      assertEquals( expected, request._url );
     }
 
   }

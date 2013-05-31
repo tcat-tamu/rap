@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,36 +17,37 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CreateOperation;
 import org.eclipse.rap.rwt.testfixture.Message.DestroyOperation;
 import org.eclipse.rap.rwt.testfixture.Message.Operation;
+import org.eclipse.rap.rwt.testfixture.internal.TestUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.internal.graphics.ImageFactory;
+import org.eclipse.swt.internal.widgets.WidgetDataUtil;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 
-@SuppressWarnings("deprecation")
 public class CTabItemLCA_Test {
 
   private Display display;
   private Shell shell;
   private CTabFolder folder;
+  private CTabItem item;
   private CTabItemLCA lca;
 
   @Before
@@ -56,6 +57,7 @@ public class CTabItemLCA_Test {
     shell = new Shell( display );
     folder = new CTabFolder( shell, SWT.NONE );
     folder.setSize( 150, 150 );
+    item = new CTabItem( folder, SWT.NONE );
     lca = new CTabItemLCA();
     Fixture.fakeNewRequest();
   }
@@ -67,14 +69,12 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderCreate() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.renderInitialization( item );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( item );
     assertEquals( "rwt.widgets.CTabItem", operation.getType() );
-    assertEquals( Integer.valueOf( 0 ), operation.getProperty( "index" ) );
+    assertEquals( 0, operation.getProperty( "index" ).asInt() );
   }
 
   @Test
@@ -99,13 +99,11 @@ public class CTabItemLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( item );
-    assertEquals( Integer.valueOf( 1 ), operation.getProperty( "index" ) );
+    assertEquals( 1, operation.getProperty( "index" ).asInt() );
   }
 
   @Test
   public void testRenderParent() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.renderInitialization( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -115,8 +113,6 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderDispose() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.renderDispose( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -127,8 +123,6 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderInitialToolTip() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.render( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -138,18 +132,15 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderToolTip() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     item.setToolTipText( "foo" );
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( item, "toolTip" ) );
+    assertEquals( "foo", message.findSetProperty( item, "toolTip" ).asString() );
   }
 
   @Test
   public void testRenderToolTipUnchanged() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
 
@@ -163,8 +154,6 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderInitialCustomVariant() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.render( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -174,18 +163,15 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderCustomVariant() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     item.setData( RWT.CUSTOM_VARIANT, "blue" );
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "variant_blue", message.findSetProperty( item, "customVariant" ) );
+    assertEquals( "variant_blue", message.findSetProperty( item, "customVariant" ).asString() );
   }
 
   @Test
   public void testRenderCustomVariantUnchanged() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
 
@@ -198,32 +184,27 @@ public class CTabItemLCA_Test {
   }
 
   @Test
-  public void testRenderInitialBounds() throws IOException, JSONException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
+  public void testRenderInitialBounds() throws IOException {
     lca.render( item );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray bounds = ( JSONArray )message.findCreateProperty( item, "bounds" );
-    assertTrue( bounds.getInt( 2 ) > 0 );
-    assertTrue( bounds.getInt( 3 ) > 0 );
+    JsonArray bounds = ( JsonArray )message.findCreateProperty( item, "bounds" );
+    assertTrue( bounds.get( 2 ).asInt() > 0 );
+    assertTrue( bounds.get( 3 ).asInt() > 0 );
   }
 
   @Test
-  public void testRenderBounds() throws IOException, JSONException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
+  public void testRenderBounds() throws IOException {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray bounds = ( JSONArray )message.findSetProperty( item, "bounds" );
-    assertTrue( bounds.getInt( 2 ) > 0 );
-    assertTrue( bounds.getInt( 3 ) > 0 );
+    JsonArray bounds = ( JsonArray )message.findSetProperty( item, "bounds" );
+    assertTrue( bounds.get( 2 ).asInt() > 0 );
+    assertTrue( bounds.get( 3 ).asInt() > 0 );
   }
 
   @Test
   public void testRenderBoundsUnchanged() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
 
@@ -236,8 +217,6 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderInitialFont() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.render( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -246,27 +225,21 @@ public class CTabItemLCA_Test {
   }
 
   @Test
-  public void testRenderFont() throws IOException, JSONException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
-    item.setFont( Graphics.getFont( "Arial", 20, SWT.BOLD ) );
+  public void testRenderFont() throws IOException {
+    item.setFont( new Font( display, "Arial", 20, SWT.BOLD ) );
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( item, "font" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[\"Arial\"]", actual.getJSONArray( 0 ) ) );
-    assertEquals( Integer.valueOf( 20 ), actual.get( 1 ) );
-    assertEquals( Boolean.TRUE, actual.get( 2 ) );
-    assertEquals( Boolean.FALSE, actual.get( 3 ) );
+    JsonArray expected = JsonArray.readFrom( "[[\"Arial\"], 20, true, false ]" );
+    assertEquals( expected, message.findSetProperty( item, "font" ) );
   }
 
   @Test
   public void testRenderFontUnchanged() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
 
-    item.setFont( Graphics.getFont( "Arial", 20, SWT.BOLD ) );
+    item.setFont( new Font( display, "Arial", 20, SWT.BOLD ) );
     Fixture.preserveWidgets();
     lca.renderChanges( item );
 
@@ -276,8 +249,6 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderInitialText() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.render( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -287,18 +258,24 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderText() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     item.setText( "foo" );
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( item, "text" ) );
+    assertEquals( "foo", message.findSetProperty( item, "text" ).asString() );
+  }
+
+  @Test
+  public void testRenderText_WithMnemonic() throws IOException {
+    item.setText( "foo&bar" );
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( "foobar", message.findSetProperty( item, "text" ).asString() );
   }
 
   @Test
   public void testRenderTextUnchanged() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
 
@@ -312,8 +289,6 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderInitialImage() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -321,9 +296,8 @@ public class CTabItemLCA_Test {
   }
 
   @Test
-  public void testRenderImage() throws IOException, JSONException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+  public void testRenderImage() throws IOException {
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     item.setImage( image );
     folder.setSelection( item );
@@ -331,17 +305,15 @@ public class CTabItemLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( image );
-    String expected = "[\"" + imageLocation + "\", 100, 50 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( item, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 100 ).add( 50 );
+    assertEquals( expected, message.findSetProperty( item, "image" ) );
   }
 
   @Test
   public void testRenderImageUnchanged() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     item.setImage( image );
     folder.setSelection( item );
@@ -354,10 +326,9 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderImageReset() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
     item.setImage( image );
     folder.setSelection( item );
 
@@ -366,13 +337,11 @@ public class CTabItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( item, "image" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( item, "image" ) );
   }
 
   @Test
   public void testRenderInitialShowing() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.render( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -382,35 +351,31 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderShowing() throws IOException {
-    CTabItem firstItem = new CTabItem( folder, SWT.NONE );
-    CTabItem item = new CTabItem( folder, SWT.NONE );
+    CTabItem lastItem = new CTabItem( folder, SWT.NONE );
 
-    firstItem.setText( "foo bar foo bar" );
-    lca.renderChanges( item );
+    item.setText( "foo bar foo bar" );
+    lca.renderChanges( lastItem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findSetProperty( item, "showing" ) );
+    assertEquals( JsonValue.FALSE, message.findSetProperty( lastItem, "showing" ) );
   }
 
   @Test
   public void testRenderShowingUnchanged() throws IOException {
-    CTabItem firstItem = new CTabItem( folder, SWT.NONE );
-    CTabItem item = new CTabItem( folder, SWT.NONE );
+    CTabItem lastItem = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
-    Fixture.markInitialized( item );
+    Fixture.markInitialized( lastItem );
 
-    firstItem.setText( "foo bar foo bar" );
+    item.setText( "foo bar foo bar" );
     Fixture.preserveWidgets();
-    lca.renderChanges( item );
+    lca.renderChanges( lastItem );
 
     Message message = Fixture.getProtocolMessage();
-    assertNull( message.findSetOperation( item, "showing" ) );
+    assertNull( message.findSetOperation( lastItem, "showing" ) );
   }
 
   @Test
   public void testRenderInitialShowClose() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     lca.render( item );
 
     Message message = Fixture.getProtocolMessage();
@@ -420,18 +385,15 @@ public class CTabItemLCA_Test {
 
   @Test
   public void testRenderShowClose() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
-
     item.setShowClose( true );
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( item, "showClose" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( item, "showClose" ) );
   }
 
   @Test
   public void testRenderShowCloseUnchanged() throws IOException {
-    CTabItem item = new CTabItem( folder, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
 
@@ -441,6 +403,78 @@ public class CTabItemLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findSetOperation( item, "showClose" ) );
+  }
+
+  @Test
+  public void testRenderInitialMnemonicIndex() throws IOException {
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( item, "mnemonicIndex" ) );
+  }
+
+  @Test
+  public void testRenderMnemonicIndex() throws IOException {
+    item.setText( "te&st" );
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 2, message.findSetProperty( item, "mnemonicIndex" ).asInt() );
+  }
+
+  @Test
+  public void testRenderMnemonicIndex_OnTextChange() throws IOException {
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( item );
+
+    item.setText( "te&st" );
+    Fixture.preserveWidgets();
+    item.setText( "aa&bb" );
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 2, message.findSetProperty( item, "mnemonicIndex" ).asInt() );
+  }
+
+  @Test
+  public void testRenderMnemonicIndexUnchanged() throws IOException {
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( item );
+
+    item.setText( "te&st" );
+    Fixture.preserveWidgets();
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( item, "mnemonicIndex" ) );
+  }
+
+  @Test
+  public void testRenderData() throws IOException {
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo", "bar" } );
+    item.setData( "foo", "string" );
+    item.setData( "bar", Integer.valueOf( 1 ) );
+
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    JsonObject data = ( JsonObject )message.findSetProperty( item, "data" );
+    assertEquals( "string", data.get( "foo" ).asString() );
+    assertEquals( 1, data.get( "bar" ).asInt() );
+  }
+
+  @Test
+  public void testRenderDataUnchanged() throws IOException {
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo" } );
+    item.setData( "foo", "string" );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( item );
+
+    Fixture.preserveWidgets();
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 0, message.getOperationCount() );
   }
 
 }

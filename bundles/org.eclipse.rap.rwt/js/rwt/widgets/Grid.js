@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2010, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -134,6 +134,9 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
 
     _registerListeners : function() {
       this._rootItem.addEventListener( "update", this._onItemUpdate, this );
+      this.addEventListener( "mousedown", this._handleHyperlinkActivation, this );
+      this.addEventListener( "mouseup", this._handleHyperlinkActivation, this );
+      this.addEventListener( "click", this._handleHyperlinkActivation, this );
       this.addEventListener( "mousedown", this._onMouseDown, this );
       this.addEventListener( "mouseup", this._onMouseUp, this );
       this.addEventListener( "mouseout", this._onMouseOut, this );
@@ -174,6 +177,7 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
         this._config.markupEnabled = true;
       }
       this._hasFixedColumns = map.splitContainer;
+      this._config.baseAppearance = map.appearance;
       this._rowContainer.setBaseAppearance( map.appearance );
       this.setAppearance( map.appearance );
     },
@@ -534,7 +538,7 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
     _onMouseDown : function( event ) {
       this._delayedSelection = false;
       var target = event.getOriginalTarget();
-      if( target instanceof rwt.widgets.base.GridRow ) {
+      if( target instanceof rwt.widgets.base.GridRow && !this._isHyperlinkTarget( event ) ) {
         this._onRowMouseDown( target, event );
       }
     },
@@ -561,6 +565,31 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
           this._onSelectionClick( event, item );
         }
       }
+    },
+
+    _handleHyperlinkActivation : function( event ) {
+      if( this._isRWTHyperlinkTarget( event ) ) {
+        event.setDefaultPrevented( true );
+        if( event.getType() === "click" ) {
+          var domTarget = event.getDomTarget();
+          var row = event.getOriginalTarget();
+          var item = this._rowContainer.findItemByRow( row );
+          var text = domTarget.getAttribute( "href" );
+          if( !text ) {
+            text = domTarget.innerHTML;
+          }
+          this._sendSelectionEvent( item, false, "hyperlink", undefined, text );
+        }
+      }
+    },
+
+    _isHyperlinkTarget : function( event ) {
+      return event.getDomTarget().tagName.toLowerCase() === "a";
+    },
+
+    _isRWTHyperlinkTarget : function( event ) {
+      var domTarget = event.getDomTarget();
+      return this._isHyperlinkTarget( event ) && domTarget.getAttribute( "target" ) === "_rwt";
     },
 
     _isSelectionClick : function( identifier ) {
@@ -943,10 +972,7 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
 
     _sendItemCheckedChange : function( item ) { // TODO [tb] : item events should be send by item
       if( !this._inServerResponse() ) {
-        var req = rwt.remote.Server.getInstance();
-        var wm = rwt.remote.WidgetManager.getInstance();
-        var itemId = wm.findIdByWidget( item );
-        req.addParameter( itemId + ".checked", item.isChecked() );
+        rwt.remote.Server.getInstance().getRemoteObject( item ).set( "checked", item.isChecked() );
         this._sendSelectionEvent( item, false, "check" );
       }
     },
@@ -966,9 +992,8 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
 
     _sendItemFocusChange : function() {
       if( !this._inServerResponse() ) {
-        var req = rwt.remote.Server.getInstance();
-        var id = rwt.remote.WidgetManager.getInstance().findIdByWidget( this );
-        req.addParameter( id + ".focusItem", this._getItemId( this._focusItem ) );
+        var focusItemId = this._getItemId( this._focusItem );
+        rwt.remote.Server.getInstance().getRemoteObject( this ).set( "focusItem", focusItemId );
       }
     },
 
@@ -1041,14 +1066,15 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
       }
     },
 
-    _sendSelectionEvent : function( item, defaultSelected, detail, index ) {
+    _sendSelectionEvent : function( item, defaultSelected, detail, index, text ) {
       if(    ( this._hasSelectionListener && !defaultSelected )
           || ( this._hasDefaultSelectionListener && defaultSelected ) )
       {
         var properties = {
           "item" : this._getItemId( item ),
           "detail" : detail,
-          "index" : !isNaN( index ) ? index : undefined
+          "index" : !isNaN( index ) ? index : undefined,
+          "text" : text
         };
         if( defaultSelected ) {
           rwt.remote.EventUtil.notifyDefaultSelected( this, properties );
@@ -1213,7 +1239,7 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
         if( isNaN( cell ) ) {
           item.setChecked( !item.isChecked() );
           this._sendItemCheckedChange( item );
-        } else {
+        } else if( item.isCellCheckable( cell ) ) {
           item.toggleCellChecked( cell );
           this._sendCellCheckedChange( item, cell );
         }

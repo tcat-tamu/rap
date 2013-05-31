@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -43,6 +43,7 @@ public final class TableItemLCA extends AbstractWidgetLCA {
 
   private static final String TYPE = "rwt.widgets.GridItem";
 
+  static final String PROP_INDEX = "index";
   static final String PROP_TEXTS = "texts";
   static final String PROP_IMAGES = "images";
   static final String PROP_BACKGROUND = "background";
@@ -58,6 +59,8 @@ public final class TableItemLCA extends AbstractWidgetLCA {
   @Override
   public void preserveValues( Widget widget ) {
     TableItem item = ( TableItem )widget;
+    preserveProperty( item, PROP_INDEX, getIndex( item ) );
+    preserveProperty( item, PROP_CACHED, isCached( item ) );
     if( isCached( item ) ) {
       preserveProperty( item, PROP_TEXTS, getTexts( item ) );
       preserveProperty( item, PROP_IMAGES, getImages( item ) );
@@ -65,13 +68,13 @@ public final class TableItemLCA extends AbstractWidgetLCA {
       WidgetLCAUtil.preserveForeground( item, getUserForeground( item ) );
       WidgetLCAUtil.preserveFont( item, getUserFont( item ) );
       WidgetLCAUtil.preserveCustomVariant( item );
+      WidgetLCAUtil.preserveData( item );
       preserveProperty( item, PROP_CELL_BACKGROUNDS, getCellBackgrounds( item ) );
       preserveProperty( item, PROP_CELL_FOREGROUNDS, getCellForegrounds( item ) );
       preserveProperty( item, PROP_CELL_FONTS, getCellFonts( item ) );
       preserveProperty( item, PROP_CHECKED, item.getChecked() );
       preserveProperty( item, PROP_GRAYED, item.getGrayed() );
     }
-    preserveProperty( item, PROP_CACHED, isCached( item ) );
   }
 
   public void readData( Widget widget ) {
@@ -83,16 +86,15 @@ public final class TableItemLCA extends AbstractWidgetLCA {
   public void renderInitialization( Widget widget ) throws IOException {
     TableItem item = ( TableItem )widget;
     Table parent = item.getParent();
-    int index = parent.indexOf( item );
     IClientObject clientObject = ClientObjectFactory.getClientObject( item );
     clientObject.create( TYPE );
     clientObject.set( "parent", WidgetUtil.getId( parent ) );
-    clientObject.set( "index", index );
   }
 
   @Override
   public void renderChanges( Widget widget ) throws IOException {
     final TableItem item = ( TableItem )widget;
+    renderProperty( item, PROP_INDEX, getIndex( item ), -1 );
     if( wasCleared( item ) ) {
       renderClear( item );
     } else {
@@ -131,6 +133,7 @@ public final class TableItemLCA extends AbstractWidgetLCA {
     WidgetLCAUtil.renderForeground( item, getUserForeground( item ) );
     WidgetLCAUtil.renderFont( item, getUserFont( item ) );
     WidgetLCAUtil.renderCustomVariant( item );
+    WidgetLCAUtil.renderData( item );
     renderProperty( item,
                     PROP_CELL_BACKGROUNDS,
                     getCellBackgrounds( item ),
@@ -154,6 +157,10 @@ public final class TableItemLCA extends AbstractWidgetLCA {
 
   //////////////////
   // Helping methods
+
+  private static int getIndex( TableItem item ) {
+    return item.getParent().indexOf( item );
+  }
 
   private static boolean isCached( TableItem item ) {
     Table table = item.getParent();

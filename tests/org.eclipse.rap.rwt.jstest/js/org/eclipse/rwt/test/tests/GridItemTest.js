@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 EclipseSource and others.
+ * Copyright (c) 2010, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -423,6 +423,29 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridItemTest", {
       tree.destroy();
     },
 
+    testSetCellCheckableByProtocol : function() {
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      var tree = this._createTreeByProtocol( "w3", "w2", [ "CHECK" ] );
+      var processor = rwt.remote.MessageProcessor;
+      processor.processOperation( {
+        "target" : "w4",
+        "action" : "create",
+        "type" : "rwt.widgets.GridItem",
+        "properties" : {
+          "parent" : "w3",
+          "index": 0,
+          "cellCheckable" : [ true, true, false ]
+        }
+      } );
+      var ObjectManager = rwt.remote.ObjectRegistry;
+      var item = ObjectManager.getObject( "w4" );
+      assertTrue( item.isCellCheckable( 0 ) );
+      assertTrue( item.isCellCheckable( 1 ) );
+      assertFalse( item.isCellCheckable( 2 ) );
+      shell.destroy();
+      tree.destroy();
+    },
+
     testSetGrayedByProtocol : function() {
       var shell = TestUtil.createShellByProtocol( "w2" );
       var tree = this._createTreeByProtocol( "w3", "w2", [ "CHECK" ] );
@@ -550,6 +573,19 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridItemTest", {
       item.setTexts( [ "<b>Test</b>", "<i>Test2</i>" ] );
       assertEquals( "<b>Test</b>", item.getText( 0, false ) );
       assertEquals( "<i>Test2</i>", item.getText( 1, false ) );
+    },
+
+    testTextGetUnEscapedTextAfterPermanentEscape : function() {
+      var item = new rwt.widgets.GridItem();
+      item.setTexts( [ "<b>Test</b>", "<i>Test2</i>" ] );
+      item.getText( 1, true );
+
+      try {
+        item.getText( 1, false );
+        fail();
+      } catch( ex ) {
+        // expected
+      }
     },
 
     testItemFont : function() {
@@ -771,6 +807,65 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridItemTest", {
       assertEquals( [ child1, child2, child3 ], root._children );
       child2.dispose();
       assertEquals( [ child1, child3, undefined ], root._children );
+    },
+
+    testRemoveItemUncachedAndUpdateIndex : function() {
+      var root = new rwt.widgets.GridItem();
+      root.setItemCount( 3 );
+      var child3 = new rwt.widgets.GridItem( root, 2 );
+
+      root.setItemCount( 2 );
+      child3.setIndex( 1 );
+
+      assertEquals( [ undefined, child3 ], root._children );
+    },
+
+    testRemoveMultipleItemsUncachedAndUpdateIndex : function() {
+      var root = new rwt.widgets.GridItem();
+      root.setItemCount( 5 );
+      var child3 = new rwt.widgets.GridItem( root, 2 );
+      var child4 = new rwt.widgets.GridItem( root, 3 );
+      var child5 = new rwt.widgets.GridItem( root, 4 );
+
+      root.setItemCount( 3 );
+      child3.setIndex( 0 );
+      child4.setIndex( 1 );
+      child5.setIndex( 2 );
+
+      assertEquals( [ child3, child4, child5 ], root._children );
+    },
+
+    testRemoveItemUncachedDisposesPlaceholder : function() {
+      var root = new rwt.widgets.GridItem();
+      root.setItemCount( 3 );
+      var child2 = new rwt.widgets.GridItem( root, 1, true );
+      var child3 = new rwt.widgets.GridItem( root, 2 );
+
+      root.setItemCount( 2 );
+      child3.setIndex( 1 );
+      TestUtil.flush();
+
+      assertTrue( child2.isDisposed() );
+      assertEquals( [ undefined, child3 ], root._children );
+    },
+
+    testRemoveMultipleItemsUncachedDisposesPlaceHolder : function() {
+      var root = new rwt.widgets.GridItem();
+      root.setItemCount( 5 );
+      var child1 = new rwt.widgets.GridItem( root, 0, true );
+      var child2 = new rwt.widgets.GridItem( root, 1, true );
+      var child3 = new rwt.widgets.GridItem( root, 2 );
+      var child4 = new rwt.widgets.GridItem( root, 3 );
+      var child5 = new rwt.widgets.GridItem( root, 4 );
+
+      root.setItemCount( 3 );
+      child3.setIndex( 0 );
+      child4.setIndex( 1 );
+      child5.setIndex( 2 );
+
+      assertEquals( [ child3, child4, child5 ], root._children );
+      assertTrue( child1.isDisposed() );
+      assertTrue( child2.isDisposed() );
     },
 
     testRemoveItemEvent : function() {

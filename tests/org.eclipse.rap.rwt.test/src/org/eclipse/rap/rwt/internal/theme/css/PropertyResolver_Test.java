@@ -35,6 +35,7 @@ import org.eclipse.rap.rwt.internal.theme.QxCursor;
 import org.eclipse.rap.rwt.internal.theme.QxDimension;
 import org.eclipse.rap.rwt.internal.theme.QxFloat;
 import org.eclipse.rap.rwt.internal.theme.QxFont;
+import org.eclipse.rap.rwt.internal.theme.QxIdentifier;
 import org.eclipse.rap.rwt.internal.theme.QxImage;
 import org.eclipse.rap.rwt.internal.theme.QxShadow;
 import org.eclipse.rap.rwt.internal.theme.QxType;
@@ -96,7 +97,7 @@ public class PropertyResolver_Test {
   @Test
   public void testColorWithAlpha() throws Exception {
     String input = "rgba( 1, 2, 3, 0.25 )";
-    QxColor result = PropertyResolver.readColorWithAlpha( parseProperty( input ) );
+    QxColor result = PropertyResolver.readColor( parseProperty( input ) );
     assertNotNull( result );
     assertEquals( 1, result.red );
     assertEquals( 2, result.green );
@@ -107,7 +108,7 @@ public class PropertyResolver_Test {
   @Test
   public void testColorWithAlpha_Percents() throws Exception {
     String input = "rgba( 0%, 50%, 100%, 0.25 )";
-    QxColor result = PropertyResolver.readColorWithAlpha( parseProperty( input ) );
+    QxColor result = PropertyResolver.readColor( parseProperty( input ) );
     assertNotNull( result );
     assertEquals( 0, result.red );
     assertEquals( 127, result.green );
@@ -118,14 +119,14 @@ public class PropertyResolver_Test {
   @Test
   public void testColorWithAlpha_NoTransparency() throws Exception {
     String input = "rgba( 0, 0, 0, 1 )";
-    QxColor result = PropertyResolver.readColorWithAlpha( parseProperty( input ) );
+    QxColor result = PropertyResolver.readColor( parseProperty( input ) );
     assertSame( QxColor.BLACK, result );
   }
 
   @Test
   public void testColorWithAlpha_NormalizeNegativeAlpha() throws Exception {
     String input = "rgba( 1, 2, 3, -0.1 )";
-    QxColor result = PropertyResolver.readColorWithAlpha( parseProperty( input ) );
+    QxColor result = PropertyResolver.readColor( parseProperty( input ) );
     assertNotNull( result );
     assertEquals( 1, result.red );
     assertEquals( 2, result.green );
@@ -136,7 +137,7 @@ public class PropertyResolver_Test {
   @Test
   public void testColorWithAlpha_NormalizePositiveAlpha() throws Exception {
     String input = "rgba( 1, 2, 3, 1.1 )";
-    QxColor result = PropertyResolver.readColorWithAlpha( parseProperty( input ) );
+    QxColor result = PropertyResolver.readColor( parseProperty( input ) );
     assertNotNull( result );
     assertEquals( 1, result.red );
     assertEquals( 2, result.green );
@@ -147,7 +148,7 @@ public class PropertyResolver_Test {
   @Test
   public void testColorWithAlpha_NormalizeColorValue() throws Exception {
     String input = "rgba( -10, 127, 300, 0.25 )";
-    QxColor result = PropertyResolver.readColorWithAlpha( parseProperty( input ) );
+    QxColor result = PropertyResolver.readColor( parseProperty( input ) );
     assertNotNull( result );
     assertEquals( 0, result.red );
     assertEquals( 127, result.green );
@@ -159,7 +160,7 @@ public class PropertyResolver_Test {
   public void testColorWithAlpha_MixedValues() throws Exception {
     String input = "rgba( 0%, 50, 100, 0.25 )";
     try {
-      PropertyResolver.readColorWithAlpha( parseProperty( input ) );
+      PropertyResolver.readColor( parseProperty( input ) );
       fail();
     } catch( IllegalArgumentException e ) {
       // expected
@@ -936,6 +937,49 @@ public class PropertyResolver_Test {
     } catch( IllegalArgumentException e ) {
       assertTrue( e.getMessage().contains( "color darkslategray" ) );
     }
+  }
+
+  @Test
+  public void testIsBackgroundRepeat() {
+    assertTrue( PropertyResolver.isBackgroundRepeatProperty( "background-repeat" ) );
+  }
+
+  @Test
+  public void testBackgroundRepeat_Valid() throws Exception {
+    QxIdentifier identifier = PropertyResolver.readBackgroundRepeat( parseProperty( "repeat" ) );
+
+    assertEquals( "repeat", identifier.value );
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testBackgroundRepeat_Invalid() throws Exception {
+    PropertyResolver.readBackgroundRepeat( parseProperty( "foo" ) );
+  }
+
+  @Test
+  public void testIsBackgroundPosition() {
+    assertTrue( PropertyResolver.isBackgroundPositionProperty( "background-position" ) );
+  }
+
+  @Test
+  public void testBackgroundPosition_Valid() throws Exception {
+    LexicalUnit input = parseProperty( "left top" );
+    QxIdentifier identifier = PropertyResolver.readBackgroundPosition( input );
+
+    assertEquals( "left top", identifier.value );
+  }
+
+  @Test
+  public void testBackgroundPosition_ValidOneKeyword() throws Exception {
+    LexicalUnit input = parseProperty( "left" );
+    QxIdentifier identifier = PropertyResolver.readBackgroundPosition( input );
+
+    assertEquals( "left center", identifier.value );
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testBackgroundposition_Invalid() throws Exception {
+    PropertyResolver.readBackgroundRepeat( parseProperty( "foo bar" ) );
   }
 
   private static LexicalUnit parseProperty( String input )

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2008, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@
 package org.eclipse.swt.internal.widgets.expanditemkit;
 
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.rap.rwt.testfixture.internal.TestUtil.createImage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -21,14 +22,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
@@ -39,22 +38,20 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ExpandEvent;
 import org.eclipse.swt.events.ExpandListener;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.internal.graphics.ImageFactory;
+import org.eclipse.swt.internal.widgets.WidgetDataUtil;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ExpandBar;
 import org.eclipse.swt.widgets.ExpandItem;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 
-@SuppressWarnings("deprecation")
 public class ExpandItemLCA_Test {
 
   private Display display;
@@ -84,7 +81,7 @@ public class ExpandItemLCA_Test {
     ExpandListener listener = mock( ExpandListener.class );
     expandBar.addExpandListener( listener );
 
-    Fixture.fakeSetParameter( WidgetUtil.getId( expandItem ), "expanded", Boolean.TRUE );
+    Fixture.fakeSetProperty( WidgetUtil.getId( expandItem ), "expanded", true );
     fakeExpandEvent( expandItem, "Expand" );
     Fixture.readDataAndProcessAction( display );
 
@@ -114,7 +111,7 @@ public class ExpandItemLCA_Test {
     };
     expandBar.addExpandListener( listener );
 
-    Fixture.fakeSetParameter( WidgetUtil.getId( expandItem ), "expanded", Boolean.TRUE );
+    Fixture.fakeSetProperty( WidgetUtil.getId( expandItem ), "expanded", true );
     fakeExpandEvent( expandItem, "Expand" );
     Fixture.readDataAndProcessAction( display );
 
@@ -127,7 +124,7 @@ public class ExpandItemLCA_Test {
     expandBar.addExpandListener( listener );
     expandItem.setExpanded( true );
 
-    Fixture.fakeSetParameter( WidgetUtil.getId( expandItem ), "expanded", Boolean.FALSE );
+    Fixture.fakeSetProperty( WidgetUtil.getId( expandItem ), "expanded", false );
     fakeExpandEvent( expandItem, "Collapse" );
     Fixture.readDataAndProcessAction( display );
 
@@ -158,7 +155,7 @@ public class ExpandItemLCA_Test {
     expandItem.setExpanded( true );
     expandBar.addExpandListener( listener );
 
-    Fixture.fakeSetParameter( WidgetUtil.getId( expandItem ), "expanded", Boolean.FALSE );
+    Fixture.fakeSetProperty( WidgetUtil.getId( expandItem ), "expanded", false );
     fakeExpandEvent( expandItem, "Collapse" );
     Fixture.readDataAndProcessAction( display );
 
@@ -209,7 +206,7 @@ public class ExpandItemLCA_Test {
     lca.renderChanges( expandItem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "variant_blue", message.findSetProperty( expandItem, "customVariant" ) );
+    assertEquals( "variant_blue", message.findSetProperty( expandItem, "customVariant" ).asString() );
   }
 
   @Test
@@ -226,27 +223,27 @@ public class ExpandItemLCA_Test {
   }
 
   @Test
-  public void testRenderInitialBounds() throws IOException, JSONException {
+  public void testRenderInitialBounds() throws IOException {
     expandItem.setText( "foo" );
 
     lca.render( expandItem );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray bounds = ( JSONArray )message.findCreateProperty( expandItem, "bounds" );
-    assertTrue( bounds.getInt( 2 ) > 0 );
-    assertTrue( bounds.getInt( 3 ) > 0 );
+    JsonArray bounds = ( JsonArray )message.findCreateProperty( expandItem, "bounds" );
+    assertTrue( bounds.get( 2 ).asInt() > 0 );
+    assertTrue( bounds.get( 3 ).asInt() > 0 );
   }
 
   @Test
-  public void testRenderBounds() throws IOException, JSONException {
+  public void testRenderBounds() throws IOException {
     expandItem.setText( "foo" );
 
     lca.renderChanges( expandItem );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray bounds = ( JSONArray )message.findSetProperty( expandItem, "bounds" );
-    assertTrue( bounds.getInt( 2 ) > 0 );
-    assertTrue( bounds.getInt( 3 ) > 0 );
+    JsonArray bounds = ( JsonArray )message.findSetProperty( expandItem, "bounds" );
+    assertTrue( bounds.get( 2 ).asInt() > 0 );
+    assertTrue( bounds.get( 3 ).asInt() > 0 );
   }
 
   @Test
@@ -277,7 +274,7 @@ public class ExpandItemLCA_Test {
     lca.renderChanges( expandItem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( expandItem, "text" ) );
+    assertEquals( "foo", message.findSetProperty( expandItem, "text" ).asString() );
   }
 
   @Test
@@ -302,24 +299,23 @@ public class ExpandItemLCA_Test {
   }
 
   @Test
-  public void testRenderImage() throws IOException, JSONException {
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+  public void testRenderImage() throws IOException {
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
 
     expandItem.setImage( image );
     lca.renderChanges( expandItem );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( image );
-    String expected = "[\"" + imageLocation + "\", 100, 50 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( expandItem, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 100 ).add( 50 );
+    assertEquals( expected, message.findSetProperty( expandItem, "image" ) );
   }
 
   @Test
   public void testRenderImageUnchanged() throws IOException {
     Fixture.markInitialized( display );
     Fixture.markInitialized( expandItem );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
 
     expandItem.setImage( image );
     Fixture.preserveWidgets();
@@ -333,7 +329,7 @@ public class ExpandItemLCA_Test {
   public void testRenderImageReset() throws IOException {
     Fixture.markInitialized( display );
     Fixture.markInitialized( expandItem );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
     expandItem.setImage( image );
 
     Fixture.preserveWidgets();
@@ -341,7 +337,7 @@ public class ExpandItemLCA_Test {
     lca.renderChanges( expandItem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( expandItem, "image" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( expandItem, "image" ) );
   }
 
   @Test
@@ -355,11 +351,11 @@ public class ExpandItemLCA_Test {
 
   @Test
   public void testRenderHeaderHeight() throws IOException {
-    expandBar.setFont( Graphics.getFont( "Arial", 22, SWT.BOLD )  );
+    expandBar.setFont( new Font( display, "Arial", 22, SWT.BOLD )  );
     lca.renderChanges( expandItem );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Integer.valueOf( 26 ), message.findSetProperty( expandItem, "headerHeight" ) );
+    assertEquals( 26, message.findSetProperty( expandItem, "headerHeight" ).asInt() );
   }
 
   @Test
@@ -367,7 +363,7 @@ public class ExpandItemLCA_Test {
     Fixture.markInitialized( display );
     Fixture.markInitialized( expandItem );
 
-    expandBar.setFont( Graphics.getFont( "Arial", 22, SWT.BOLD )  );
+    expandBar.setFont( new Font( display, "Arial", 22, SWT.BOLD )  );
     Fixture.preserveWidgets();
     lca.renderChanges( expandItem );
 
@@ -375,9 +371,37 @@ public class ExpandItemLCA_Test {
     assertNull( message.findSetOperation( expandItem, "headerHeight" ) );
   }
 
-  private static void fakeExpandEvent( ExpandItem item, String eventName ) {
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( ClientMessageConst.EVENT_PARAM_ITEM, getId( item ) );
-    Fixture.fakeNotifyOperation( getId( item.getParent() ), eventName, parameters );
+  @Test
+  public void testRenderData() throws IOException {
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo", "bar" } );
+    expandItem.setData( "foo", "string" );
+    expandItem.setData( "bar", Integer.valueOf( 1 ) );
+
+    lca.renderChanges( expandItem );
+
+    Message message = Fixture.getProtocolMessage();
+    JsonObject data = ( JsonObject )message.findSetProperty( expandItem, "data" );
+    assertEquals( "string", data.get( "foo" ).asString() );
+    assertEquals( 1, data.get( "bar" ).asInt() );
   }
+
+  @Test
+  public void testRenderDataUnchanged() throws IOException {
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo" } );
+    expandItem.setData( "foo", "string" );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( expandItem );
+
+    Fixture.preserveWidgets();
+    lca.renderChanges( expandItem );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 0, message.getOperationCount() );
+  }
+
+  private static void fakeExpandEvent( ExpandItem item, String eventName ) {
+    JsonObject properties = new JsonObject().add( ClientMessageConst.EVENT_PARAM_ITEM, getId( item ) );
+    Fixture.fakeNotifyOperation( getId( item.getParent() ), eventName, properties );
+  }
+
 }

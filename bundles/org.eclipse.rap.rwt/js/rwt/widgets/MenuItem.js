@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 Innoopract Informationssysteme GmbH.
+ * Copyright (c) 2009, 2013 Innoopract Informationssysteme GmbH.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,10 +14,12 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
   extend : rwt.widgets.base.MultiCellWidget,
 
   construct : function( menuItemType ) {
-    this.base( arguments, [ "image", "image", "label", "image" ] );
+    this.base( arguments, [ "image", "image", "label", "label", "image" ] );
     this._hasSelectionListener = false;
     this._selected = false;
     this._parentMenu = null;
+    this._rawText = null;
+    this._mnemonicIndex = null;
     this._subMenu = null;
     this._subMenuOpen = false;
     this._preferredCellWidths = null;
@@ -34,38 +36,34 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
       case "bar" :
        this._isSelectable = false;
        this._isDeselectable = false;
-       this._sendEvent = false;
        this.addState( "onMenuBar" );
       break;
       case "push" :
        this._isSelectable = false;
        this._isDeselectable = false;
-       this._sendEvent = true;
       break;
       case "check":
        this._isSelectable = true;
        this._isDeselectable = true;
-       this._sendEvent = true;
       break;
       case "cascade":
        this._isSelectable = false;
        this._isDeselectable = false;
-       this._sendEvent = false;
       break;
       case "radio":
        this._isSelectable = true;
-       this._sendEvent = true;
        this.setNoRadioGroup( false );
        rwt.widgets.util.RadioButtonUtil.registerExecute( this );
       break;
     }
-    this._preferredCellWidths = [ 0, 0, 0, 13 ];
+    this._preferredCellWidths = [ 0, 0, 0, 0, 13 ];
     if( this._isSelectable ) {
       this.setCellContent( 0, "" );
     }
   },
 
   destruct : function() {
+    this.setMnemonicIndex( null );
     this._disposeFields( "_parentMenu", "_subMenu" );
   },
 
@@ -100,6 +98,94 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
   },
 
   members : {
+
+   setText : function( value ) {
+      this._rawText = value;
+      this._mnemonicIndex = null;
+      this.renderText();
+    },
+
+    setAccelerator : function( value ) {
+      var acc = null;
+      if( value ) {
+        // assumign a tab is rendered as four spaces
+        acc = rwt.util.Encoding.escapeText( value );
+        acc = rwt.util.Encoding.replaceWhiteSpaces( "    " + acc );
+      }
+      this.setCellContent( 3, acc );
+      this.setCellDimension( 3, null, null ); // force to recompute the width
+      this._setPreferredCellWidth( 3, this.getCellWidth( 3 ) );
+    },
+
+    setMnemonicIndex : function( value ) {
+      this._mnemonicIndex = value;
+      if( this._parentMenu instanceof rwt.widgets.MenuBar ) {
+        var mnemonicHandler = rwt.widgets.util.MnemonicHandler.getInstance();
+        if( ( typeof value === "number" ) && ( value >= 0 ) ) {
+          mnemonicHandler.add( this, this._onMnemonic );
+        } else {
+          mnemonicHandler.remove( this );
+        }
+      } else if( value != null && this._isMnemonicMenu() ) {
+        this.renderText();
+      }
+    },
+
+    renderText : function() {
+      this._applyText( this._isMnemonicMenu() );
+    },
+
+    _isMnemonicMenu : function() {
+      return     this._parentMenu instanceof rwt.widgets.Menu
+              && this._parentMenu.getMnemonics();
+    },
+
+    getMnemonicIndex : function() {
+      return this._mnemonicIndex;
+    },
+
+    handleMnemonic : function( event ) {
+      this._onMnemonic( event );
+    },
+
+    _applyText : function( mnemonic ) {
+      if( this._rawText ) {
+        var mnemonicIndex = mnemonic ? this._mnemonicIndex : undefined;
+        var text = rwt.util.Encoding.escapeText( this._rawText, mnemonicIndex );
+        this._setText( text );
+      } else {
+        this._setText( null );
+      }
+    },
+
+    _afterRenderLayout : function( changes ) {
+      if( changes.createContent && this.getCellNode( 3 ) ) {
+        this.getCellNode( 3 ).style.textAlign = "right";
+      }
+    },
+
+    _onMnemonic : function( event ) {
+      switch( event.type ) {
+        case "show":
+          this._applyText( true );
+        break;
+        case "hide":
+          this._applyText( false );
+        break;
+        case "trigger":
+          var charCode = this._rawText.toUpperCase().charCodeAt( this._mnemonicIndex );
+          if( event.charCode === charCode ) {
+            if( this.hasState( "bar" ) || this.hasState( "cascade" ) ) {
+              this._parentMenu.openByMnemonic( this );
+            } else {
+              this.execute();
+              rwt.widgets.util.MenuManager.getInstance().update();
+            }
+            event.success = true;
+          }
+        break;
+      }
+    },
 
     setParentMenu : function( menu ) {
       this._parentMenu = menu;
@@ -161,7 +247,7 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
       this._setPreferredCellWidth( 1, width );
     },
 
-    setText : function( value ) {
+    _setText : function( value ) {
       this.setCellContent( 2, value );
       this.setCellDimension( 2, null, null ); // force to recompute the width
       this._setPreferredCellWidth( 2, this.getCellWidth( 2 ) );
@@ -176,14 +262,14 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
       var url = value ? value[ 0 ] : null;
       var width = value ? value[ 1 ] : 13;
       var height = value ? value[ 2 ] : 0;
-      this.setCellContent( 3, url );
-      this.setCellHeight( 3, height );
-      this._setPreferredCellWidth( 3, width );
+      this.setCellContent( 4, url );
+      this.setCellHeight( 4, height );
+      this._setPreferredCellWidth( 4, width );
     },
 
     _beforeComputeInnerWidth : function() {
       if( this._parentMenu instanceof rwt.widgets.Menu ) {
-        for( var i = 0; i < 4; i++ ) {
+        for( var i = 0; i < 5; i++ ) {
           this._setCellWidth( i, this._parentMenu.getMaxCellWidth( i ) );
         }
       }
@@ -217,19 +303,22 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
       return this._noRadioGroup;
     },
 
-    // TODO [tb] "execute", "setSelection", "_sendChanges" and possibly more
+    // TODO [tb] "execute", "setSelection", "_notifySelected" and possibly more
     // could be shared between Button, MenuItem and (future) ToolItem.
     // Then, also the corrosponding LCA-methods could be shared
     execute : function() {
       this.base( arguments );
       if( this._isSelectable ) {
         this.setSelection( !( this._selected && this._isDeselectable ) );
+      } else {
+        this._notifySelected();
       }
-      this._sendChanges();
     },
 
     setSelection : function( value ) {
-      if( this._selected != value || this._selected ) {
+      var wasSelected = this._selected;
+      var selectionChanged = this._selected != value;
+      if( selectionChanged ) {
         this._selected = value;
         if( this._selected ) {
           this.addState( "selected" );
@@ -237,22 +326,26 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
           this.removeState( "selected" );
         }
         if( !rwt.remote.EventUtil.getSuspended() ) {
-          var widgetManager = rwt.remote.WidgetManager.getInstance();
-          var id = widgetManager.findIdByWidget( this );
-          var req = rwt.remote.Server.getInstance();
-          req.addParameter( id + ".selection", this._selected );
+          var server = rwt.remote.Server.getInstance();
+          server.getRemoteObject( this ).set( "selection", this._selected );
         }
+      }
+      if( selectionChanged || wasSelected ) {
+        this._notifySelected();
       }
     },
 
-    // Not using EventUtil since no event should be sent (for radio at least)
-    _sendChanges : function() {
+    _notifySelected : function() {
       if(    !rwt.remote.EventUtil.getSuspended()
           && this._hasSelectionListener
-          && this._sendEvent )
+          && this._shouldSendEvent() )
       {
         rwt.remote.EventUtil.notifySelected( this );
       }
+    },
+
+    _shouldSendEvent : function() {
+      return !this.hasState( "rwt_CASCADE" );
     },
 
     _onmouseup : function( event ) {

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.rap.rwt.service.ApplicationContext;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.junit.After;
 import org.junit.Before;
@@ -34,10 +35,12 @@ public class ThemeStoreWriter_Test {
 
   // static field used for performance improvements of test initialization
   private static Map<String,Theme> themes;
+  private ApplicationContext applicationContext;
 
   @Before
   public void setUp() throws Exception {
     Fixture.setUp();
+    applicationContext = getApplicationContext();
     initializeThemesOnFirstSetUp();
   }
 
@@ -53,22 +56,22 @@ public class ThemeStoreWriter_Test {
     element.addProperty( "background-image" );
     Theme theme = getTheme( THEME_SET_CURRENT_THEME_ID );
     IThemeCssElement[] elements = new IThemeCssElement[] { element };
-    ThemeStoreWriter storeWriter = new ThemeStoreWriter( theme, elements );
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
     String output = storeWriter.createJson();
     // register colors
-    assertTrue( output.contains( "\"#000000\"" ) );
-    assertTrue( output.contains( "\"#ff0000\"" ) );
+    assertTrue( output.contains( "[0,0,0,1]" ) );
+    assertTrue( output.contains( "[255,0,0,1]" ) );
     // register images, with sizes
     String expected;
-    expected = "\"ba873d77.png\": [ 50, 100 ]";
+    expected = "\"ba873d77.png\":[50,100]";
     assertTrue( output.contains( expected ) );
     // conditional colors
-    expected =   "\"color\": [ [ [ \"[BORDER\" ], "
-               + "\"400339c0\" ], [ [], \"3fe41900\" ] ]";
+    expected =   "\"color\":[[[\"[BORDER\"],"
+               + "\"400339c0\"],[[],\"3fe41900\"]]";
     assertTrue( output.contains( expected ) );
     // conditional background-images
-    expected =   "\"background-image\": "
-               + "[ [ [ \"[BORDER\" ], \"ba873d77.png\" ], [ [], \"a505df1b\" ] ]";
+    expected =   "\"background-image\":"
+               + "[[[\"[BORDER\"],\"ba873d77.png\"],[[],\"a505df1b\"]]";
     assertTrue( output.contains( expected ) );
   }
 
@@ -78,17 +81,17 @@ public class ThemeStoreWriter_Test {
     element.addProperty( "animation" );
     Theme theme = getTheme( THEME_ANIMATIONS );
     IThemeCssElement[] elements = new IThemeCssElement[] { element };
-    ThemeStoreWriter storeWriter = new ThemeStoreWriter( theme, elements );
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
     String output = storeWriter.createJson();
-    String expected =   "\"animations\": {\n"
-                      + "\"46ab28c4\": {\n"
-                      + "\"slideIn\": [ 2000, \"easeIn\" ],\n"
-                      + "\"slideOut\": [ 2000, \"easeOut\" ]\n"
-                      + "}\n"
+    String expected =   "\"animations\":{"
+                      + "\"46ab28c4\":{"
+                      + "\"slideIn\":[2000,\"easeIn\"],"
+                      + "\"slideOut\":[2000,\"easeOut\"]"
+                      + "}"
                       + "}";
     assertTrue( output.contains( expected ) );
-    expected =   "\"Menu\": {\n"
-               + "\"animation\": [ [ [], \"46ab28c4\" ] ]\n"
+    expected =   "\"Menu\":{"
+               + "\"animation\":[[[],\"46ab28c4\"]]"
                + "}";
     assertTrue( output.contains( expected ) );
   }
@@ -99,18 +102,18 @@ public class ThemeStoreWriter_Test {
     element.addProperty( "background-image" );
     Theme theme = getTheme( THEME_WRITE_VERTICAL_GRADIENT );
     IThemeCssElement[] elements = new IThemeCssElement[] { element };
-    ThemeStoreWriter storeWriter = new ThemeStoreWriter( theme, elements );
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
     String output = storeWriter.createJson();
-    String expected =   "\"gradients\": {\n"
-                      + "\"2eb911d6\": {\n"
-                      + "\"percents\": [ 0.0, 48.0, 52.0, 100.0 ],\n"
-                      + "\"colors\": [ \"#ffffff\", \"#f0f0f0\", \"#e0e0e0\", \"#ffffff\" ],\n"
-                      + "\"vertical\": true\n"
-                      + "}\n"
+    String expected =   "\"gradients\":{"
+                      + "\"2eb911d6\":{"
+                      + "\"percents\":[0,48,52,100],"
+                      + "\"colors\":[\"#ffffff\",\"#f0f0f0\",\"#e0e0e0\",\"#ffffff\"],"
+                      + "\"vertical\":true"
+                      + "}"
                       + "}";
     assertTrue( output.contains( expected ) );
-    expected =   "\"Button\": {\n"
-               + "\"background-image\": [ [ [], \"2eb911d6\" ] ]\n"
+    expected =   "\"Button\":{"
+               + "\"background-image\":[[[],\"2eb911d6\"]]"
                + "}";
     assertTrue( output.contains( expected ) );
   }
@@ -121,18 +124,18 @@ public class ThemeStoreWriter_Test {
     element.addProperty( "background-image" );
     Theme theme = getTheme( THEME_WRITE_HORIZONTAL_GRADIENT );
     IThemeCssElement[] elements = new IThemeCssElement[] { element };
-    ThemeStoreWriter storeWriter = new ThemeStoreWriter( theme, elements );
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
     String output = storeWriter.createJson();
-    String expected =   "\"gradients\": {\n"
-                      + "\"2762759\": {\n"
-                      + "\"percents\": [ 0.0, 48.0, 52.0, 100.0 ],\n"
-                      + "\"colors\": [ \"#ffffff\", \"#f0f0f0\", \"#e0e0e0\", \"#ffffff\" ],\n"
-                      + "\"vertical\": false\n"
-                      + "}\n"
+    String expected =   "\"gradients\":{"
+                      + "\"2762759\":{"
+                      + "\"percents\":[0,48,52,100],"
+                      + "\"colors\":[\"#ffffff\",\"#f0f0f0\",\"#e0e0e0\",\"#ffffff\"],"
+                      + "\"vertical\":false"
+                      + "}"
                       + "}";
     assertTrue( output.contains( expected ) );
-    expected =   "\"Button\": {\n"
-               + "\"background-image\": [ [ [], \"2762759\" ] ]\n"
+    expected =   "\"Button\":{"
+               + "\"background-image\":[[[],\"2762759\"]]"
                + "}";
     assertTrue( output.contains( expected ) );
   }
@@ -143,14 +146,14 @@ public class ThemeStoreWriter_Test {
     element.addProperty( "box-shadow" );
     Theme theme = getTheme( THEME_WRITE_SHADOW );
     IThemeCssElement[] elements = new IThemeCssElement[] { element };
-    ThemeStoreWriter storeWriter = new ThemeStoreWriter( theme, elements );
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
     String output = storeWriter.createJson();
-    String expected =   "\"shadows\": {\n"
-                      + "\"2aedfabd\": [ false, 10, 10, 3, 0, \"#000000\", 0.5 ]\n"
-                      + "}\n";
+    String expected =   "\"shadows\":{"
+                      + "\"2aedfabd\":[false,10,10,3,0,\"#000000\",0.5]"
+                      + "}";
     assertTrue( output.contains( expected ) );
-    expected =   "\"Shell\": {\n"
-               + "\"box-shadow\": [ [ [], \"2aedfabd\" ] ]\n"
+    expected =   "\"Shell\":{"
+               + "\"box-shadow\":[[[],\"2aedfabd\"]]"
                + "}";
     assertTrue( output.contains( expected ) );
   }
@@ -162,18 +165,18 @@ public class ThemeStoreWriter_Test {
     element.addProperty( "background-color" );
     Theme theme = getTheme( THEME_WRITE_COLORS );
     IThemeCssElement[] elements = new IThemeCssElement[] { element };
-    ThemeStoreWriter storeWriter = new ThemeStoreWriter( theme, elements );
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
     String output = storeWriter.createJson();
-    String expected =   "\"colors\": {\n"
-                      + "\"ffffffff\": \"undefined\",\n"
-                      + "\"400339c0\": \"#ff0000\",\n"
-                      + "\"3ffe9078\": \"#cecece\"\n"
+    String expected =   "\"colors\":{"
+                      + "\"ffffffff\":\"undefined\","
+                      + "\"400339c0\":[255,0,0,1],"
+                      + "\"3ffe9078\":[206,206,206,1]"
                       + "}";
     assertTrue( output.contains( expected ) );
     expected =
-        "\"Button\": {\n"
-      + "\"color\": [ [ [ \".special\" ], \"ffffffff\" ], [ [], \"400339c0\" ] ],\n"
-      + "\"background-color\": [ [ [ \".special\" ], \"3ffe9078\" ], [ [], \"ffffffff\" ] ]\n"
+        "\"Button\":{"
+      + "\"color\":[[[\".special\"],\"ffffffff\"],[[],\"400339c0\"]],"
+      + "\"background-color\":[[[\".special\"],\"3ffe9078\"],[[],\"ffffffff\"]]"
       + "}";
     assertTrue( output.contains( expected ) );
   }
@@ -184,22 +187,41 @@ public class ThemeStoreWriter_Test {
     element.addProperty( "background-image" );
     Theme theme = getTheme( THEME_WRITE_IMAGES );
     IThemeCssElement[] elements = new IThemeCssElement[] { element };
-    ThemeStoreWriter storeWriter = new ThemeStoreWriter( theme, elements );
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
     String output = storeWriter.createJson();
-    String expectedImages =   "\"images\": {\n"
-                            + "\"c84ae54c.png\": [ 100, 50 ]\n"
+    String expectedImages =   "\"images\":{"
+                            + "\"c84ae54c.png\":[100,50]"
                             + "}";
     assertTrue( output.contains( expectedImages ) );
-    String expectedGradients =   "\"gradients\": {\n"
-                               + "\"154e1724\": {\n"
-                               + "\"percents\": [ 0.0, 100.0 ],\n"
-                               + "\"colors\": [ \"#000000\", \"#ffffff\" ],\n"
-                               + "\"vertical\": true\n"
+    String expectedGradients =   "\"gradients\":{"
+                               + "\"154e1724\":{"
+                               + "\"percents\":[0,100],"
+                               + "\"colors\":[\"#000000\",\"#ffffff\"],"
+                               + "\"vertical\":true"
                                + "}";
     assertTrue( output.contains( expectedGradients ) );
     String expected =
-        "\"Button\": {\n"
-      + "\"background-image\": [ [ [ \".special\" ], \"154e1724\" ], [ [], \"c84ae54c.png\" ] ]\n"
+        "\"Button\":{"
+      + "\"background-image\":[[[\".special\"],\"154e1724\"],[[],\"c84ae54c.png\"]]"
+      + "}";
+    assertTrue( output.contains( expected ) );
+  }
+
+  @Test
+  public void testWriteImages_BackgroundRepeatAndPosition() {
+    ThemeCssElement element = new ThemeCssElement( "Button" );
+    element.addProperty( "background-image" );
+    element.addProperty( "background-repeat" );
+    element.addProperty( "background-position" );
+    Theme theme = getTheme( THEME_WRITE_IMAGES );
+    IThemeCssElement[] elements = new IThemeCssElement[] { element };
+    ThemeStoreWriter storeWriter = new ThemeStoreWriter( applicationContext, theme, elements );
+    String output = storeWriter.createJson();
+    String expected =
+        "\"Button\":{"
+      + "\"background-image\":[[[\".special\"],\"154e1724\"],[[],\"c84ae54c.png\"]],"
+      + "\"background-repeat\":[[[],\"repeat-x\"]],"
+      + "\"background-position\":[[[],\"left top\"]]"
       + "}";
     assertTrue( output.contains( expected ) );
   }
@@ -218,7 +240,9 @@ public class ThemeStoreWriter_Test {
   }
 
   private void registerThemeForTestWriteImages() throws IOException {
-    String cssCode =   "Button { background-image: url( " + Fixture.IMAGE_100x50 + " ); }\n"
+    String cssCode = "Button { background-image: url( " + Fixture.IMAGE_100x50 + " );\n"
+    + "  background-repeat: repeat-x;\n"
+    + "  background-position: left top; }\n"
     + "Button.special { background-image: gradient( linear, left top, left bottom,\n"
     + "  from( #000000 ),\n"
     + "  to( #ffffff )\n"

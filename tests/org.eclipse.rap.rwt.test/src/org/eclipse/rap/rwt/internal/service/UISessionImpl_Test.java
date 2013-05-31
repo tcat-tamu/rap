@@ -20,8 +20,11 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,12 +36,14 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.eclipse.rap.rwt.client.Client;
 import org.eclipse.rap.rwt.client.service.ClientInfo;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
+import org.eclipse.rap.rwt.internal.client.ClientMessages;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.ISessionShutdownAdapter;
 import org.eclipse.rap.rwt.remote.Connection;
@@ -60,16 +65,20 @@ public class UISessionImpl_Test {
   private UISessionImpl uiSession;
   private List<Throwable> servletLogEntries;
   private Locale localeBuffer;
+  private ApplicationContextImpl applicationContext;
 
   @Before
   public void setUp() {
     localeBuffer = Locale.getDefault();
     Locale.setDefault( Locale.ENGLISH );
-    Fixture.setUp();
+    applicationContext = mock( ApplicationContextImpl.class );
     httpSession = new TestSession();
-    uiSession = new UISessionImpl( httpSession );
-    UISessionImpl.attachInstanceToSession( httpSession, uiSession );
-    ContextProvider.getContext().setUISession( uiSession );
+    uiSession = new UISessionImpl( applicationContext, httpSession );
+    uiSession.attachToHttpSession();
+    HttpServletRequest request = mock( HttpServletRequest.class );
+    HttpServletResponse response = mock( HttpServletResponse.class );
+    ServiceContext serviceContext = new ServiceContext( request, response, uiSession );
+    ContextProvider.setContext( serviceContext );
     servletLogEntries = new LinkedList<Throwable>();
     TestServletContext servletContext = ( TestServletContext )httpSession.getServletContext();
     servletContext.setLogger( new TestLogger() {
@@ -81,32 +90,73 @@ public class UISessionImpl_Test {
 
   @After
   public void tearDown() {
-    Fixture.tearDown();
+    ContextProvider.disposeContext();
     Locale.setDefault( localeBuffer );
   }
 
   @Test
-  public void testConstructor_failsWithWithNullArgument() {
-    try {
-      new UISessionImpl( null );
-      fail();
-    } catch( NullPointerException expected ) {
-    }
-  }
+  public void testAttachToSession_doesNotOverrideOtherUISession() {
+    UISessionImpl uiSession2 = new UISessionImpl( applicationContext, httpSession, "foo" );
+    uiSession2.attachToHttpSession();
 
-  @Test
-  public void testGetInstanceFromSession() {
-    UISessionImpl result = UISessionImpl.getInstanceFromSession( httpSession );
+    UISessionImpl result = UISessionImpl.getInstanceFromSession( httpSession, null );
 
     assertSame( result, uiSession );
   }
 
   @Test
+  public void testGetInstanceFromSession() {
+    UISessionImpl result = UISessionImpl.getInstanceFromSession( httpSession, null );
+
+    assertSame( result, uiSession );
+  }
+
+  @Test
+  public void testGetInstanceFromSession_withConnectionId() {
+    UISessionImpl uiSession2 = new UISessionImpl( applicationContext, httpSession, "foo" );
+    uiSession2.attachToHttpSession();
+
+    UISessionImpl result = UISessionImpl.getInstanceFromSession( httpSession, "foo" );
+
+    assertSame( result, uiSession2 );
+  }
+
+  @Test
   public void testGetInstanceFromSession_returnsNullAfterInvalidate() {
     httpSession.invalidate();
-    UISessionImpl result = UISessionImpl.getInstanceFromSession( httpSession );
+    UISessionImpl result = UISessionImpl.getInstanceFromSession( httpSession, null );
 
     assertNull( result );
+  }
+
+  @Test
+  public void testShutdown() {
+    uiSession.shutdown();
+
+    assertNull( UISessionImpl.getInstanceFromSession( httpSession, null ) );
+    assertFalse( uiSession.isBound() );
+  }
+
+  @Test
+  public void testShutdown_withConnectionId() {
+    UISessionImpl uiSession2 = new UISessionImpl( applicationContext, httpSession, "foo" );
+    uiSession2.attachToHttpSession();
+
+    uiSession2.shutdown();
+
+    assertNull( UISessionImpl.getInstanceFromSession( httpSession, "foo" ) );
+    assertFalse( uiSession2.isBound() );
+  }
+
+  @Test
+  public void testShutdown_doesnNotShutdownAnotherUISession() {
+    UISessionImpl uiSession2 = new UISessionImpl( applicationContext, httpSession, "foo" );
+    uiSession2.attachToHttpSession();
+
+    uiSession2.shutdown();
+
+    assertNotNull( UISessionImpl.getInstanceFromSession( httpSession, null ) );
+    assertTrue( uiSession.isBound() );
   }
 
   @Test
@@ -115,11 +165,12 @@ public class UISessionImpl_Test {
   }
 
   @Test
-  public void testGetId_validAfterSessionWasInvalidated() {
+  public void testGetId_isUnique() {
     String id = uiSession.getId();
-    httpSession.invalidate();
 
-    assertEquals( id, uiSession.getId() );
+    String id2 = new UISessionImpl( null, null ).getId();
+
+    assertFalse( id2.equals( id ) );
   }
 
   @Test
@@ -128,28 +179,28 @@ public class UISessionImpl_Test {
   }
 
   @Test
-  public void testAttachHttpSession() {
+  public void testSetHttpSession() {
     HttpSession anotherSession = new TestSession();
-    uiSession.attachHttpSession( anotherSession );
+    uiSession.setHttpSession( anotherSession );
 
     assertSame( anotherSession, uiSession.getHttpSession() );
   }
 
   @Test
-  public void testAttachHttpSession_failsWithNullArgument() {
+  public void testSetHttpSession_failsWithNullArgument() {
     try {
-      uiSession.attachHttpSession( null );
+      uiSession.setHttpSession( null );
       fail();
     } catch( NullPointerException expected ) {
     }
   }
 
   @Test
-  public void testAttachHttpSession_doesNotChangeId() {
+  public void testSetHttpSession_doesNotChangeId() {
     String initialId = uiSession.getId();
     TestSession anotherSession = new TestSession();
     anotherSession.setId( "some.other.id" );
-    uiSession.attachHttpSession( anotherSession );
+    uiSession.setHttpSession( anotherSession );
 
     String id = uiSession.getId();
 
@@ -157,7 +208,7 @@ public class UISessionImpl_Test {
   }
 
   @Test
-  public void testAttachHttpSession_doesNotTriggerListener() {
+  public void testSetHttpSession_doesNotTriggerListener() {
     final boolean[] wasCalled = { false };
     uiSession.addUISessionListener( new UISessionListener() {
       public void beforeDestroy( UISessionEvent event ) {
@@ -165,7 +216,8 @@ public class UISessionImpl_Test {
       }
     } );
 
-    uiSession.attachHttpSession( new TestSession() );
+    uiSession.setHttpSession( new TestSession() );
+
     assertFalse( wasCalled[ 0 ] );
   }
 
@@ -463,7 +515,7 @@ public class UISessionImpl_Test {
       }
     } );
 
-    uiSession.valueUnbound( null );
+    uiSession.shutdown();
 
     assertTrue( interceptShutdownWasCalled[ 0 ] );
     assertTrue( uiSession.isBound() );
@@ -512,9 +564,7 @@ public class UISessionImpl_Test {
     Client client = mock( Client.class );
     ClientSelector clientSelector = mock( ClientSelector.class );
     when( clientSelector.getSelectedClient( any( UISession.class ) ) ).thenReturn( client );
-    ApplicationContextImpl applicationContext = mock( ApplicationContextImpl.class );
     when( applicationContext.getClientSelector() ).thenReturn( clientSelector );
-    ApplicationContextUtil.set( uiSession, applicationContext );
 
     Client result = uiSession.getClient();
 
@@ -537,8 +587,7 @@ public class UISessionImpl_Test {
 
   @Test
   public void testSetLocale_canBeResetWithNull() {
-    ApplicationContextUtil.set( uiSession, ApplicationContextUtil.getInstance() );
-    Fixture.fakeClient( mockClientWithLocale( null ) );
+    fakeClient( mockClientWithLocale( null ) );
     uiSession.setLocale( Locale.ITALIAN );
 
     uiSession.setLocale( null );
@@ -548,6 +597,7 @@ public class UISessionImpl_Test {
 
   @Test
   public void testGetLocale_returnsSetLocale() {
+    fakeClient( mockClientWithLocale( null ) );
     uiSession.setLocale( Locale.UK );
 
     Locale locale = uiSession.getLocale();
@@ -557,8 +607,7 @@ public class UISessionImpl_Test {
 
   @Test
   public void testGetLocale_fallsBackToClientLocale() {
-    ApplicationContextUtil.set( uiSession, ApplicationContextUtil.getInstance() );
-    Fixture.fakeClient( mockClientWithLocale( Locale.ITALIAN ) );
+    fakeClient( mockClientWithLocale( Locale.ITALIAN ) );
 
     Locale locale = uiSession.getLocale();
 
@@ -567,8 +616,7 @@ public class UISessionImpl_Test {
 
   @Test
   public void testGetLocale_fallsBackToSystemLocale_withoutClientInfo() {
-    ApplicationContextUtil.set( uiSession, ApplicationContextUtil.getInstance() );
-    Fixture.fakeClient( mock( Client.class ) );
+    fakeClient( mock( Client.class ) );
 
     Locale locale = uiSession.getLocale();
 
@@ -577,8 +625,7 @@ public class UISessionImpl_Test {
 
   @Test
   public void testGetLocale_fallsBackToSystemLocale_withoutClientLocale() {
-    ApplicationContextUtil.set( uiSession, ApplicationContextUtil.getInstance() );
-    Fixture.fakeClient( mockClientWithLocale( null ) );
+    fakeClient( mockClientWithLocale( null ) );
 
     Locale locale = uiSession.getLocale();
 
@@ -587,8 +634,7 @@ public class UISessionImpl_Test {
 
   @Test
   public void testGetLocale_worksInBackgroundThread() throws Throwable {
-    ApplicationContextUtil.set( uiSession, ApplicationContextUtil.getInstance() );
-    Fixture.fakeClient( mock( Client.class ) );
+    fakeClient( mock( Client.class ) );
     final AtomicReference<Locale> localeCaptor = new AtomicReference<Locale>();
 
     Fixture.runInThread( new Runnable() {
@@ -598,6 +644,42 @@ public class UISessionImpl_Test {
     } );
 
     assertNotNull( localeCaptor.get() );
+  }
+
+  @Test
+  public void testSetLocale_updatesClientMessages() {
+    ClientMessages messages = mock( ClientMessages.class );
+    fakeClient( mockClientWithClientMessages( messages ) );
+
+    uiSession.setLocale( Locale.CANADA );
+
+    verify( messages ).update( eq( Locale.CANADA ) );
+  }
+
+  @Test
+  public void testSetLocale_doesNotUpdateClientMessagesIfUnchanged() {
+    ClientMessages messages = mock( ClientMessages.class );
+    Client client = mockClientWithLocale( Locale.CANADA );
+    when( client.getService( same( ClientMessages.class ) ) ).thenReturn( messages );
+    fakeClient( client );
+
+    uiSession.setLocale( Locale.CANADA );
+
+    verify( messages, times( 0 ) ).update( eq( Locale.CANADA ) );
+  }
+
+  @Test
+  public void testSetLocale_updatesWithDefault() {
+    ClientMessages messages = mock( ClientMessages.class );
+    Client client = mockClientWithLocale( Locale.CANADA );
+    when( client.getService( same( ClientMessages.class ) ) ).thenReturn( messages );
+    fakeClient( client );
+    uiSession.setLocale( Locale.ITALY );
+    reset( messages );
+
+    uiSession.setLocale( null );
+
+    verify( messages ).update( eq( Locale.CANADA ) );
   }
 
   @Test
@@ -651,13 +733,45 @@ public class UISessionImpl_Test {
 
     Fixture.runInThread( new Runnable() {
       public void run() {
-        Fixture.createServiceContext();
+        HttpServletRequest request = mock( HttpServletRequest.class );
+        HttpServletResponse response = mock( HttpServletResponse.class );
+        ApplicationContextImpl applicationContext = mock( ApplicationContextImpl.class );
+        ContextProvider.setContext( new ServiceContext( request, response, applicationContext ) );
         uiSession.exec( runnable );
+        ContextProvider.disposeContext();
       }
     } );
 
     assertNotSame( context, runnable.getContext() );
     assertSame( uiSession, runnable.getUISession() );
+  }
+
+  @Test
+  public void testSetApplicationContext() {
+    ApplicationContextImpl otherApplicationContext = mock( ApplicationContextImpl.class );
+
+    uiSession.setApplicationContext( otherApplicationContext );
+
+    assertSame( otherApplicationContext, uiSession.getApplicationContext() );
+  }
+
+  @Test
+  public void testApplicationContextInUISessionIsNotSerialized() throws Exception {
+    UISessionImpl deserializedUiSession = Fixture.serializeAndDeserialize( uiSession );
+
+    assertNull( deserializedUiSession.getApplicationContext() );
+  }
+
+  @Test
+  public void testGetConnectionId_withoutConnectionId() {
+    assertNull( uiSession.getConnectionId() );
+  }
+
+  @Test
+  public void testGetConnectionId_withConnectionId() {
+    uiSession = new UISessionImpl( applicationContext, httpSession, "foo" );
+
+    assertEquals( "foo", uiSession.getConnectionId() );
   }
 
   private static Client mockClientWithLocale( Locale locale ) {
@@ -666,6 +780,18 @@ public class UISessionImpl_Test {
     when( clientInfo.getLocale() ).thenReturn( locale );
     when( client.getService( same( ClientInfo.class ) ) ).thenReturn( clientInfo  );
     return client;
+  }
+
+  private static Client mockClientWithClientMessages( ClientMessages messages ) {
+    Client client = mock( Client.class );
+    when( client.getService( same( ClientMessages.class ) ) ).thenReturn( messages  );
+    return client;
+  }
+
+  private void fakeClient( Client client ) {
+    ClientSelector clientSelector = mock( ClientSelector.class );
+    when( clientSelector.getSelectedClient( any( UISession.class ) ) ).thenReturn( client );
+    when( applicationContext.getClientSelector() ).thenReturn( clientSelector );
   }
 
   private static class EmptyUISessionListener implements UISessionListener {

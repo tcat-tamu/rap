@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,6 +22,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
     this._maxCellWidths = null;
     this._menuLayoutScheduled = false;
     this._opener = null;
+    this._mnemonics = false;
     this._hoverItem = null;
     this._openTimer = null;
     this._closeTimer = null;
@@ -30,7 +31,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
     this._hoverFirstItemFlag = false;
     this.setHeight( "auto" );
     this.setWidth( "auto" );
-    this._maxCellWidths = [ null, null, null, null ];
+    this._maxCellWidths = [ null, null, null, null, null ];
     this._layout = new rwt.widgets.base.VerticalBoxLayout();
     this._layout.set( {
       top : 0,
@@ -44,6 +45,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
     this.addEventListener( "mouseout", this._onMouseOut );
     this.addEventListener( "mouseover", this._onMouseOver );
     this.addEventListener( "keypress", this._onKeyPress );
+    this.addEventListener( "keydown", this._onKeyDown );
     this._openTimer = new rwt.client.Timer( 250 );
     this._openTimer.addEventListener( "interval", this._onopentimer, this );
     this._closeTimer = new rwt.client.Timer( 250 );
@@ -92,7 +94,10 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
     getAllowContextMenu : function( target, domTarget ) {
       var result = false;
       switch( target.classname ) {
+        case "rwt.widgets.Label":
         case "rwt.widgets.Text":
+        case "rwt.widgets.base.GridRow":
+        case "rwt.widgets.ListItem":
         case "rwt.widgets.base.BasicText":
         case "qx.ui.form.TextArea":
           // NOTE: "enabled" can be "inherit", so it is not always a boolean
@@ -106,9 +111,16 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
       return result;
     },
 
+
     _hasNativeMenu : function( element ) {
-      var tagName = typeof element.tagName == "string" ? element.tagName.toUpperCase() : "";
-      return tagName === "INPUT" || tagName === "TEXTAREA";
+      var result;
+      var tagName = typeof element.tagName == "string" ? element.tagName.toLowerCase() : "";
+      if( tagName === "a" ) {
+        result = element.getAttribute( "href" ) && element.getAttribute( "target" ) !== "_rwt";
+      } else {
+        result = tagName === "input" || tagName === "textarea";
+      }
+      return result;
     }
 
   },
@@ -137,6 +149,22 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
 
     getOpener : function( value ) {
       return this._opener;
+    },
+
+    setMnemonics : function( value ) {
+      if( this._mnemonics !== value ) {
+        this._mnemonics = value;
+        var items = this._layout.getChildren();
+        for( var i = 0; i < items.length; i++ ) {
+          if( items[ i ].renderText ) {
+            items[ i ].renderText();
+          }
+        }
+      }
+    },
+
+    getMnemonics : function() {
+      return this._mnemonics;
     },
 
     // Overwritten:
@@ -208,7 +236,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
     },
 
     invalidateAllMaxCellWidths : function() {
-      for( var i = 0; i < 4; i++ ) {
+      for( var i = 0; i < 5; i++ ) {
         this._maxCellWidths[ i ] = null;
       }
     },
@@ -263,7 +291,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
       this.dispatchSimpleEvent( "changeHoverItem" );
     },
 
-    getHoverItem : function( value ) {
+    getHoverItem : function() {
       return this._hoverItem;
     },
 
@@ -343,7 +371,6 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
       vRoot.setFocusedChild( this._lastFocus );
     },
 
-
     _beforeAppear : function() {
       // original qooxdoo code: (1 line)
       rwt.widgets.base.Parent.prototype._beforeAppear.call( this );
@@ -351,6 +378,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
       this.bringToFront();
       this._makeActive();
       this._menuShown();
+      rwt.widgets.util.MnemonicHandler.getInstance().deactivate();
     },
 
     _beforeDisappear : function() {
@@ -375,7 +403,6 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
       this._menuHidden();
     },
 
-
     //////////
     // Submenu
 
@@ -395,12 +422,19 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
       this.setOpenItem( null );
     },
 
-    setOpenItem : function( item ) {
+    openByMnemonic : function( item ) {
+      this.setOpenItem( item, true );
+      this.setHoverItem( null, true );
+    },
+
+    setOpenItem : function( item, byMnemonic ) {
       if( this._openItem && this._openItem.getMenu() ) {
         this._openItem.setSubMenuOpen( false );
         var oldMenu = this._openItem.getMenu();
         oldMenu.hide();
-        this._makeActive();
+        if( this.getFocusRoot() ) {
+          this._makeActive();
+        }
       }
       this._openItem = item;
       // in theory an item could have lost it's assigned menu (by eval-code)
@@ -416,7 +450,11 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
         subMenu.setLeft(   rwt.html.Location.getLeft( thisNode )
                          + thisNode.offsetWidth
                          - 3 );
+        subMenu.setMnemonics( byMnemonic === true );
         subMenu.show();
+        if( byMnemonic ) {
+          subMenu.hoverFirstItem();
+        }
       }
     },
 
@@ -448,6 +486,28 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
      }
    },
 
+   _onKeyDown :function( event ) {
+     if( this._mnemonics ) {
+       var keyCode = event.getKeyCode();
+       var isChar =    !isNaN( keyCode )
+                    && rwt.event.EventHandlerUtil.isAlphaNumericKeyCode( keyCode );
+       if( isChar ) {
+         var event = {
+           "type" : "trigger",
+           "charCode" : keyCode,
+           "success" : false
+         };
+         var items = this._layout.getChildren();
+         for( var i = 0; i < items.length; i++ ) {
+           if( items[ i ].handleMnemonic ) {
+             items[ i ].handleMnemonic( event );
+           }
+         }
+       }
+     }
+
+   },
+
     _onKeyPress : function( event ) {
       switch( event.getKeyIdentifier() ) {
         case "Up":
@@ -470,7 +530,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
 
     _handleKeyUp : function( event ) {
       if( this._openItem ) {
-       this._openItem.getMenu()._hoverPreviousItem();
+        this._openItem.getMenu()._hoverPreviousItem();
       } else {
         this._hoverPreviousItem();
       }
@@ -480,7 +540,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
 
     _handleKeyDown : function( event ) {
       if( this._openItem ) {
-       this._openItem.getMenu()._hoverNextItem();
+        this._openItem.getMenu()._hoverNextItem();
       } else {
         this._hoverNextItem();
       }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -82,7 +82,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var targetNode = widget._getTargetNode();
       var isMshtml = rwt.client.Client.isMshtml();
       if( isMshtml ) {
-        var bounds = TestUtil.getElementBounds( targetNode )
+        var bounds = TestUtil.getElementBounds( targetNode );
         var expected = {
           "top" : 0,
           "left" : 0,
@@ -108,7 +108,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var targetNode = widget._getTargetNode();
       var isMshtml = rwt.client.Client.isMshtml();
       if( isMshtml ) {
-        var bounds = TestUtil.getElementBounds( targetNode )
+        var bounds = TestUtil.getElementBounds( targetNode );
         var expected = {
           "top" : 0,
           "left" : 0,
@@ -188,7 +188,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var log = [];
       var logger = function( event ) {
         log.push( child1.getElement().parentNode );
-      }
+      };
       child1.addEventListener( "insertDom", logger );
       TestUtil.flush();
       assertEquals( [ parent.getElement() ], log );
@@ -206,7 +206,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var log = [];
       var logger = function( event ) {
         log.push( child.getElement().parentNode );
-      }
+      };
       child.addEventListener( "insertDom", logger );
       TestUtil.flush();
       assertEquals( [ parent.getElement() ], log );
@@ -223,7 +223,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var log = [];
       var logger = function( event ) {
         log.push( child.getElement().parentNode );
-      }
+      };
       child.addEventListener( "insertDom", logger );
       child.setParent( parent );
       parent.setBorder( new rwt.html.Border( 3, "rounded", "#FF00FF", [ 0, 1, 2, 3 ] ) );
@@ -257,7 +257,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var log = [];
       var logger = function( event ) {
         log.push( null );
-      }
+      };
       parent.addEventListener( "insertDom", logger );
       child.addEventListener( "insertDom", logger );
       TestUtil.flush();
@@ -337,7 +337,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var adapter = widget.getAdapter( rwt.widgets.util.WidgetRenderAdapter );
       var log = [];
       var logger = function( args ) {
-        log.push( args[ 0 ] )
+        log.push( args[ 0 ] );
         return false;
       };
       adapter.addRenderListener( "visibility", logger, this );
@@ -352,14 +352,14 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       var adapter = widget.getAdapter( rwt.widgets.util.WidgetRenderAdapter );
       var log = [];
       var logger = function( args ) {
-        log.push( args[ 0 ] )
+        log.push( args[ 0 ] );
         return false;
       };
       adapter.addRenderListener( "visibility", logger, this );
       widget.hide();
       assertEquals( 1, log.length );
       assertEquals( "", widget.getStyleProperty( "display" ) );
-      adapter.forceRender( "visibility", false )
+      adapter.forceRender( "visibility", false );
       assertEquals( "none", widget.getStyleProperty( "display" ) );
       assertEquals( 1, log.length );
       widget.destroy();
@@ -388,10 +388,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
         var widget = this._createWidget();
         widget.setBackgroundGradient( gradient );
         TestUtil.flush();
-        var result = this._getCssGradient( widget.getElement() );
-        var expected1 = "gradient(-90deg, rgb(255, 0, 255) 0%, rgb(0, 255, 0) 100%)";
-        var expected2 = "gradient(linear, 0% 0%, 0% 100%, from(rgb(255, 0, 255)), to(rgb(0, 255, 0)))";
-        assertTrue( result === expected1 || result === expected2 );
+        var result = TestUtil.getCssGradient( widget.getElement() );
+        var expected;
+        if( rwt.client.Client.isWebkit() ) {
+          expected = "gradient(linear, 0% 0%, 0% 100%, from(rgb(255, 0, 255)), to(rgb(0, 255, 0)))";
+        } else if( rwt.client.Client.isGecko() ) {
+          expected = "gradient(-90deg, rgb(255, 0, 255) 0%, rgb(0, 255, 0) 100%)";
+        } else {
+          expected = "gradient(180deg, rgb(255, 0, 255) 0%, rgb(0, 255, 0) 100%)";
+        }
+        assertEquals( expected, result );
         widget.destroy();
       }
     },
@@ -402,11 +408,11 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
         var widget = this._createWidget();
         widget.setBackgroundGradient( gradient );
         TestUtil.flush();
-        var result = this._getCssGradient( widget.getElement() );
+        var result = TestUtil.getCssGradient( widget.getElement() );
         assertFalse( result === "" );
         widget.setBackgroundGradient( null );
         TestUtil.flush();
-        var result = this._getCssGradient( widget.getElement() );
+        var result = TestUtil.getCssGradient( widget.getElement() );
         assertTrue( result === "" );
         widget.destroy();
       }
@@ -444,6 +450,23 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       }
     },
 
+    testRemoveBackgroundImageAndRestoreBackgroundGradient : function() {
+      if( rwt.client.Client.supportsCss3() ) {
+        var gradient = [ [ 0, "rgb(255, 0, 255)" ], [ 1, "rgb(0, 255, 0)" ] ];
+        var widget = this._createWidget();
+        widget.setBackgroundGradient( gradient );
+        TestUtil.flush();
+        widget.setBackgroundImage( "bla.png" );
+        assertTrue( TestUtil.getCssBackgroundImage( widget.getElement() ).indexOf( "bla.png" ) !== -1 );
+        TestUtil.flush();
+        widget.setBackgroundImage( null );
+        TestUtil.flush();
+        var result = TestUtil.getCssGradient( widget.getElement() );
+        assertTrue( result !== "" );
+        widget.destroy();
+      }
+    },
+
     testRenderHorizontalBackgroundGradient : function() {
       if( rwt.client.Client.supportsCss3() ) {
         var gradient = [ [ 0, "rgb(255, 0, 255)" ], [ 1, "rgb(0, 255, 0)" ] ];
@@ -451,10 +474,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
         var widget = this._createWidget();
         widget.setBackgroundGradient( gradient );
         TestUtil.flush();
-        var result = this._getCssGradient( widget.getElement() );
-        var expected1 = "gradient(0deg, rgb(255, 0, 255) 0%, rgb(0, 255, 0) 100%)";
-        var expected2 = "gradient(linear, 0% 0%, 100% 0%, from(rgb(255, 0, 255)), to(rgb(0, 255, 0)))";
-        assertTrue( result === expected1 || result === expected2 );
+        var result = TestUtil.getCssGradient( widget.getElement() );
+        var expected;
+        if( rwt.client.Client.isWebkit() ) {
+          expected = "gradient(linear, 0% 0%, 100% 0%, from(rgb(255, 0, 255)), to(rgb(0, 255, 0)))";
+        } else if( rwt.client.Client.isGecko() ) {
+          expected = "gradient(0deg, rgb(255, 0, 255) 0%, rgb(0, 255, 0) 100%)";
+        } else {
+          expected = "gradient(90deg, rgb(255, 0, 255) 0%, rgb(0, 255, 0) 100%)";
+        }
+        assertEquals( expected, result );
         widget.destroy();
       }
     },
@@ -469,11 +498,19 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
         var widget = this._createWidget();
         widget.setBackgroundGradient( gradient );
         TestUtil.flush();
-        var result = this._getCssGradient( widget.getElement() );
-        var expected1 =   "gradient(-90deg, rgb(255, 0, 255) 0%, "
-                        + "rgb(255, 128, 255) 33%, rgb(0, 255, 0) 100%)";
-        var expected2 = "gradient(linear, 0% 0%, 0% 100%, from(rgb(255, 0, 255)), color-stop(0.33, rgb(255, 128, 255)), to(rgb(0, 255, 0)))";
-        assertTrue( result === expected1 || result === expected2 );
+        var result = TestUtil.getCssGradient( widget.getElement() );
+        var expected;
+        if( rwt.client.Client.isWebkit() ) {
+          expected =   "gradient(linear, 0% 0%, 0% 100%, from(rgb(255, 0, 255)), "
+                     + "color-stop(0.33, rgb(255, 128, 255)), to(rgb(0, 255, 0)))";
+        } else if( rwt.client.Client.isGecko() ) {
+          expected =   "gradient(-90deg, rgb(255, 0, 255) 0%, "
+                     + "rgb(255, 128, 255) 33%, rgb(0, 255, 0) 100%)";
+        } else {
+          expected =   "gradient(180deg, rgb(255, 0, 255) 0%, "
+                     + "rgb(255, 128, 255) 33%, rgb(0, 255, 0) 100%)";
+        }
+        assertEquals( expected, result );
         widget.destroy();
       }
     },
@@ -501,8 +538,8 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
           assertTrue( result.indexOf( "3px 5px 1px" ) !== -1 );
           assertTrue( result.indexOf( "rgba(9, 8, 7, 0." ) !== -1 );
         } else {
-          expected1 = "3px 5px 1px rgba(9, 8, 7, 0.4)"
-          expected2 = "3px 5px 1px rgba(9,8,7,0.4)"
+          var expected1 = "3px 5px 1px rgba(9, 8, 7, 0.4)";
+          var expected2 = "3px 5px 1px rgba(9,8,7,0.4)";
           assertTrue( result === expected1 || result === expected2 );
         }
         widget.destroy();
@@ -669,6 +706,97 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
       widget.destroy();
     },
 
+    testBoxWidthZero : function() {
+      var widget = this._createWidget();
+      widget.setLeft( 10 );
+      widget._computePreferredInnerWidth = function(){ return 99; };
+
+      widget.setWidth( 0 );
+      TestUtil.flush();
+
+      assertEquals( 0, widget.getBoxWidth() );
+      widget.destroy();
+    },
+
+    testBoxHeightZero : function() {
+      var widget = this._createWidget();
+      widget.setTop( 10 );
+      widget._computePreferredInnerHeight = function(){ return 99; };
+
+      widget.setHeight( 0 );
+      TestUtil.flush();
+
+      assertEquals( 0, widget.getBoxHeight() );
+      widget.destroy();
+    },
+
+    testRenderBackgroundRepeat : function() {
+      var widget = this._createWidget();
+
+      widget.setBackgroundRepeat( "no-repeat" );
+      TestUtil.flush();
+
+      assertEquals( "no-repeat", widget.getElement().style.backgroundRepeat );
+      widget.destroy();
+    },
+
+    testRenderBackgroundPosition : function() {
+      var widget = this._createWidget();
+
+      widget.setBackgroundPosition( "right bottom" );
+      TestUtil.flush();
+
+      if( rwt.client.Client.isWebkit() || rwt.client.Client.isOpera() ) {
+        assertEquals( "100% 100%", widget.getElement().style.backgroundPosition );
+      } else {
+        assertEquals( "right bottom", widget.getElement().style.backgroundPosition );
+      }
+      widget.destroy();
+    },
+
+    testRenderBackgroundRepeatAndPositionWhenRenderImage : function() {
+      var widget = this._createWidget();
+      widget.setBackgroundRepeat( "no-repeat" );
+      widget.setBackgroundPosition( "right bottom" );
+      var element = widget.getElement();
+      element.style.background = "";
+
+      widget.setBackgroundImage( "bla.png" );
+      TestUtil.flush();
+
+      assertEquals( "no-repeat", element.style.backgroundRepeat );
+      if( rwt.client.Client.isWebkit() || rwt.client.Client.isOpera() ) {
+        assertEquals( "100% 100%", widget.getElement().style.backgroundPosition );
+      } else {
+        assertEquals( "right bottom", widget.getElement().style.backgroundPosition );
+      }
+      widget.destroy();
+    },
+
+    testRenderBackgroundRepeatAndPositionWhenRemoveGradient : function() {
+      if( rwt.client.Client.supportsCss3() ) {
+        var widget = this._createWidget();
+        widget.setBackgroundImage( "bla.png" );
+        widget.setBackgroundRepeat( "no-repeat" );
+        widget.setBackgroundPosition( "right bottom" );
+        TestUtil.flush();
+        var gradient = [ [ 0, "rgb(255, 0, 255)" ], [ 1, "rgb(0, 255, 0)" ] ];
+        widget.setBackgroundGradient( gradient );
+        TestUtil.flush();
+
+        widget.setBackgroundGradient( null );
+        TestUtil.flush();
+
+        var element = widget.getElement();
+        assertEquals( "no-repeat", element.style.backgroundRepeat );
+        if( rwt.client.Client.isWebkit() || rwt.client.Client.isOpera() ) {
+          assertEquals( "100% 100%", widget.getElement().style.backgroundPosition );
+        } else {
+          assertEquals( "right bottom", widget.getElement().style.backgroundPosition );
+        }
+        widget.destroy();
+      }
+    },
 
     /////////
     // Helper
@@ -697,21 +825,6 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.WidgetTest", {
 
     _getComplexBorder : function() {
       return new rwt.html.Border( 2, "complex", "green", "red" );
-    },
-
-    _getCssGradient : function( element ) {
-      var result = "";
-      var background = element.style.background;
-      var start = background.indexOf( "gradient(" );
-      if( start !== -1 ) {
-        var end = background.indexOf( ") repeat", start );
-        if( end != -1 ) {
-          result = background.slice( start, end + 1 );
-        } else {
-          result = background.slice( start );
-        }
-      }
-      return result;
     },
 
     _getCssShadow : function( element ) {

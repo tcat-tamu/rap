@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,8 +11,13 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.custom.clabelkit;
 
+import static org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory.getClientObject;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.hasChanged;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 
 import java.io.IOException;
 
@@ -20,10 +25,10 @@ import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.internal.theme.IThemeAdapter;
+import org.eclipse.rap.rwt.internal.util.MnemonicUtil;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.ControlLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
-import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Rectangle;
@@ -38,6 +43,7 @@ public final class CLabelLCA extends AbstractWidgetLCA {
   };
 
   private static final String PROP_TEXT = "text";
+  private static final String PROP_MNEMONIC_INDEX = "mnemonicIndex";
   private static final String PROP_IMAGE = "image";
   private static final String PROP_ALIGNMENT = "alignment";
   private static final String PROP_LEFT_MARGIN = "leftMargin";
@@ -76,8 +82,8 @@ public final class CLabelLCA extends AbstractWidgetLCA {
     CLabel clabel = ( CLabel )widget;
     IClientObject clientObject = ClientObjectFactory.getClientObject( clabel );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( clabel.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( clabel, ALLOWED_STYLES ) );
+    clientObject.set( "parent", getId( clabel.getParent() ) );
+    clientObject.set( "style", createJsonArray( getStyles( clabel, ALLOWED_STYLES ) ) );
     // NOTE : This is consistent with Tree and Table, but might change - See Bug 373764
     clientObject.set( "appearance", "clabel" );
     renderProperty( clabel, PROP_MARKUP_ENABLED, isMarkupEnabled( clabel ), false );
@@ -88,7 +94,8 @@ public final class CLabelLCA extends AbstractWidgetLCA {
     CLabel clabel = ( CLabel )widget;
     ControlLCAUtil.renderChanges( clabel );
     WidgetLCAUtil.renderCustomVariant( clabel );
-    renderProperty( clabel, PROP_TEXT, clabel.getText(), null );
+    renderText( clabel );
+    renderMnemonicIndex( clabel );
     renderProperty( clabel, PROP_IMAGE, clabel.getImage(), null );
     renderProperty( clabel, PROP_ALIGNMENT, getAlignment( clabel ), DEFAULT_ALIGNMENT );
     renderMargins( clabel );
@@ -130,8 +137,30 @@ public final class CLabelLCA extends AbstractWidgetLCA {
     return result;
   }
 
+  private static void renderText( CLabel clabel ) {
+    String newValue = clabel.getText();
+    if( hasChanged( clabel, PROP_TEXT, newValue, null ) ) {
+      String text = newValue;
+      if( !isMarkupEnabled( clabel ) ) {
+        text = MnemonicUtil.removeAmpersandControlCharacters( newValue );
+      }
+      getClientObject( clabel ).set( PROP_TEXT, text );
+    }
+  }
+
+  private static void renderMnemonicIndex( CLabel clabel ) {
+    if( !isMarkupEnabled( clabel ) ) {
+      String text = clabel.getText();
+      if( hasChanged( clabel, PROP_TEXT, text, null ) ) {
+        int mnemonicIndex = MnemonicUtil.findMnemonicCharacterIndex( text );
+        if( mnemonicIndex != -1 ) {
+          getClientObject( clabel ).set( PROP_MNEMONIC_INDEX, mnemonicIndex );
+        }
+      }
+    }
+  }
+
   private static CLabelThemeAdapter getThemeAdapter( CLabel clabel ) {
-    Object adapter = clabel.getAdapter( IThemeAdapter.class );
-    return ( CLabelThemeAdapter )adapter;
+    return ( CLabelThemeAdapter )clabel.getAdapter( IThemeAdapter.class );
   }
 }

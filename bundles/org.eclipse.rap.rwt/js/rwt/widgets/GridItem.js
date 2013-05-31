@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2010, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -40,6 +40,7 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
     this._grayed = false;
     this._cellChecked = [];
     this._cellGrayed = [];
+    this._cellCheckable = [];
     this._variant = null;
     if( this._parent != null ) {
       this._level = this._parent.getLevel() + 1;
@@ -76,6 +77,7 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
     this._cellBackgrounds = null;
     this._cellChecked = null;
     this._cellGrayed = null;
+    this._cellCheckable = null;
     this._rootItem = null;
   },
 
@@ -117,6 +119,17 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
       this._update( msg );
     },
 
+    setIndex : function( value ) {
+      var siblings = this._parent._children;
+      if( siblings.indexOf( this ) !== value ) {
+        var target = siblings[ value ];
+        siblings[ value ] = this;
+        if( target && !target.isCached() ) {
+          target.dispose();
+        }
+      }
+    },
+
     clear : function() {
       // TODO [tb] : children?
       this._cached = false;
@@ -148,13 +161,23 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
       this._update( "content" );
     },
 
+    /**
+     * Id doEscape is true, the text is permanantly ecaped, unescaped text can no longer
+     * be provided. If it is undefined the text is escaped, but not permanently.
+     */
     getText : function( column, doEscape ) {
       var result = this._texts[ column ];
       if( ( typeof result ) === "string" ) {
         if( doEscape !== false && !this._escaped ) {
-          this._escapeTexts();
-          this._escaped = true;
-          result = this._texts[ column ];
+          if( doEscape === true ) {
+            this._escapeTexts();
+            this._escaped = true;
+            result = this._texts[ column ];
+          } else {
+            result = this._escape( this._texts[ column ] );
+          }
+        } if( doEscape === false && this._escaped ) {
+          throw new Error( "Unescaped text requested from GridItem, but is already escaped" );
         }
       } else {
         result = "";
@@ -268,6 +291,14 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
 
     isCellGrayed : function( column ) {
       return this._cellGrayed[ column ];
+    },
+
+    setCellCheckable : function( value ) {
+      this._cellCheckable = value;
+    },
+
+    isCellCheckable : function( column ) {
+      return this._cellCheckable[ column ] === undefined ? true : this._cellCheckable[ column ];
     },
 
     setVariant : function( variant ) {
@@ -656,8 +687,10 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
         delete this._customHeightItems[ item.toHashCode() ];
       }
       var index = this._children.indexOf( item );
-      this._children.splice( index, 1 );
-      this._children.push( undefined );
+      if( index !== -1 ) {
+        this._children.splice( index, 1 );
+        this._children.push( undefined );
+      }
       this._update( "remove", item );
     },
 
@@ -707,15 +740,20 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
     // Helper
 
     _escapeTexts : function() {
-      var EncodingUtil = rwt.util.Encoding;
       for( var i = 0; i < this._texts.length; i++ ) {
         var text = this._texts[ i ];
         if( text ) {
-          text = EncodingUtil.escapeText( text, false );
-          text = EncodingUtil.replaceWhiteSpaces( text );
+          text = this._escape( text );
         }
         this._texts[ i ] = text;
       }
+    },
+
+    _escape : function( text ) {
+      var EncodingUtil = rwt.util.Encoding;
+      var result = EncodingUtil.escapeText( text, false );
+      result = EncodingUtil.replaceWhiteSpaces( result );
+      return result;
     },
 
     _computeVisibleChildrenCount : function() {

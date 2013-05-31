@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -38,6 +38,7 @@ public final class TreeItemLCA extends AbstractWidgetLCA {
 
   private static final String TYPE = "rwt.widgets.GridItem";
 
+  static final String PROP_INDEX = "index";
   static final String PROP_ITEM_COUNT = "itemCount";
   static final String PROP_TEXTS = "texts";
   static final String PROP_IMAGES = "images";
@@ -56,6 +57,7 @@ public final class TreeItemLCA extends AbstractWidgetLCA {
   @Override
   public void preserveValues( Widget widget ) {
     TreeItem item = ( TreeItem )widget;
+    preserveProperty( item, PROP_INDEX, getIndex( item ) );
     if( isCached( item ) ) {
       preserveProperty( item, PROP_ITEM_COUNT, item.getItemCount() );
       preserveProperty( item, PROP_TEXTS, getTexts( item ) );
@@ -64,6 +66,7 @@ public final class TreeItemLCA extends AbstractWidgetLCA {
       WidgetLCAUtil.preserveForeground( item, getUserForeground( item ) );
       WidgetLCAUtil.preserveFont( item, getUserFont( item ) );
       WidgetLCAUtil.preserveCustomVariant( item );
+      WidgetLCAUtil.preserveData( item );
       preserveProperty( item, PROP_CELL_BACKGROUNDS, getCellBackgrounds( item ) );
       preserveProperty( item, PROP_CELL_FOREGROUNDS, getCellForegrounds( item ) );
       preserveProperty( item, PROP_CELL_FONTS, getCellFonts( item ) );
@@ -93,24 +96,16 @@ public final class TreeItemLCA extends AbstractWidgetLCA {
   @Override
   public void renderInitialization( Widget widget ) throws IOException {
     TreeItem item = ( TreeItem )widget;
-    Widget parent;
-    int index;
-    if( item.getParentItem() == null ) {
-      parent = item.getParent();
-      index  = item.getParent().indexOf( item );
-    } else {
-      parent = item.getParentItem();
-      index = item.getParentItem().indexOf( item );
-    }
     IClientObject clientObject = ClientObjectFactory.getClientObject( item );
     clientObject.create( TYPE );
+    Widget parent = item.getParentItem() == null ? item.getParent() : item.getParentItem();
     clientObject.set( "parent", WidgetUtil.getId( parent ) );
-    clientObject.set( "index", index );
   }
 
   @Override
   public void renderChanges( Widget widget ) throws IOException {
     TreeItem item = ( TreeItem )widget;
+    renderProperty( item, PROP_INDEX, getIndex( item ), -1 );
     if( isCached( item ) ) {
       renderProperty( item, PROP_ITEM_COUNT, item.getItemCount(), DEFAULT_ITEM_COUNT );
       renderProperty( item, PROP_TEXTS, getTexts( item ), getDefaultTexts( item ) );
@@ -119,6 +114,7 @@ public final class TreeItemLCA extends AbstractWidgetLCA {
       WidgetLCAUtil.renderForeground( item, getUserForeground( item ) );
       WidgetLCAUtil.renderFont( item, getUserFont( item ) );
       WidgetLCAUtil.renderCustomVariant( item );
+      WidgetLCAUtil.renderData( item );
       renderProperty( item,
                       PROP_CELL_BACKGROUNDS,
                       getCellBackgrounds( item ),
@@ -149,6 +145,16 @@ public final class TreeItemLCA extends AbstractWidgetLCA {
 
   //////////////////
   // Helping methods
+
+  private static int getIndex( TreeItem item ) {
+    int result;
+    if( item.getParentItem() == null ) {
+      result = item.getParent().indexOf( item );
+    } else {
+      result = item.getParentItem().indexOf( item );
+    }
+    return result;
+  }
 
   private static boolean isCached( TreeItem item ) {
     Tree tree = item.getParent();

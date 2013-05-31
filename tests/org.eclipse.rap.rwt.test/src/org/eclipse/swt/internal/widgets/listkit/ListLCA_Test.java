@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,9 +9,9 @@
  *    Innoopract Informationssysteme GmbH - initial API and implementation
  *    EclipseSource - ongoing development
  ******************************************************************************/
-
 package org.eclipse.swt.internal.widgets.listkit;
 
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,10 +24,10 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -51,8 +51,6 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -142,11 +140,11 @@ public class ListLCA_Test {
     assertEquals( rectangle, adapter.getPreserved( Props.BOUNDS ) );
     Fixture.clearPreserved();
     // foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     list.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     list.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     list.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( list );
@@ -169,7 +167,7 @@ public class ListLCA_Test {
   public void testReadSelectionForSingle() {
     createListItems( 3 );
 
-    fakeSelection( new int[]{ 0 } );
+    fakeSelection( 0 );
     lca.readData( list );
 
     assertEquals( 0, list.getSelectionIndex() );
@@ -180,7 +178,7 @@ public class ListLCA_Test {
     createListItems( 3 );
     list.setSelection( 1 );
 
-    fakeSelection( new int[]{} );
+    fakeSelection();
     lca.readData( list );
 
     assertEquals( -1, list.getSelectionIndex() );
@@ -191,7 +189,7 @@ public class ListLCA_Test {
     list = new List( shell, SWT.MULTI );
     createListItems( 3 );
 
-    fakeSelection( new int[]{ 0, 1 } );
+    fakeSelection( 0, 1 );
     lca.readData( list );
 
     int[] expected = new int[]{ 0, 1 };
@@ -307,14 +305,13 @@ public class ListLCA_Test {
   }
 
   @Test
-  public void testRenderItems() throws IOException, JSONException {
+  public void testRenderItems() throws IOException {
     list.setItems( new String[] { "Item 1", "Item 2", "Item 3" } );
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    String expected = "[ \"Item 1\", \"Item 2\", \"Item 3\" ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( list, "items" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( "Item 1" ).add( "Item 2" ).add( "Item 3" );
+    assertEquals( expected, message.findSetProperty( list, "items" ) );
   }
 
   @Test
@@ -340,19 +337,19 @@ public class ListLCA_Test {
   }
 
   @Test
-  public void testRenderSelectionIndices() throws IOException, JSONException {
+  public void testRenderSelectionIndices() throws IOException {
     list.setItems( new String[] { "Item 1", "Item 2", "Item 3" } );
 
     list.select( 1 );
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( list, "selectionIndices" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[1]", actual ) );
+    JsonArray expected = new JsonArray().add( 1 );
+    assertEquals( expected, message.findSetProperty( list, "selectionIndices" ) );
   }
 
   @Test
-  public void testRenderSelectionIndicesWithMulti() throws IOException, JSONException {
+  public void testRenderSelectionIndicesWithMulti() throws IOException {
     List list = new List( shell, SWT.MULTI );
     list.setItems( new String[] { "Item 1", "Item 2", "Item 3" } );
 
@@ -360,8 +357,8 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( list, "selectionIndices" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[1,2]", actual ) );
+    JsonArray exected = new JsonArray().add( 1 ).add( 2 );
+    assertEquals( exected, message.findSetProperty( list, "selectionIndices" ) );
   }
 
   @Test
@@ -395,7 +392,7 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Integer.valueOf( 2 ), message.findSetProperty( list, "topIndex" ) );
+    assertEquals( 2, message.findSetProperty( list, "topIndex" ).asInt() );
   }
 
   @Test
@@ -431,7 +428,7 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Integer.valueOf( 2 ), message.findSetProperty( list, "focusIndex" ) );
+    assertEquals( 2, message.findSetProperty( list, "focusIndex" ).asInt() );
   }
 
   @Test
@@ -466,7 +463,7 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( hScroll, "visibility" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( hScroll, "visibility" ) );
     assertNull( message.findSetOperation( vScroll, "visibility" ) );
   }
 
@@ -479,7 +476,7 @@ public class ListLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findSetOperation( hScroll, "visibility" ) );
-    assertEquals( Boolean.TRUE, message.findSetProperty( vScroll, "visibility" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( vScroll, "visibility" ) );
   }
 
   @Test
@@ -511,13 +508,13 @@ public class ListLCA_Test {
   }
 
   @Test
-  public void testRenderItemDimensions() throws IOException, JSONException {
+  public void testRenderItemDimensions() throws IOException {
     list.setItems( new String[] { "Item 1", "Item 2", "Item 3" } );
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( list, "itemDimensions" );
-    assertEquals( list.getItemHeight(), actual.getInt( 1 ) );
+    JsonArray actual = ( JsonArray )message.findSetProperty( list, "itemDimensions" );
+    assertEquals( list.getItemHeight(), actual.get( 1 ).asInt() );
   }
 
   @Test
@@ -543,7 +540,7 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( list, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( list, "Selection" ) );
     assertNull( message.findListenOperation( list, "DefaultSelection" ) );
   }
 
@@ -559,7 +556,7 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( list, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( list, "Selection" ) );
     assertNull( message.findListenOperation( list, "DefaultSelection" ) );
   }
 
@@ -573,7 +570,7 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( list, "DefaultSelection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( list, "DefaultSelection" ) );
     assertNull( message.findListenOperation( list, "Selection" ) );
   }
 
@@ -589,7 +586,7 @@ public class ListLCA_Test {
     lca.renderChanges( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( list, "DefaultSelection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( list, "DefaultSelection" ) );
     assertNull( message.findListenOperation( list, "Selection" ) );
   }
 
@@ -615,7 +612,7 @@ public class ListLCA_Test {
     lca.render( list );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findCreateProperty( list, "markupEnabled" ) );
+    assertEquals( JsonValue.TRUE, message.findCreateProperty( list, "markupEnabled" ) );
   }
 
   private static void setFocusIndex( List list, int focusIndex ) {
@@ -628,18 +625,19 @@ public class ListLCA_Test {
     }
   }
 
-  private void fakeSelection( int[] values ) {
+  private void fakeSelection( int... values ) {
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( list ), "selection", values );
+    Fixture.fakeSetProperty( getId( list ), "selection", createJsonArray( values ) );
   }
 
   private void fakeFocusIndex( int value ) {
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( list ), "focusIndex", Integer.valueOf( value ) );
+    Fixture.fakeSetProperty( getId( list ), "focusIndex", value );
   }
 
   private void fakeTopIndex( int value ) {
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( list ), "topIndex", Integer.valueOf( value ) );
+    Fixture.fakeSetProperty( getId( list ), "topIndex", value );
   }
+
 }

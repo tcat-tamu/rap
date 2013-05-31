@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 Rüdiger Herrmann and others.
+ * Copyright (c) 2011, 2013 Rüdiger Herrmann and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,10 +11,15 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.tooltipkit;
 
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readPropertyValue;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import java.io.IOException;
 
@@ -23,7 +28,6 @@ import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.ControlLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
-import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.widgets.IToolTipAdapter;
@@ -47,6 +51,7 @@ public final class ToolTipLCA extends AbstractWidgetLCA {
 
   private static final Point DEFAULT_LOCATION = new Point( 0, 0 );
 
+  @Override
   public void preserveValues( Widget widget ) {
     ToolTip toolTip = ( ToolTip )widget;
     WidgetLCAUtil.preserveCustomVariant( widget );
@@ -57,7 +62,7 @@ public final class ToolTipLCA extends AbstractWidgetLCA {
     preserveProperty( toolTip, PROP_MESSAGE, toolTip.getMessage() );
     preserveProperty( toolTip, PROP_LOCATION, getLocation( toolTip ) );
     preserveProperty( toolTip, PROP_VISIBLE, toolTip.isVisible() );
-    preserveListener( toolTip, PROP_SELECTION_LISTENER, toolTip.isListening( SWT.Selection ) );
+    preserveListener( toolTip, PROP_SELECTION_LISTENER, isListening( toolTip, SWT.Selection ) );
   }
 
   public void readData( Widget widget ) {
@@ -67,14 +72,16 @@ public final class ToolTipLCA extends AbstractWidgetLCA {
     readVisible( toolTip );
   }
 
+  @Override
   public void renderInitialization( Widget widget ) throws IOException {
     ToolTip toolTip = ( ToolTip )widget;
     IClientObject clientObject = ClientObjectFactory.getClientObject( toolTip );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( toolTip.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( toolTip, ALLOWED_STYLES ) );
+    clientObject.set( "parent", getId( toolTip.getParent() ) );
+    clientObject.set( "style", createJsonArray( getStyles( toolTip, ALLOWED_STYLES ) ) );
   }
 
+  @Override
   public void renderChanges( Widget widget ) throws IOException {
     ToolTip toolTip = ( ToolTip )widget;
     WidgetLCAUtil.renderCustomVariant( widget );
@@ -85,11 +92,14 @@ public final class ToolTipLCA extends AbstractWidgetLCA {
     renderProperty( toolTip, PROP_MESSAGE, toolTip.getMessage(), "" );
     renderProperty( toolTip, PROP_LOCATION, getLocation( toolTip ), DEFAULT_LOCATION );
     renderProperty( toolTip, PROP_VISIBLE, toolTip.isVisible(), false );
-    renderListener( toolTip, PROP_SELECTION_LISTENER, toolTip.isListening( SWT.Selection ), false );
+    renderListener( toolTip,
+                    PROP_SELECTION_LISTENER,
+                    isListening( toolTip, SWT.Selection ),
+                    false );
   }
 
   private static void readVisible( ToolTip toolTip ) {
-    String value = WidgetLCAUtil.readPropertyValue( toolTip, PROP_VISIBLE );
+    String value = readPropertyValue( toolTip, PROP_VISIBLE );
     if( value != null ) {
       toolTip.setVisible( new Boolean( value ).booleanValue() );
     }

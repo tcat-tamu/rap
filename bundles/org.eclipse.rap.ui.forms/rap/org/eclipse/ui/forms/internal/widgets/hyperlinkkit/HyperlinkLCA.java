@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,11 @@
  *    EclipseSource - ongoing development
  ******************************************************************************/
 package org.eclipse.ui.forms.internal.widgets.hyperlinkkit;
+
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import java.io.IOException;
 
@@ -58,7 +63,7 @@ public class HyperlinkLCA extends AbstractWidgetLCA {
     WidgetLCAUtil.preserveProperty( hyperlink,
                                     PROP_ACTIVE_BACKGROUND,
                                     getActiveBackground( hyperlink ) );
-    boolean hasListener = hyperlink.isListening( SWT.DefaultSelection );
+    boolean hasListener = isListening( hyperlink, SWT.DefaultSelection );
     WidgetLCAUtil.preserveListener( hyperlink, PROP_DEFAULT_SELECTION_LISTENER, hasListener );
   }
 
@@ -67,8 +72,8 @@ public class HyperlinkLCA extends AbstractWidgetLCA {
     Hyperlink hyperlink = ( Hyperlink )widget;
     IClientObject clientObject = ClientObjectFactory.getClientObject( hyperlink );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( hyperlink.getParent() ) ); //$NON-NLS-1$
-    clientObject.set( "style", WidgetLCAUtil.getStyles( hyperlink, ALLOWED_STYLES ) ); //$NON-NLS-1$
+    clientObject.set( "parent", getId( hyperlink.getParent() ) ); //$NON-NLS-1$
+    clientObject.set( "style", createJsonArray( getStyles( hyperlink, ALLOWED_STYLES ) ) ); //$NON-NLS-1$
   }
 
   @Override
@@ -90,7 +95,7 @@ public class HyperlinkLCA extends AbstractWidgetLCA {
                                   PROP_ACTIVE_BACKGROUND,
                                   getActiveBackground( hyperlink ),
                                   null );
-    boolean hasListener = hyperlink.isListening( SWT.DefaultSelection );
+    boolean hasListener = isListening( hyperlink, SWT.DefaultSelection );
     WidgetLCAUtil.renderListener( hyperlink, PROP_DEFAULT_SELECTION_LISTENER, hasListener, false );
   }
 
@@ -98,21 +103,19 @@ public class HyperlinkLCA extends AbstractWidgetLCA {
   // Helping methods
 
   private static Color getActiveForeground( Hyperlink hyperlink ) {
-    Object adapter = hyperlink.getAdapter( IHyperlinkAdapter.class );
-    IHyperlinkAdapter hyperlinkAdapter = ( IHyperlinkAdapter )adapter;
-    return hyperlinkAdapter.getActiveForeground();
+    return getAdapter( hyperlink ).getActiveForeground();
   }
 
   private static Color getActiveBackground( Hyperlink hyperlink ) {
-    Object adapter = hyperlink.getAdapter( IHyperlinkAdapter.class );
-    IHyperlinkAdapter hyperlinkAdapter = ( IHyperlinkAdapter )adapter;
-    return hyperlinkAdapter.getActiveBackground();
+    return getAdapter( hyperlink ).getActiveBackground();
   }
 
   private static int getUnderlineMode( Hyperlink hyperlink ) {
-    Object adapter = hyperlink.getAdapter( IHyperlinkAdapter.class );
-    IHyperlinkAdapter hyperlinkAdapter = ( IHyperlinkAdapter )adapter;
-    return hyperlinkAdapter.getUnderlineMode();
+    return getAdapter( hyperlink ).getUnderlineMode();
+  }
+
+  private static IHyperlinkAdapter getAdapter( Hyperlink hyperlink ) {
+    return hyperlink.getAdapter( IHyperlinkAdapter.class );
   }
 
 }

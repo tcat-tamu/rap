@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (C) 2011, 2012 EclipseSource and others.
+  Copyright (C) 2011, 2013 EclipseSource and others.
   All rights reserved. This program and the accompanying materials
   are made available under the terms of the Eclipse Public License v1.0
   which accompanies this distribution, and is available at
@@ -18,17 +18,15 @@
 
   <groupId>org.eclipse.rap</groupId>
   <artifactId>org.eclipse.rap.runtime.target-parent</artifactId>
-  <version>2.0.0-SNAPSHOT</version>
+  <version>2.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>
     <tycho-version>0.16.0</tycho-version>
     <tycho-extras-version>${tycho-version}</tycho-extras-version>
     <signing-plugin-version>1.0.5</signing-plugin-version>
-    <base-platform>4.3milestones/S-4.3M4-201212140730/</base-platform>
+    <base-platform>4.3milestones/S-4.3RC1-201305162200/</base-platform>
     <base-platform-repository>http://download.eclipse.org/eclipse/updates/${base-platform}</base-platform-repository>
-    <base-platform-juno>4.2/R-4.2.1-201209141800/</base-platform-juno>
-    <base-platform-repository-juno>http://download.eclipse.org/eclipse/updates/${base-platform-juno}</base-platform-repository-juno>
     <baseline-repository>http://download.eclipse.org/rt/rap/nightly/runtime/</baseline-repository>
   </properties>
 
@@ -37,9 +35,7 @@
   </prerequisites>
 
   <modules>
-    <module>../../features/org.eclipse.rap.equinox.juno.target.feature</module>
     <module>../../features/org.eclipse.rap.equinox.target.feature</module>
-    <module>repository.juno</module>
     <module>repository.kepler</module>
   </modules>
 
@@ -52,7 +48,7 @@
     <repository>
       <id>extra-dependencies-repository</id>
       <layout>p2</layout>
-      <url>http://build.eclipse.org/rt/rap/base-platforms/1.5/extra-dependencies</url>
+      <url>http://build.eclipse.org/rt/rap/base-platforms/2.1/extra-dependencies</url>
     </repository>
   </repositories>
 

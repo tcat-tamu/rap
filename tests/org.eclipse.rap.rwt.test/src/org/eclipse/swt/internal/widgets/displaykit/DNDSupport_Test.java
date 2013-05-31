@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,10 +26,9 @@ import static org.mockito.Mockito.verify;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
@@ -57,8 +56,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -104,7 +101,7 @@ public class DNDSupport_Test {
     DragDetectListener listener = mock( DragDetectListener.class );
     sourceControl.addDragDetectListener( listener );
 
-    fakeDragSourceEvent( "dragStart", 1 );
+    fakeDragSourceEvent( "DragStart", 1 );
     Fixture.executeLifeCycleFromServerThread();
 
     verify( listener, times( 1 ) ).dragDetected( any( DragDetectEvent.class ) );
@@ -116,7 +113,7 @@ public class DNDSupport_Test {
     DragSourceListener listener = mock( DragSourceListener.class );
     dragSource.addDragListener( listener );
 
-    fakeDragSourceEvent( "dragStart", 1 );
+    fakeDragSourceEvent( "DragStart", 1 );
     Fixture.executeLifeCycleFromServerThread();
 
     verify( listener, times( 1 ) ).dragStart( any( DragSourceEvent.class ) );
@@ -132,7 +129,7 @@ public class DNDSupport_Test {
       }
     } );
 
-    fakeDragSourceEvent( "dragStart", 1 );
+    fakeDragSourceEvent( "DragStart", 1 );
     Fixture.executeLifeCycleFromServerThread();
 
     assertNotNull( getProtocolMessage().findCallOperation( dragSource, "cancel" ) );
@@ -149,7 +146,7 @@ public class DNDSupport_Test {
       }
     } );
 
-    fakeDragSourceEvent( "dragStart", 1 );
+    fakeDragSourceEvent( "DragStart", 1 );
     Fixture.executeLifeCycleFromServerThread();
 
     int[] expected = new int[]{ SWT.DragDetect, DND.DragStart };
@@ -170,7 +167,7 @@ public class DNDSupport_Test {
     } );
 
     Fixture.fakeNewRequest();
-    createDragSourceEvent( "dragStart", 20, 30, "move", 1 );
+    createDragSourceEvent( "DragStart", 20, 30, "move", 1 );
     Fixture.executeLifeCycleFromServerThread();
 
     DragSourceEvent dragSourceEvent = ( DragSourceEvent )events.get( 0 );
@@ -182,14 +179,14 @@ public class DNDSupport_Test {
   public void testDropTargetLeaveBeforeEnter() {
     createDragSource( DND.DROP_MOVE );
     createDropTarget( DND.DROP_MOVE );
-    fakeDropTargetEvent( "dragEnter", 1 );
+    fakeDropTargetEvent( "DragEnter", 1 );
     Fixture.executeLifeCycleFromServerThread();
     addLogger( dropTarget );
 
     Fixture.fakeNewRequest();
-    fakeDropTargetEvent( "dragLeave", 2 );
-    fakeDropTargetEvent( "dragEnter", 3 );
-    fakeDropTargetEvent( "dragOver", 4 );
+    fakeDropTargetEvent( "DragLeave", 2 );
+    fakeDropTargetEvent( "DragEnter", 3 );
+    fakeDropTargetEvent( "DragOver", 4 );
     Fixture.executeLifeCycleFromServerThread();
 
     int[] expected = new int[]{ DND.DragLeave, DND.DragEnter, DND.DragOver };
@@ -204,11 +201,13 @@ public class DNDSupport_Test {
     addLogger( dropTarget );
     addSetDragDataListener( dragSource, "text" );
 
-    fakeDropTargetEvent( "dropAccept", 1 );
-    fakeDragSourceEvent( "dragFinished", 2 );
+    fakeDropTargetEvent( "DropAccept", 1 );
+    fakeDragSourceEvent( "DragEnd", 2 );
     Fixture.readDataAndProcessAction( display );
 
-    int[] expected = new int[]{ DND.DragLeave, DND.DropAccept, DND.DragSetData, DND.Drop, DND.DragEnd };
+    int[] expected = new int[]{
+      DND.DragLeave, DND.DropAccept, DND.DragSetData, DND.Drop, DND.DragEnd
+    };
     assertTrue( Arrays.equals( expected, getEventOrder() ) );
   }
 
@@ -221,7 +220,7 @@ public class DNDSupport_Test {
     addSetDragDataListener( dragSource, "Hello World!" );
 
 
-    createDropTargetEvent( "dropAccept", 0, 0, "move", getTextType(), 1 );
+    createDropTargetEvent( "DropAccept", 0, 0, "move", getTextType(), 1 );
     Fixture.readDataAndProcessAction( display );
 
     DragSourceEvent dragSetDataEvent = getDragSourceEvent( 2 );
@@ -240,7 +239,7 @@ public class DNDSupport_Test {
 
     SWTException exception = null;
 
-    fakeDropTargetEvent( "dropAccept", 1 );
+    fakeDropTargetEvent( "DropAccept", 1 );
     try {
       Fixture.executeLifeCycleFromServerThread();
       fail();
@@ -274,7 +273,7 @@ public class DNDSupport_Test {
     addSetDragDataListener( dragSource, "data" );
 
 
-    fakeDropTargetEvent( "dropAccept", 1 );
+    fakeDropTargetEvent( "DropAccept", 1 );
     Fixture.readDataAndProcessAction( display );
 
     DragSourceEvent dragSetDataEvent = getDragSourceEvent( 0 );
@@ -297,7 +296,7 @@ public class DNDSupport_Test {
     addLogger( dragSource );
     addLogger( dropTarget );
 
-    fakeDropTargetEvent( "dropAccept", 1 );
+    fakeDropTargetEvent( "DropAccept", 1 );
     Fixture.readDataAndProcessAction( display );
 
     int[] expected = new int[]{ DND.DragLeave, DND.DropAccept };
@@ -323,8 +322,8 @@ public class DNDSupport_Test {
     } );
     addLogger( dragSource );
 
-    fakeDropTargetEvent( "dropAccept", 1 );
-    fakeDragSourceEvent( "dragFinished", 2 );
+    fakeDropTargetEvent( "DropAccept", 1 );
+    fakeDragSourceEvent( "DragEnd", 2 );
     Fixture.readDataAndProcessAction( display );
 
     int[] expected = new int[]{ DND.DropAccept, DND.DragEnd };
@@ -339,7 +338,7 @@ public class DNDSupport_Test {
     addLogger( dragSource );
     addLogger( dropTarget );
 
-    fakeDragSourceEvent( "dragFinished", 1 );
+    fakeDragSourceEvent( "DragEnd", 1 );
     Fixture.readDataAndProcessAction( display );
 
     assertEquals( 1, events.size() );
@@ -366,8 +365,8 @@ public class DNDSupport_Test {
       }
     } );
 
-    fakeDropTargetEvent( "dropAccept", 1 );
-    fakeDragSourceEvent( "dragFinished", 2 );
+    fakeDropTargetEvent( "DropAccept", 1 );
+    fakeDragSourceEvent( "DragEnd", 2 );
     Fixture.readDataAndProcessAction( display );
 
     assertEquals( DND.DROP_COPY, getDropTargetEvent( 0 ).detail );
@@ -389,8 +388,8 @@ public class DNDSupport_Test {
       }
     } );
 
-    fakeDropTargetEvent( "dropAccept", 1 );
-    fakeDragSourceEvent( "dragFinished", 2 );
+    fakeDropTargetEvent( "DropAccept", 1 );
+    fakeDragSourceEvent( "DragEnd", 2 );
     Fixture.readDataAndProcessAction( display );
 
     assertTrue( getDragSourceEvent( 0 ).doit ); // This is still true in SWT/Win
@@ -411,8 +410,8 @@ public class DNDSupport_Test {
       }
     } );
 
-    fakeDropTargetEvent( "dropAccept", 1 );
-    fakeDragSourceEvent( "dragFinished", 2 );
+    fakeDropTargetEvent( "DropAccept", 1 );
+    fakeDragSourceEvent( "DragEnd", 2 );
     Fixture.readDataAndProcessAction( display );
 
     int[] expected = new int[]{
@@ -436,7 +435,7 @@ public class DNDSupport_Test {
     addLogger( dropTarget );
     addLogger( dragSource );
 
-    fakeDropTargetEvent( "dropAccept", 0 );
+    fakeDropTargetEvent( "DropAccept", 0 );
     Fixture.readDataAndProcessAction( display );
 
     DragSourceEvent setDataEvent = getDragSourceEvent( 2 );
@@ -451,8 +450,8 @@ public class DNDSupport_Test {
     createDragSource( DND.DROP_MOVE | DND.DROP_LINK | DND.DROP_COPY );
     createDropTarget( DND.DROP_MOVE | DND.DROP_LINK | DND.DROP_COPY );
 
-    createDropTargetEvent( "dragEnter", 10, 10, "copy", getTextType(), 1 );
-    createDropTargetEvent( "dragOver", 10, 10, "copy", getTextType(), 2 );
+    createDropTargetEvent( "DragEnter", 10, 10, "copy", getTextType(), 1 );
+    createDropTargetEvent( "DragOver", 10, 10, "copy", getTextType(), 2 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
@@ -470,14 +469,14 @@ public class DNDSupport_Test {
       }
     } );
 
-    fakeDropTargetEvent( "dragEnter", 1 );
-    fakeDropTargetEvent( "dragOver", 2 );
+    fakeDropTargetEvent( "DragEnter", 1 );
+    fakeDropTargetEvent( "DragOver", 2 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeDetail" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( "DROP_LINK", call.getProperty( "detail" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( "DROP_LINK", call.getProperty( "detail" ).asString() );
   }
 
   @Test
@@ -491,14 +490,14 @@ public class DNDSupport_Test {
       }
     } );
 
-    createDropTargetEvent( "dragEnter", 10, 10, "move", getTextType(), 1 );
-    createDropTargetEvent( "dragOver", 10, 10, "copy", getTextType(), 2 );
+    createDropTargetEvent( "DragEnter", 10, 10, "move", getTextType(), 1 );
+    createDropTargetEvent( "DragOver", 10, 10, "copy", getTextType(), 2 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeDetail" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( "DROP_LINK", call.getProperty( "detail" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( "DROP_LINK", call.getProperty( "detail" ).asString() );
   }
 
   @Test
@@ -516,10 +515,10 @@ public class DNDSupport_Test {
 
     Fixture.executeLifeCycleFromServerThread(); // clear pending message operations
     Fixture.fakeNewRequest();
-    fakeDropTargetEvent( "dragEnter", 1 );
-    fakeDropTargetEvent( "dragOver", 2 );
-    fakeDropTargetEvent( "dropAccept", 3 );
-    fakeDragSourceEvent( "dragFinished", 3 );
+    fakeDropTargetEvent( "DragEnter", 1 );
+    fakeDropTargetEvent( "DragOver", 2 );
+    fakeDropTargetEvent( "DropAccept", 3 );
+    fakeDragSourceEvent( "DragEnd", 3 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
@@ -547,7 +546,7 @@ public class DNDSupport_Test {
   }
 
   @Test
-  public void testResponseFeedbackChangedOnEnter() throws JSONException {
+  public void testResponseFeedbackChangedOnEnter() {
     createDragSource( DND.DROP_MOVE | DND.DROP_LINK | DND.DROP_COPY );
     createDropTarget( DND.DROP_MOVE | DND.DROP_LINK | DND.DROP_COPY );
     dropTarget.addDropListener( new DropTargetAdapter() {
@@ -559,21 +558,21 @@ public class DNDSupport_Test {
     Fixture.executeLifeCycleFromServerThread(); // clear message
     Fixture.fakeNewRequest();
 
-    fakeDropTargetEvent( "dragEnter", 1 );
-    fakeDropTargetEvent( "dragOver", 2 );
+    fakeDropTargetEvent( "DragEnter", 1 );
+    fakeDropTargetEvent( "DragOver", 2 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeFeedback" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( new Integer( DND.FEEDBACK_SELECT ), call.getProperty( "flags" ) );
-    JSONArray feedbackArr = ( JSONArray )call.getProperty( "feedback" );
-    assertEquals( 1, feedbackArr.length() );
-    assertEquals( "FEEDBACK_SELECT", feedbackArr.getString( 0 ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( DND.FEEDBACK_SELECT, call.getProperty( "flags" ).asInt() );
+    JsonArray feedbackArr = call.getProperty( "feedback" ).asArray();
+    assertEquals( 1, feedbackArr.size() );
+    assertEquals( "FEEDBACK_SELECT", feedbackArr.get( 0 ).asString() );
   }
 
   @Test
-  public void testResponseFeedbackChangedOnOver() throws JSONException {
+  public void testResponseFeedbackChangedOnOver() {
     createDragSource( DND.DROP_MOVE | DND.DROP_LINK | DND.DROP_COPY );
     createDropTarget( DND.DROP_MOVE | DND.DROP_LINK | DND.DROP_COPY );
     dropTarget.addDropListener( new DropTargetAdapter() {
@@ -585,19 +584,18 @@ public class DNDSupport_Test {
     Fixture.executeLifeCycleFromServerThread(); // clear message
     Fixture.fakeNewRequest();
 
-    fakeDropTargetEvent( "dragEnter", 1 );
-    fakeDropTargetEvent( "dragOver", 2 );
+    fakeDropTargetEvent( "DragEnter", 1 );
+    fakeDropTargetEvent( "DragOver", 2 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeFeedback" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
-    Integer expectedFlags = new Integer( DND.FEEDBACK_SCROLL | DND.FEEDBACK_EXPAND );
-    assertEquals( expectedFlags, call.getProperty( "flags" ) );
-    JSONArray feedbackArr = ( JSONArray )call.getProperty( "feedback" );
-    assertEquals( 2, feedbackArr.length() );
-    assertEquals( "FEEDBACK_EXPAND", feedbackArr.getString( 0 ) );
-    assertEquals( "FEEDBACK_SCROLL", feedbackArr.getString( 1 ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( DND.FEEDBACK_SCROLL | DND.FEEDBACK_EXPAND, call.getProperty( "flags" ).asInt() );
+    JsonArray feedbackArr = call.getProperty( "feedback" ).asArray();
+    assertEquals( 2, feedbackArr.size() );
+    assertEquals( "FEEDBACK_EXPAND", feedbackArr.get( 0 ).asString() );
+    assertEquals( "FEEDBACK_SCROLL", feedbackArr.get( 1 ).asString() );
 
   }
 
@@ -614,12 +612,12 @@ public class DNDSupport_Test {
     Fixture.executeLifeCycleFromServerThread();
 
     Fixture.fakeNewRequest();
-    fakeDropTargetEvent( "dragEnter", 1 );
+    fakeDropTargetEvent( "DragEnter", 1 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeDataType" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
   }
 
   @Test
@@ -636,16 +634,16 @@ public class DNDSupport_Test {
     Fixture.executeLifeCycleFromServerThread();
     Fixture.fakeNewRequest();
 
-    fakeDropTargetEvent( "dragEnter", 1 );
-    fakeDropTargetEvent( "dragOver", 2 );
+    fakeDropTargetEvent( "DragEnter", 1 );
+    fakeDropTargetEvent( "DragOver", 2 );
     Fixture.executeLifeCycleFromServerThread();
 
     DropTargetEvent dragEnter = getDropTargetEvent( 0 );
     assertTrue( HTMLTransfer.getInstance().isSupportedType( dragEnter.currentDataType ) );
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeDataType" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( new Integer( getTextType() ), call.getProperty( "dataType" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( getTextType(), call.getProperty( "dataType" ).asInt() );
   }
 
   @Test
@@ -663,17 +661,17 @@ public class DNDSupport_Test {
     Fixture.executeLifeCycleFromServerThread();
     Fixture.fakeNewRequest();
 
-    fakeDropTargetEvent( "dragEnter", 1 );
-    fakeDropTargetEvent( "dragOver", 2 );
+    fakeDropTargetEvent( "DragEnter", 1 );
+    fakeDropTargetEvent( "DragOver", 2 );
     Fixture.executeLifeCycleFromServerThread();
 
     DropTargetEvent dragOver = getDropTargetEvent( 1 );
     assertTrue( TextTransfer.getInstance().isSupportedType( dragOver.currentDataType ) );
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeDataType" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
-    Integer expectedType = new Integer( TextTransfer.getInstance().getSupportedTypes()[ 0 ].type );
-    assertEquals( expectedType, call.getProperty( "dataType" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    int expectedType = TextTransfer.getInstance().getSupportedTypes()[ 0 ].type;
+    assertEquals( expectedType, call.getProperty( "dataType" ).asInt() );
   }
 
   @Test
@@ -694,15 +692,13 @@ public class DNDSupport_Test {
     Fixture.executeLifeCycleFromServerThread();
     Fixture.fakeNewRequest();
 
-    fakeDropTargetEvent( "dragOver", 1 );
+    fakeDropTargetEvent( "DragOver", 1 );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( dragSource, "changeDataType" );
-    assertEquals( getId( targetControl ), call.getProperty( "control" ) );
-    Integer expectedType = new Integer( getTextType() );
-    assertEquals( expectedType, call.getProperty( "dataType" ) );
-
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( getTextType(), call.getProperty( "dataType" ).asInt() );
   }
 
   @Test
@@ -711,9 +707,9 @@ public class DNDSupport_Test {
     createDropTarget( DND.DROP_MOVE | DND.DROP_LINK | DND.DROP_COPY );
     addLogger( dropTarget );
 
-    fakeDropTargetEvent( "dragEnter", 2 );
-    createDropTargetEvent( "dragOperationChanged", 0, 0, "copy", getTextType(), 3 );
-    fakeDropTargetEvent( "dragOver", 5 );
+    fakeDropTargetEvent( "DragEnter", 2 );
+    createDropTargetEvent( "DragOperationChanged", 0, 0, "copy", getTextType(), 3 );
+    fakeDropTargetEvent( "DragOver", 5 );
     Fixture.executeLifeCycleFromServerThread();
 
     DropTargetEvent dragOperationChanged = getDropTargetEvent( 1 );
@@ -734,10 +730,10 @@ public class DNDSupport_Test {
     } );
     addLogger( dropTarget );
 
-    fakeDropTargetEvent( "dragEnter", 2 );
-    fakeDropTargetEvent( "dragOver", 5 );
-    fakeDropTargetEvent( "dragOperationChanged", 7 );
-    fakeDropTargetEvent( "dropAccept", 8 );
+    fakeDropTargetEvent( "DragEnter", 2 );
+    fakeDropTargetEvent( "DragOver", 5 );
+    fakeDropTargetEvent( "DragOperationChanged", 7 );
+    fakeDropTargetEvent( "DropAccept", 8 );
     Fixture.readDataAndProcessAction( display );
 
     assertEquals( 6, events.size() );
@@ -757,10 +753,10 @@ public class DNDSupport_Test {
   }
 
   private void createDragSourceEvent( String eventType, int x, int y, String operation, int time ) {
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( "x", String.valueOf( x ) );
-    parameters.put( "y", String.valueOf( y ) );
-    parameters.put( "time", String.valueOf( time ) );
+    JsonObject parameters = new JsonObject()
+      .add( "x", String.valueOf( x ) )
+      .add( "y", String.valueOf( y ) )
+      .add( "time", String.valueOf( time ) );
     Fixture.fakeNotifyOperation( getId( sourceControl ), eventType, parameters );
   }
 
@@ -775,14 +771,14 @@ public class DNDSupport_Test {
                                       int dataType,
                                       int time )
   {
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( "x", String.valueOf( x ) );
-    parameters.put( "y", String.valueOf( y ) );
-    parameters.put( "time", String.valueOf( time ) );
-    parameters.put( "operation", operation );
-    parameters.put( "feedback", String.valueOf( 0 ) );
-    parameters.put( "source", getId( sourceControl ) );
-    parameters.put( "dataType", String.valueOf( dataType ) );
+    JsonObject parameters = new JsonObject()
+      .add( "x", String.valueOf( x ) )
+      .add( "y", String.valueOf( y ) )
+      .add( "time", String.valueOf( time ) )
+      .add( "operation", operation )
+      .add( "feedback", String.valueOf( 0 ) )
+      .add( "source", getId( sourceControl ) )
+      .add( "dataType", String.valueOf( dataType ) );
     Fixture.fakeNotifyOperation( getId( targetControl ), eventType, parameters );
 
   }

@@ -534,7 +534,6 @@ abstract class ExampleTab implements Serializable {
     textWidth.setLayoutData( new GridData( 20, SWT.DEFAULT ) );
     new Label( group, SWT.NONE ).setText( "Color" );
     final Button buttonColor = new Button( group, SWT.PUSH );
-    buttonColor.setLayoutData( new GridData( 20, 20 ) );
     buttonColor.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( SelectionEvent event ) {
@@ -653,7 +652,7 @@ abstract class ExampleTab implements Serializable {
     }
   }
 
-  private void updateEnabled( ) {
+  private void updateEnabled() {
     Iterator<Control> iter = controls.iterator();
     while( iter.hasNext() ) {
       Control control = iter.next();

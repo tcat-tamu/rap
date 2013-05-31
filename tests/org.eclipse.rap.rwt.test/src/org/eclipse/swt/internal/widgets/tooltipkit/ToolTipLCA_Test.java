@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 Rüdiger Herrmann and others.
+ * Copyright (c) 2011, 2013 Rüdiger Herrmann and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,10 +22,10 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
@@ -41,8 +41,6 @@ import org.eclipse.swt.internal.widgets.IWidgetGraphicsAdapter;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolTip;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +73,7 @@ public class ToolTipLCA_Test {
   public void testReadVisibleWithRequestParamFalse() {
     toolTip.setVisible( true );
 
-    Fixture.fakeSetParameter( getId( toolTip ), "visible", Boolean.FALSE );
+    Fixture.fakeSetProperty( getId( toolTip ), "visible", false );
     Fixture.readDataAndProcessAction( display );
 
     assertFalse( toolTip.isVisible() );
@@ -211,7 +209,7 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "variant_blue", message.findSetProperty( toolTip, "customVariant" ) );
+    assertEquals( "variant_blue", message.findSetProperty( toolTip, "customVariant" ).asString() );
   }
 
   @Test
@@ -236,28 +234,22 @@ public class ToolTipLCA_Test {
   }
 
   @Test
-  public void testRenderRoundedBorder() throws IOException, JSONException {
+  public void testRenderRoundedBorder() throws IOException {
     IWidgetGraphicsAdapter graphicsAdapter = toolTip.getAdapter( IWidgetGraphicsAdapter.class );
-    Color color = Graphics.getColor( 0, 255, 0 );
+    Color color = new Color( display, 0, 255, 0 );
 
     graphicsAdapter.setRoundedBorder( 2, color, 5, 6, 7, 8 );
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray border = ( JSONArray )message.findSetProperty( toolTip, "roundedBorder" );
-    assertEquals( 6, border.length() );
-    assertEquals( 2, border.getInt( 0 ) );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[0,255,0,255]", border.getJSONArray( 1 ) ) );
-    assertEquals( 5, border.getInt( 2 ) );
-    assertEquals( 6, border.getInt( 3 ) );
-    assertEquals( 7, border.getInt( 4 ) );
-    assertEquals( 8, border.getInt( 5 ) );
+    JsonArray expected = JsonArray.readFrom( "[2, [0, 255, 0, 255], 5, 6, 7, 8]" );
+    assertEquals( expected, message.findSetProperty( toolTip, "roundedBorder" ) );
   }
 
   @Test
   public void testRenderRoundedBorderUnchanged() throws IOException {
     IWidgetGraphicsAdapter graphicsAdapter = toolTip.getAdapter( IWidgetGraphicsAdapter.class );
-    Color color = Graphics.getColor( 0, 255, 0 );
+    Color color = new Color( display, 0, 255, 0 );
     Fixture.markInitialized( toolTip );
 
     graphicsAdapter.setRoundedBorder( 2, color, 5, 6, 7, 8 );
@@ -278,11 +270,11 @@ public class ToolTipLCA_Test {
   }
 
   @Test
-  public void testRenderBackgroundGradient() throws IOException, JSONException {
+  public void testRenderBackgroundGradient() throws IOException {
     IWidgetGraphicsAdapter graphicsAdapter = toolTip.getAdapter( IWidgetGraphicsAdapter.class );
     Color[] gradientColors = new Color[] {
-      Graphics.getColor( 0, 255, 0 ),
-      Graphics.getColor( 0, 0, 255 )
+      new Color( display, 0, 255, 0 ),
+      new Color( display, 0, 0, 255 )
     };
     int[] percents = new int[] { 0, 100 };
 
@@ -290,22 +282,17 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray gradient = ( JSONArray )message.findSetProperty( toolTip, "backgroundGradient" );
-    JSONArray colors = ( JSONArray )gradient.get( 0 );
-    JSONArray stops = ( JSONArray )gradient.get( 1 );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[0,255,0,255]", colors.getJSONArray( 0 ) ) );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[0,0,255,255]", colors.getJSONArray( 1 ) ) );
-    assertEquals( new Integer( 0 ), stops.get( 0 ) );
-    assertEquals( new Integer( 100 ), stops.get( 1 ) );
-    assertEquals( Boolean.TRUE, gradient.get( 2 ) );
+    JsonArray expected
+      = JsonArray.readFrom( "[[[0, 255, 0, 255], [0, 0, 255, 255]], [0, 100], true]" );
+    assertEquals( expected, message.findSetProperty( toolTip, "backgroundGradient" ) );
   }
 
   @Test
   public void testRenderBackgroundGradientUnchanged() throws IOException {
     IWidgetGraphicsAdapter graphicsAdapter = toolTip.getAdapter( IWidgetGraphicsAdapter.class );
     Color[] gradientColors = new Color[] {
-      Graphics.getColor( 0, 255, 0 ),
-      Graphics.getColor( 0, 0, 255 )
+      new Color( display, 0, 255, 0 ),
+      new Color( display, 0, 0, 255 )
     };
     int[] percents = new int[] { 0, 100 };
     Fixture.markInitialized( toolTip );
@@ -332,7 +319,7 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( toolTip, "autoHide" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( toolTip, "autoHide" ) );
   }
 
   @Test
@@ -361,7 +348,7 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( toolTip, "text" ) );
+    assertEquals( "foo", message.findSetProperty( toolTip, "text" ).asString() );
   }
 
   @Test
@@ -390,7 +377,7 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( toolTip, "message" ) );
+    assertEquals( "foo", message.findSetProperty( toolTip, "message" ).asString() );
   }
 
   @Test
@@ -414,13 +401,13 @@ public class ToolTipLCA_Test {
   }
 
   @Test
-  public void testRenderLocation() throws IOException, JSONException {
+  public void testRenderLocation() throws IOException {
     toolTip.setLocation( 10, 20 );
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( toolTip, "location" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[10,20]", actual ) );
+    JsonArray expected = JsonArray.readFrom( "[10, 20]" );
+    assertEquals( expected, message.findSetProperty( toolTip, "location" ) );
   }
 
   @Test
@@ -449,7 +436,7 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( toolTip, "visible" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( toolTip, "visible" ) );
   }
 
   @Test
@@ -473,7 +460,7 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( toolTip, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( toolTip, "Selection" ) );
     assertNull( message.findListenOperation( toolTip, "DefaultSelection" ) );
   }
 
@@ -488,7 +475,7 @@ public class ToolTipLCA_Test {
     lca.renderChanges( toolTip );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( toolTip, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( toolTip, "Selection" ) );
     assertNull( message.findListenOperation( toolTip, "DefaultSelection" ) );
   }
 
@@ -504,4 +491,5 @@ public class ToolTipLCA_Test {
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findListenOperation( toolTip, "selection" ) );
   }
+
 }

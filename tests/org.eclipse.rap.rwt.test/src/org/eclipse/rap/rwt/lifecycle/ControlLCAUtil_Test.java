@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,8 +13,8 @@ package org.eclipse.rap.rwt.lifecycle;
 
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_DEFAULT_SELECTION;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.rap.rwt.testfixture.internal.TestUtil.createImage;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -25,13 +25,12 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
+import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.swt.SWT;
@@ -60,16 +59,12 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 
-@SuppressWarnings("deprecation")
 public class ControlLCAUtil_Test {
 
   private Display display;
@@ -147,6 +142,20 @@ public class ControlLCAUtil_Test {
   }
 
   @Test
+  public void testProcessSelectionWithText() {
+    SelectionListener listener = mock( SelectionListener.class );
+    control.addSelectionListener( listener );
+
+    fakeSelectionEvent( control, ClientMessageConst.EVENT_PARAM_TEXT, "foo" );
+    ControlLCAUtil.processSelection( control, null, false );
+
+    ArgumentCaptor<SelectionEvent> captor = ArgumentCaptor.forClass( SelectionEvent.class );
+    verify( listener ).widgetSelected( captor.capture() );
+    SelectionEvent event = captor.getValue();
+    assertEquals( event.text, "foo" );
+  }
+
+  @Test
   public void testProcessSelectionWithoutReadingBounds() {
     Listener listener = mock( Listener.class );
     control.addListener( SWT.Selection, listener );
@@ -177,6 +186,20 @@ public class ControlLCAUtil_Test {
     verify( listener ).widgetSelected( captor.capture() );
     SelectionEvent event = captor.getValue();
     assertEquals( SWT.CHECK, event.detail );
+  }
+
+  @Test
+  public void testProcessSelectionWithDetailHyperlink() {
+    SelectionListener listener = mock( SelectionListener.class );
+    control.addSelectionListener( listener );
+
+    fakeSelectionEvent( control, ClientMessageConst.EVENT_PARAM_DETAIL, "hyperlink" );
+    ControlLCAUtil.processSelection( control, null, false );
+
+    ArgumentCaptor<SelectionEvent> captor = ArgumentCaptor.forClass( SelectionEvent.class );
+    verify( listener ).widgetSelected( captor.capture() );
+    SelectionEvent event = captor.getValue();
+    assertEquals( RWT.HYPERLINK, event.detail );
   }
 
   @Test
@@ -399,7 +422,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderVisible( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findSetProperty( control, "visibility" ) );
+    assertEquals( JsonValue.FALSE, message.findSetProperty( control, "visibility" ) );
   }
 
   @Test
@@ -425,24 +448,24 @@ public class ControlLCAUtil_Test {
 
   // TODO [tb] : Move to WidgetLCAUtil_Test?
   @Test
-  public void testRenderBoundsIntiallyZero() throws JSONException {
+  public void testRenderBoundsIntiallyZero() {
     control = new Button( shell, SWT.PUSH );
     ControlLCAUtil.renderBounds( control );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray bounds = ( JSONArray )message.findSetProperty( control, "bounds" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[ 0, 0, 0, 0 ]", bounds ) );
+    JsonArray expected = JsonArray.readFrom( "[ 0, 0, 0, 0 ]" );
+    assertEquals( expected, message.findSetProperty( control, "bounds" ) );
   }
 
   // TODO [tb] : Move to WidgetLCAUtil_Test?
   @Test
-  public void testRenderBoundsInitiallySet() throws JSONException {
+  public void testRenderBoundsInitiallySet() {
     control.setBounds( 10, 20, 100, 200 );
     ControlLCAUtil.renderBounds( control );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray bounds = ( JSONArray )message.findSetProperty( control, "bounds" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[ 10, 20, 100, 200 ]", bounds ) );
+    JsonArray expected = JsonArray.readFrom( "[ 10, 20, 100, 200 ]" );
+    assertEquals( expected, message.findSetProperty( control, "bounds" ) );
   }
 
   // TODO [tb] : Move to WidgetLCAUtil_Test?
@@ -460,24 +483,23 @@ public class ControlLCAUtil_Test {
   }
 
   @Test
-  public void testRenderIntialChildren() throws JSONException {
+  public void testRenderIntialChildren() {
     ControlLCAUtil.renderChildren( shell );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( shell, "children" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[" +  WidgetUtil.getId( control ) + "]", actual ) );
+    JsonArray expected = new JsonArray().add( getId( control ) );
+    assertEquals( expected, message.findSetProperty( shell, "children" ) );
   }
 
   @Test
-  public void testRenderChildren() throws JSONException {
+  public void testRenderChildren() {
     Button button = new Button( shell, SWT.PUSH );
     control.moveBelow( button );
     ControlLCAUtil.renderChildren( shell );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( shell, "children" );
-    String expected = "[" + WidgetUtil.getId( button ) + "," + WidgetUtil.getId( control ) + "]";
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( getId( button ) ).add( getId( control ) );
+    assertEquals( expected, message.findSetProperty( shell, "children" ) );
   }
 
   @Test
@@ -509,7 +531,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderTabIndex( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 1 ), message.findSetProperty( control, "tabIndex" ) );
+    assertEquals( 1, message.findSetProperty( control, "tabIndex" ).asInt() );
   }
 
   @Test
@@ -521,7 +543,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderTabIndex( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 2 ), message.findSetProperty( control, "tabIndex" ) );
+    assertEquals( 2, message.findSetProperty( control, "tabIndex" ).asInt() );
   }
 
   @Test
@@ -556,7 +578,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderToolTip( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( control, "toolTip" ) );
+    assertEquals( "foo", message.findSetProperty( control, "toolTip" ).asString() );
   }
 
   // TODO [tb] : Move to WidgetLCAUtil_Test?
@@ -589,8 +611,8 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderMenu( control );
 
     Message message = Fixture.getProtocolMessage();
-    String expected = WidgetUtil.getId( control.getMenu() );
-    assertEquals( expected, message.findSetProperty( control, "menu" ) );
+    String expected = getId( control.getMenu() );
+    assertEquals( expected, message.findSetProperty( control, "menu" ).asString() );
   }
 
   // TODO [tb] : Move to WidgetLCAUtil_Test?
@@ -623,7 +645,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderEnabled( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findSetProperty( control, "enabled" ) );
+    assertEquals( JsonValue.FALSE, message.findSetProperty( control, "enabled" ) );
   }
 
   // TODO [tb] : Move to WidgetLCAUtil_Test?
@@ -649,24 +671,23 @@ public class ControlLCAUtil_Test {
   }
 
   @Test
-  public void testRenderBackgroundImage() throws JSONException {
-    Image image = Graphics.getImage( Fixture.IMAGE1 );
+  public void testRenderBackgroundImage() throws IOException {
+    Image image = createImage( display, Fixture.IMAGE1 );
 
     control.setBackgroundImage( image );
     ControlLCAUtil.renderBackgroundImage( control );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( image );
-    JSONArray args = ( JSONArray )message.findSetProperty( control, "backgroundImage" );
-    String expected = "[ \"" + imageLocation + "\", 58, 12 ]";
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, args ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 58 ).add( 12 );
+    assertEquals( expected, message.findSetProperty( control, "backgroundImage" ) );
   }
 
   @Test
-  public void testRenderBackgroundImageUnchanged() {
+  public void testRenderBackgroundImageUnchanged() throws IOException {
     Fixture.markInitialized( display );
     Fixture.markInitialized( control );
-    control.setBackgroundImage( Graphics.getImage( Fixture.IMAGE1 ) );
+    control.setBackgroundImage( createImage( display, Fixture.IMAGE1 ) );
 
     Fixture.preserveWidgets();
     ControlLCAUtil.renderBackgroundImage( control );
@@ -684,50 +705,43 @@ public class ControlLCAUtil_Test {
   }
 
   @Test
-  public void testRenderFont() throws JSONException {
+  public void testRenderFont() {
     control.setFont( new Font( display, "Arial", 12, SWT.NORMAL ) );
     ControlLCAUtil.renderFont( control );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray result = ( JSONArray )message.findSetProperty( control, "font" );
-    assertEquals( 4, result.length() );
-    assertEquals( "Arial", ( ( JSONArray )result.get( 0 ) ).getString( 0 ) );
-    assertEquals( 12, result.getInt( 1 ) );
-    assertFalse( result.getBoolean( 2 ) );
-    assertFalse( result.getBoolean( 3 ) );
+    JsonArray expected = JsonArray.readFrom( "[[\"Arial\"], 12, false, false]" );
+    assertEquals( expected, message.findSetProperty( control, "font" ) );
   }
 
   @Test
-  public void testRenderFontBold() throws JSONException {
+  public void testRenderFontBold() {
     control.setFont( new Font( display, "Arial", 12, SWT.BOLD ) );
     ControlLCAUtil.renderFont( control );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray result = ( JSONArray )message.findSetProperty( control, "font" );
-    assertTrue( result.getBoolean( 2 ) );
-    assertFalse( result.getBoolean( 3 ) );
+    JsonArray expected = JsonArray.readFrom( "[[\"Arial\"], 12, true, false]" );
+    assertEquals( expected, message.findSetProperty( control, "font" ) );
   }
 
   @Test
-  public void testRenderFontItalic() throws JSONException {
+  public void testRenderFontItalic() {
     control.setFont( new Font( display, "Arial", 12, SWT.ITALIC ) );
     ControlLCAUtil.renderFont( control );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray result = ( JSONArray )message.findSetProperty( control, "font" );
-    assertFalse( result.getBoolean( 2 ) );
-    assertTrue( result.getBoolean( 3 ) );
+    JsonArray expected = JsonArray.readFrom( "[[\"Arial\"], 12, false, true]" );
+    assertEquals( expected, message.findSetProperty( control, "font" ) );
   }
 
   @Test
-  public void testRenderFontItalicAndBold() throws JSONException {
+  public void testRenderFontItalicAndBold() {
     control.setFont( new Font( display, "Arial", 12, SWT.ITALIC | SWT.BOLD ) );
     ControlLCAUtil.renderFont( control );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray result = ( JSONArray )message.findSetProperty( control, "font" );
-    assertTrue( result.getBoolean( 2 ) );
-    assertTrue( result.getBoolean( 3 ) );
+    JsonArray expected = JsonArray.readFrom( "[[\"Arial\"], 12, true, true]" );
+    assertEquals( expected, message.findSetProperty( control, "font" ) );
   }
 
   @Test
@@ -754,7 +768,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderFont( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( control, "font" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( control, "font" ) );
   }
 
   @Test
@@ -771,7 +785,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderCursor( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "pointer", message.findSetProperty( control, "cursor" ) );
+    assertEquals( "pointer", message.findSetProperty( control, "cursor" ).asString() );
   }
 
   @Test
@@ -798,7 +812,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderCursor( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( control, "cursor" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( control, "cursor" ) );
   }
 
   @Test
@@ -817,7 +831,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenActivate( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "Activate" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "Activate" ) );
   }
 
   @Test
@@ -827,7 +841,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenActivate( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "Deactivate" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "Deactivate" ) );
   }
 
   @Test
@@ -859,8 +873,8 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenActivate( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "Activate" ) );
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "Deactivate" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "Activate" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "Deactivate" ) );
   }
 
   @Test
@@ -894,8 +908,8 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenFocus( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "FocusIn" ) );
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "FocusOut" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "FocusIn" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "FocusOut" ) );
   }
 
   @Test
@@ -925,8 +939,8 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenFocus( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "FocusIn" ) );
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "FocusOut" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "FocusIn" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "FocusOut" ) );
   }
 
   @Test
@@ -947,9 +961,9 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenMouse( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "MouseDown" ) );
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "MouseDoubleClick" ) );
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "MouseUp" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "MouseDown" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "MouseDoubleClick" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "MouseUp" ) );
   }
 
   @Test
@@ -981,9 +995,9 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenMouse( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "MouseDown" ) );
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "MouseDoubleClick" ) );
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "MouseUp" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "MouseDown" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "MouseDoubleClick" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "MouseUp" ) );
   }
 
   @Test
@@ -1000,7 +1014,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenKey( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "KeyDown" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "KeyDown" ) );
   }
 
   @Test
@@ -1028,7 +1042,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenKey( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "KeyDown" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "KeyDown" ) );
   }
 
   @Test
@@ -1045,7 +1059,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenTraverse( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "Traverse" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "Traverse" ) );
   }
 
   @Test
@@ -1073,7 +1087,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenTraverse( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "Traverse" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "Traverse" ) );
   }
 
   @Test
@@ -1094,7 +1108,7 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenMenuDetect( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( control, "MenuDetect" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( control, "MenuDetect" ) );
   }
 
   @Test
@@ -1129,31 +1143,31 @@ public class ControlLCAUtil_Test {
     ControlLCAUtil.renderListenMenuDetect( control );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( control, "MenuDetect" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( control, "MenuDetect" ) );
   }
 
   private void fakeKeyDown( String target, int keyCode, int charCode, String modifier ) {
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( ClientMessageConst.EVENT_PARAM_KEY_CODE, Integer.valueOf( keyCode ) );
-    properties.put( ClientMessageConst.EVENT_PARAM_CHAR_CODE, Integer.valueOf( charCode ) );
-    properties.put( ClientMessageConst.EVENT_PARAM_MODIFIER, modifier );
+    JsonObject properties = new JsonObject()
+      .add( ClientMessageConst.EVENT_PARAM_KEY_CODE, keyCode )
+      .add( ClientMessageConst.EVENT_PARAM_CHAR_CODE, charCode )
+      .add( ClientMessageConst.EVENT_PARAM_MODIFIER, modifier );
     Fixture.fakeNotifyOperation( target, ClientMessageConst.EVENT_KEY_DOWN, properties  );
   }
 
   private void fakeTraverse( String target, int keyCode, int charCode, String modifier ) {
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( ClientMessageConst.EVENT_PARAM_KEY_CODE, Integer.valueOf( keyCode ) );
-    properties.put( ClientMessageConst.EVENT_PARAM_CHAR_CODE, Integer.valueOf( charCode ) );
-    properties.put( ClientMessageConst.EVENT_PARAM_MODIFIER, modifier );
+    JsonObject properties = new JsonObject()
+      .add( ClientMessageConst.EVENT_PARAM_KEY_CODE, keyCode )
+      .add( ClientMessageConst.EVENT_PARAM_CHAR_CODE, charCode )
+      .add( ClientMessageConst.EVENT_PARAM_MODIFIER, modifier );
     Fixture.fakeNotifyOperation( target, ClientMessageConst.EVENT_KEY_DOWN, properties  );
     Fixture.fakeNotifyOperation( target, ClientMessageConst.EVENT_TRAVERSE, properties  );
   }
 
   private static void fakeSelectionEvent( Control control, String key, String value ) {
     String id = getId( control );
-    Map<String, Object> parameters = new HashMap<String,Object>();
+    JsonObject parameters = new JsonObject();
     if( key != null ) {
-      parameters.put( key, value );
+      parameters.add( key, value );
     }
     Fixture.fakeNotifyOperation( id, ClientMessageConst.EVENT_SELECTION, parameters );
   }

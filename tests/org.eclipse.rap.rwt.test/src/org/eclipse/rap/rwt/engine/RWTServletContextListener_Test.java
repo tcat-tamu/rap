@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,8 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.engine;
 
+import static org.eclipse.rap.rwt.engine.RWTServletContextListener.ENTRY_POINTS_PARAM;
+import static org.eclipse.rap.rwt.engine.RWTServletContextListener.RWT_SERVLET_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -20,13 +22,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 
 import org.eclipse.rap.rwt.application.Application;
 import org.eclipse.rap.rwt.application.ApplicationConfiguration;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
 import org.eclipse.rap.rwt.internal.lifecycle.TestEntryPoint;
 import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
@@ -71,17 +73,30 @@ public class RWTServletContextListener_Test {
   @Test
   public void testEntryPointInitialization() {
     String className = TestEntryPoint.class.getName();
-    servletContext.setInitParameter( RWTServletContextListener.ENTRY_POINTS_PARAM, className );
+    servletContext.setInitParameter( ENTRY_POINTS_PARAM, className );
 
     rwtServletContextListener.contextInitialized( contextInitializedEvent );
 
     assertEntryPointIsRegistered();
+    assertEntryPointPath( "/rap" );
+  }
+
+  @Test
+  public void testEntryPointInitializationWithServletMapping() {
+    String className = TestEntryPoint.class.getName();
+    servletContext.setInitParameter( ENTRY_POINTS_PARAM, className );
+    setServletMapping( "/foo" );
+
+    rwtServletContextListener.contextInitialized( contextInitializedEvent );
+
+    assertEntryPointIsRegistered();
+    assertEntryPointPath( "/foo" );
   }
 
   @Test
   public void testEntryPointInitializationWithNonExistingClassName() {
     String className = "does.not.Exist";
-    servletContext.setInitParameter( RWTServletContextListener.ENTRY_POINTS_PARAM, className );
+    servletContext.setInitParameter( ENTRY_POINTS_PARAM, className );
 
     try {
       rwtServletContextListener.contextInitialized( contextInitializedEvent );
@@ -98,6 +113,7 @@ public class RWTServletContextListener_Test {
     rwtServletContextListener.contextInitialized( contextInitializedEvent );
 
     assertEntryPointIsRegistered();
+    assertEntryPointPath( "/test" );
     assertPhaseListenersAreRegistered();
   }
 
@@ -124,18 +140,25 @@ public class RWTServletContextListener_Test {
   }
 
   private void assertResourceManagerIsRegistered() {
-    ApplicationContextImpl applicationContext = ApplicationContextUtil.get( servletContext );
+    ApplicationContextImpl applicationContext = ApplicationContextImpl.getFrom( servletContext );
     assertNotNull( applicationContext.getResourceManager() );
   }
 
   private void assertEntryPointIsRegistered() {
-    ApplicationContextImpl applicationContext = ApplicationContextUtil.get( servletContext );
+    ApplicationContextImpl applicationContext = ApplicationContextImpl.getFrom( servletContext );
     EntryPointManager entryPointManager = applicationContext.getEntryPointManager();
     assertEquals( 1, entryPointManager.getServletPaths().size() );
   }
 
+  private void assertEntryPointPath( String path ) {
+    ApplicationContextImpl applicationContext = ApplicationContextImpl.getFrom( servletContext );
+    EntryPointManager entryPointManager = applicationContext.getEntryPointManager();
+    String[] servletPaths = entryPointManager.getServletPaths().toArray( new String[ 0 ] );
+    assertEquals( path, servletPaths[ 0 ] );
+  }
+
   private void assertPhaseListenersAreRegistered() {
-    ApplicationContextImpl applicationContext = ApplicationContextUtil.get( servletContext );
+    ApplicationContextImpl applicationContext = ApplicationContextImpl.getFrom( servletContext );
     assertEquals( 2, applicationContext.getPhaseListenerRegistry().getAll().length );
   }
 
@@ -152,6 +175,11 @@ public class RWTServletContextListener_Test {
     public PhaseId getPhaseId() {
       return PhaseId.ANY;
     }
+  }
+
+  private void setServletMapping( String path ) {
+    servletContext.addServlet( RWT_SERVLET_NAME, mock( Servlet.class ) );
+    servletContext.getServletRegistration( RWT_SERVLET_NAME ).addMapping( path );
   }
 
   private static class TestConfigurator implements ApplicationConfiguration {

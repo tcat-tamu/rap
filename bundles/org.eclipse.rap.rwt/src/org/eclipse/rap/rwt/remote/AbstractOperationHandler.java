@@ -11,7 +11,8 @@
 package org.eclipse.rap.rwt.remote;
 
 import java.io.Serializable;
-import java.util.Map;
+
+import org.eclipse.rap.json.JsonObject;
 
 
 /**
@@ -26,26 +27,29 @@ import java.util.Map;
  * It is recommended to extend this base class rather than to implement the OperationHandler
  * interface itself.
  * </p>
- * <p>
- * <strong>Note:</strong> The classes and interfaces in the package
- * <em>org.eclipse.rap.rwt.remote</em> are still considered <strong>provisional</strong>. They are
- * expected to evolve over the next releases, which may lead to slight changes. We make the package
- * available to enable the development of custom components with the new API.
- * </p>
  *
  * @since 2.0
  */
 public abstract class AbstractOperationHandler implements OperationHandler, Serializable {
 
-  public void handleSet( Map<String, Object> properties ) {
+  /**
+   * @since 2.1
+   */
+  public void handleSet( JsonObject properties ) {
     throw new UnsupportedOperationException( "set operations not supported by this handler" );
   }
 
-  public void handleCall( String method, Map<String, Object> parameters ) {
+  /**
+   * @since 2.1
+   */
+  public void handleCall( String method, JsonObject parameters ) {
     throw new UnsupportedOperationException( "call operations not supported by this handler" );
   }
 
-  public void handleNotify( String event, Map<String, Object> properties ) {
+  /**
+   * @since 2.1
+   */
+  public void handleNotify( String event, JsonObject properties ) {
     throw new UnsupportedOperationException( "notify operations not supported by this handler" );
   }
 

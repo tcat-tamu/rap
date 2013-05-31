@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,22 +10,33 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.theme;
 
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.theme.ThemePropertyAdapterRegistry.ThemePropertyAdapter;
 import org.eclipse.rap.rwt.internal.theme.css.ConditionalValue;
+import org.eclipse.rap.rwt.service.ApplicationContext;
 
 
 public final class ThemeStoreWriter {
 
   private final IThemeCssElement[] allThemeableWidgetElements;
   private final Theme theme;
+  private final ApplicationContext applicationContext;
 
-  public ThemeStoreWriter( Theme theme, IThemeCssElement[] elements ) {
+  public ThemeStoreWriter( ApplicationContext applicationContext,
+                           Theme theme,
+                           IThemeCssElement[] elements )
+  {
+    this.applicationContext = applicationContext;
     this.theme = theme;
     allThemeableWidgetElements = elements;
   }
@@ -34,8 +45,8 @@ public final class ThemeStoreWriter {
     QxType[] allValues = theme.getValuesMap().getAllValues();
     Map valuesMap = createValuesMap( allValues );
     JsonObject json = new JsonObject();
-    json.append( "values", createJsonFromValuesMap( valuesMap ) );
-    json.append( "theme", createThemeJson() );
+    json.add( "values", createJsonFromValuesMap( valuesMap ) );
+    json.add( "theme", createThemeJson() );
     return json.toString();
   }
 
@@ -46,7 +57,7 @@ public final class ThemeStoreWriter {
       IThemeCssElement element = allThemeableWidgetElements[ i ];
       String elementName = element.getName();
       JsonObject elementObj = createThemeJsonForElement( valuesMap, element );
-      result.append( elementName, elementObj );
+      result.add( elementName, elementObj );
     }
     return result;
   }
@@ -56,7 +67,8 @@ public final class ThemeStoreWriter {
   {
     JsonObject result = new JsonObject();
     String[] properties = element.getProperties();
-    ThemePropertyAdapterRegistry registry = ThemePropertyAdapterRegistry.getInstance();
+    ThemePropertyAdapterRegistry registry
+      = ThemePropertyAdapterRegistry.getInstance( applicationContext );
     for( int i = 0; i < properties.length; i++ ) {
       String propertyName = properties[ i ];
       JsonArray valuesArray = new JsonArray();
@@ -65,19 +77,19 @@ public final class ThemeStoreWriter {
       for( int j = 0; j < values.length; j++ ) {
         ConditionalValue conditionalValue = values[ j ];
         JsonArray array = new JsonArray();
-        array.append( JsonArray.valueOf( conditionalValue.constraints ) );
+        array.add( createJsonArray( conditionalValue.constraints ) );
         QxType value = conditionalValue.value;
         ThemePropertyAdapter adapter = registry.getPropertyAdapter( value.getClass() );
         String cssKey = adapter.getKey( value );
-        array.append( cssKey );
-        valuesArray.append( array );
+        array.add( cssKey );
+        valuesArray.add( array );
       }
-      result.append( propertyName, valuesArray );
+      result.add( propertyName, valuesArray );
     }
     return result;
   }
 
-  private static Map createValuesMap( QxType[] values ) {
+  private Map createValuesMap( QxType[] values ) {
     Map<String,JsonObject> result = new LinkedHashMap<String,JsonObject>();
     for( int i = 0; i < values.length; i++ ) {
       appendValueToMap( values[ i ], result );
@@ -85,8 +97,9 @@ public final class ThemeStoreWriter {
     return result;
   }
 
-  private static void appendValueToMap( QxType propertyValue, Map<String,JsonObject> valuesMap ) {
-    ThemePropertyAdapterRegistry registry = ThemePropertyAdapterRegistry.getInstance();
+  private void appendValueToMap( QxType propertyValue, Map<String,JsonObject> valuesMap ) {
+    ThemePropertyAdapterRegistry registry
+      = ThemePropertyAdapterRegistry.getInstance( applicationContext );
     ThemePropertyAdapter adapter = registry.getPropertyAdapter( propertyValue.getClass() );
     if( adapter != null ) {
       String slot = adapter.getSlot( propertyValue );
@@ -95,7 +108,7 @@ public final class ThemeStoreWriter {
         JsonValue value = adapter.getValue( propertyValue );
         if( value != null ) {
           JsonObject slotObject = getSlot( valuesMap, slot );
-          slotObject.append( key, value );
+          slotObject.add( key, value );
         }
       }
     }
@@ -109,7 +122,7 @@ public final class ThemeStoreWriter {
       Entry entry = ( Entry )keyIterator.next();
       String key = ( String )entry.getKey();
       JsonValue value = ( JsonValue )entry.getValue();
-      result.append( key, value );
+      result.add( key, value );
     }
     return result;
   }

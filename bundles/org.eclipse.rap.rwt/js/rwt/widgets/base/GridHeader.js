@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2011, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -88,7 +88,8 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
       this._renderLabelLeft( label, column );
       label.setWidth( column.getWidth() );
       label.setHoverEffect( column.getMoveable() );
-      label.setVisibility( column.getVisibility() );
+      label.setVisibility( column.getVisibility() && column.getWidth() > 0 );
+      column.applyHtmlAttributes( label );
       if( this._footer ) {
         label.setText( column.getFooterText() );
         label.setImage( column.getFooterImage() );
@@ -106,6 +107,7 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
         label.setText( column.getText() );
         label.setImage( column.getImage() );
         label.setToolTip( column.getToolTip() );
+        label.setUserData( "toolTipText", column.getUserData( "toolTipText" ) );
         label.setSortIndicator( column.getSortDirection() );
         label.applyObjectId( column.getObjectId() );
         if( column.isGroup() ) {
@@ -249,7 +251,7 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
       if( this._footer ) {
         label.addState( "footer" );
       } else if( column.getResizeable() ) {
-        label.setResizeCursor( "ew-resize" );
+        label.setResizeCursor( "col-resize" );
       }
       if( column.isGroup() ) {
         label.addState( "group" );

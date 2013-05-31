@@ -139,6 +139,21 @@ org.eclipse.rwt.test.fixture.TestUtil = {
     return node.style.cssText.search( "user-select: none" ) == -1;
   },
 
+  getCssGradient : function( element ) {
+    var result = "";
+    var background = element.style.background;
+    var start = background.indexOf( "gradient(" );
+    if( start !== -1 ) {
+      var end = background.indexOf( ") repeat", start );
+      if( end != -1 ) {
+        result = background.slice( start, end + 1 );
+      } else {
+        result = background.slice( start );
+      }
+    }
+    return result;
+  },
+
   /////////////////////////////
   // Event handling - DOM layer
 
@@ -662,6 +677,7 @@ org.eclipse.rwt.test.fixture.TestUtil = {
     keyHandler._lastKeyCode = null;
     keyHandler._lastUpDownType = {};
     rwt.event.EventHandler.setCaptureWidget( null );
+    rwt.event.EventHandler.setBlockKeyEvents( false );
   },
 
   ////////////////
@@ -728,11 +744,9 @@ org.eclipse.rwt.test.fixture.TestUtil = {
   },
 
   initErrorPageLog : function() {
-    var handler = rwt.runtime.ErrorHandler;
     org.eclipse.rwt.test.fixture.TestUtil.clearErrorPage();
-    handler.showErrorPage = function( content ) {
-      TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      TestUtil._errorPage = content;
+    rwt.runtime.ErrorHandler.showErrorPage = function( content ) {
+      org.eclipse.rwt.test.fixture.TestUtil._errorPage = content;
     };
   },
 
@@ -830,7 +844,9 @@ org.eclipse.rwt.test.fixture.TestUtil = {
   // Misc
 
   isMobileWebkit : function() {
-    return rwt.client.Client.isMobileSafari() || rwt.client.Client.isAndroidBrowser();
+    return    rwt.client.Client.isMobileSafari()
+           || rwt.client.Client.isAndroidBrowser()
+           || rwt.client.Client.isMobileChrome();
   },
 
   isFocused : function( widget ) {
@@ -923,6 +939,14 @@ org.eclipse.rwt.test.fixture.TestUtil = {
 
   ///////////////////
   // Protocol ralated
+
+  addToRegistry : function( id, object ) {
+    rwt.remote.ObjectRegistry.add(
+      id,
+      object,
+      rwt.remote.HandlerRegistry.getHandler( object.classname )
+    );
+  },
 
   createShellByProtocol : function( id ) {
     rwt.remote.EventUtil.setSuspended( true );

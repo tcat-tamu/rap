@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2008, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,7 +22,8 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -42,7 +43,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -139,9 +139,9 @@ public class DateTimeLCA_Test {
     Fixture.preserveWidgets();
 
     Fixture.fakeNotifyOperation( getId( dateTime ), ClientMessageConst.EVENT_SELECTION, null );
-    Fixture.fakeSetParameter( getId( dateTime ), "day", Integer.valueOf( 31 ) );
-    Fixture.fakeSetParameter( getId( dateTime ), "month", Integer.valueOf( 4 ) );
-    Fixture.fakeSetParameter( getId( dateTime ), "year", Integer.valueOf( 2010 ) );
+    Fixture.fakeSetProperty( getId( dateTime ), "day", 31 );
+    Fixture.fakeSetProperty( getId( dateTime ), "month", 4 );
+    Fixture.fakeSetProperty( getId( dateTime ), "year", 2010 );
     Fixture.readDataAndProcessAction( dateTime );
 
     assertEquals( 31, dateTime.getDay() );
@@ -186,11 +186,11 @@ public class DateTimeLCA_Test {
     assertEquals( menu, adapter.getPreserved( Props.MENU ) );
     Fixture.clearPreserved();
     // foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     dateTime.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     dateTime.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     dateTime.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( dateTime );
@@ -317,7 +317,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( dateTime, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( dateTime, "Selection" ) );
   }
 
   @Test
@@ -333,7 +333,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( dateTime, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( dateTime, "Selection" ) );
   }
 
   @Test
@@ -370,7 +370,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 2000 ), message.findSetProperty( dateTime, "year" ) );
+    assertEquals( 2000, message.findSetProperty( dateTime, "year" ).asInt() );
   }
 
   @Test
@@ -407,7 +407,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 2 ), message.findSetProperty( dateTime, "month" ) );
+    assertEquals( 2, message.findSetProperty( dateTime, "month" ).asInt() );
   }
 
   @Test
@@ -444,7 +444,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 3 ), message.findSetProperty( dateTime, "day" ) );
+    assertEquals( 3, message.findSetProperty( dateTime, "day" ).asInt() );
   }
 
   @Test
@@ -479,8 +479,8 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( dateTime, "subWidgetsBounds" );
-    assertEquals( 9, actual.length() );
+    JsonArray actual = ( JsonArray )message.findSetProperty( dateTime, "subWidgetsBounds" );
+    assertEquals( 9, actual.size() );
   }
 
   @Test
@@ -515,7 +515,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( dateTime, "hours" ) );
+    assertEquals( 10, message.findSetProperty( dateTime, "hours" ).asInt() );
   }
 
   @Test
@@ -551,7 +551,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( dateTime, "minutes" ) );
+    assertEquals( 10, message.findSetProperty( dateTime, "minutes" ).asInt() );
   }
 
   @Test
@@ -587,7 +587,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( dateTime, "seconds" ) );
+    assertEquals( 10, message.findSetProperty( dateTime, "seconds" ).asInt() );
   }
 
   @Test
@@ -622,8 +622,8 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( dateTime, "subWidgetsBounds" );
-    assertEquals( 6, actual.length() );
+    JsonArray actual = ( JsonArray )message.findSetProperty( dateTime, "subWidgetsBounds" );
+    assertEquals( 6, actual.size() );
   }
 
   @Test
@@ -658,7 +658,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 2000 ), message.findSetProperty( dateTime, "year" ) );
+    assertEquals( 2000, message.findSetProperty( dateTime, "year" ).asInt() );
   }
 
   @Test
@@ -695,7 +695,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 2 ), message.findSetProperty( dateTime, "month" ) );
+    assertEquals( 2, message.findSetProperty( dateTime, "month" ).asInt() );
   }
 
   @Test
@@ -732,7 +732,7 @@ public class DateTimeLCA_Test {
     lca.renderChanges( dateTime );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 3 ), message.findSetProperty( dateTime, "day" ) );
+    assertEquals( 3, message.findSetProperty( dateTime, "day" ).asInt() );
   }
 
   @Test
@@ -748,4 +748,5 @@ public class DateTimeLCA_Test {
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findSetOperation( dateTime, "day" ) );
   }
+
 }

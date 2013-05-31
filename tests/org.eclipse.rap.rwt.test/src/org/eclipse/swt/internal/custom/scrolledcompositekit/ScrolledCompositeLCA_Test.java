@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,8 +23,8 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
@@ -47,8 +47,6 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -147,11 +145,11 @@ public class ScrolledCompositeLCA_Test {
     Fixture.clearPreserved();
     sc.setEnabled( true );
     // foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     sc.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     sc.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     sc.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( sc );
@@ -174,8 +172,8 @@ public class ScrolledCompositeLCA_Test {
   public void testReadData_ScrollBarsSelection() {
     sc.setContent( new Composite( sc, SWT.NONE ) );
 
-    Fixture.fakeSetParameter( getId( sc ), "horizontalBar.selection", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( sc ), "verticalBar.selection", Integer.valueOf( 2 ) );
+    Fixture.fakeSetProperty( getId( sc ), "horizontalBar.selection", 1 );
+    Fixture.fakeSetProperty( getId( sc ), "verticalBar.selection", 2 );
     Fixture.readDataAndProcessAction( sc );
 
     assertEquals( new Point( 1, 2 ), sc.getOrigin() );
@@ -234,7 +232,7 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( contentId, message.findSetProperty( sc, "content" ) );
+    assertEquals( contentId, message.findSetProperty( sc, "content" ).asString() );
   }
 
   @Test
@@ -264,7 +262,7 @@ public class ScrolledCompositeLCA_Test {
   }
 
   @Test
-  public void testRenderOrigin() throws IOException, JSONException {
+  public void testRenderOrigin() throws IOException {
     Composite content = new Composite( sc, SWT.NONE );
     sc.setContent( content );
 
@@ -272,12 +270,12 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( sc, "origin" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[ 1, 2 ]", actual ) );
+    JsonArray expected = JsonArray.readFrom( "[ 1, 2 ]" );
+    assertEquals( expected, message.findSetProperty( sc, "origin" ) );
   }
 
   @Test
-  public void testRenderOrigin_SetByScrollbar() throws IOException, JSONException {
+  public void testRenderOrigin_SetByScrollbar() throws IOException {
     Composite content = new Composite( sc, SWT.NONE );
     sc.setContent( content );
 
@@ -286,8 +284,8 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( sc, "origin" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[ 1, 2 ]", actual ) );
+    JsonArray expected = JsonArray.readFrom( "[ 1, 2 ]" );
+    assertEquals( expected, message.findSetProperty( sc, "origin" ) );
   }
 
   @Test
@@ -321,7 +319,7 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( sc, "showFocusedControl" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( sc, "showFocusedControl" ) );
   }
 
   @Test
@@ -348,7 +346,7 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( hScroll, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( hScroll, "Selection" ) );
   }
 
   @Test
@@ -364,7 +362,7 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( hScroll, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( hScroll, "Selection" ) );
   }
 
   @Test
@@ -393,7 +391,7 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( vScroll, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( vScroll, "Selection" ) );
   }
 
   @Test
@@ -409,7 +407,7 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( vScroll, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( vScroll, "Selection" ) );
   }
 
   @Test
@@ -442,7 +440,7 @@ public class ScrolledCompositeLCA_Test {
     lca.renderChanges( sc );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( hScroll, "visibility" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( hScroll, "visibility" ) );
     assertNull( message.findSetOperation( vScroll, "visibility" ) );
   }
 
@@ -453,7 +451,7 @@ public class ScrolledCompositeLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findSetOperation( hScroll, "visibility" ) );
-    assertEquals( Boolean.TRUE, message.findSetProperty( vScroll, "visibility" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( vScroll, "visibility" ) );
   }
 
   @Test
@@ -472,4 +470,5 @@ public class ScrolledCompositeLCA_Test {
     assertNull( message.findSetOperation( hScroll, "visibility" ) );
     assertNull( message.findSetOperation( vScroll, "visibility" ) );
   }
+
 }

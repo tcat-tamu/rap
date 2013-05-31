@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -46,6 +46,7 @@ public class MenuItem extends Item {
   private DisposeListener menuDisposeListener;
   private boolean selection;
   private int userId;
+  private AcceleratorBinding acceleratorBinding;
 
   /**
    * Constructs a new instance of this class given its parent
@@ -274,6 +275,59 @@ public class MenuItem extends Item {
     if( ( style & SWT.SEPARATOR ) == 0 ) {
       super.setImage( image );
     }
+  }
+
+  /**
+   * Sets the widget accelerator.  An accelerator is the bit-wise
+   * OR of zero or more modifier masks and a key. Examples:
+   * <code>SWT.MOD1 | SWT.MOD2 | 'T', SWT.MOD3 | SWT.F2</code>.
+   * <code>SWT.CONTROL | SWT.SHIFT | 'T', SWT.ALT | SWT.F2</code>.
+   * The default value is zero, indicating that the menu item does
+   * not have an accelerator.
+   *
+   * @param accelerator an integer that is the bit-wise OR of masks and a key
+   *
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @since 2.1
+   */
+  public void setAccelerator( int accelerator ) {
+    checkWidget();
+    if( accelerator != 0 ) {
+      if( acceleratorBinding == null ) {
+        acceleratorBinding = new AcceleratorBinding( this );
+      }
+      acceleratorBinding.setAccelerator( accelerator );
+    } else if( acceleratorBinding != null ) {
+      acceleratorBinding.release();
+      acceleratorBinding = null;
+    }
+  }
+
+  /**
+   * Returns the widget accelerator.  An accelerator is the bit-wise
+   * OR of zero or more modifier masks and a key. Examples:
+   * <code>SWT.CONTROL | SWT.SHIFT | 'T', SWT.ALT | SWT.F2</code>.
+   * The default value is zero, indicating that the menu item does
+   * not have an accelerator.
+   *
+   * @return the accelerator or 0
+   *
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @since 2.1
+   */
+  public int getAccelerator() {
+    checkWidget();
+    return acceleratorBinding != null ? acceleratorBinding.getAccelerator() : 0;
   }
 
   //////////
@@ -555,6 +609,15 @@ public class MenuItem extends Item {
   // Item overrides
 
   @Override
+  void releaseWidget() {
+    super.releaseWidget();
+    if( acceleratorBinding != null ) {
+      acceleratorBinding.release();
+      acceleratorBinding = null;
+    }
+  }
+
+  @Override
   final void releaseChildren() {
     if( menu != null ) {
       removeMenuDisposeListener();
@@ -589,7 +652,7 @@ public class MenuItem extends Item {
         menuDisposeListener = new DisposeListener() {
 
           public void widgetDisposed( DisposeEvent event ) {
-            MenuItem.this.menu = null;
+            menu = null;
           }
         };
       }
@@ -600,6 +663,25 @@ public class MenuItem extends Item {
   private void removeMenuDisposeListener() {
     if( menu != null ) {
       menu.removeDisposeListener( menuDisposeListener );
+    }
+  }
+
+  void handleAcceleratorActivation() {
+    if( ( style & SWT.CHECK ) != 0 ) {
+      selection = !selection;
+    } else if ( ( style & SWT.RADIO ) != 0 ) {
+      deselectOtherRadios();
+      selection = true;
+    }
+    notifyListeners( SWT.Selection, new Event() );
+  }
+
+  private void deselectOtherRadios() {
+    for( MenuItem item : parent.getItems() ) {
+      if( item != this && ( item.getStyle() & SWT.RADIO ) != 0 && item.getSelection() ) {
+        item.setSelection( false );
+        item.notifyListeners( SWT.Selection, new Event() );
+      }
     }
   }
 
@@ -626,4 +708,5 @@ public class MenuItem extends Item {
     }
     super.reskinChildren( flags );
   }
+
 }

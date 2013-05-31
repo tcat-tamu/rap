@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
- Copyright (c) 2008, 2012 Innoopract Informationssysteme GmbH and others.
+ Copyright (c) 2008, 2013 Innoopract Informationssysteme GmbH and others.
  All rights reserved. This program and the accompanying materials
  are made available under the terms of the Eclipse Public License v1.0
  which accompanies this distribution, and is available at
@@ -23,13 +23,13 @@
 
     <property name="background-color"
         description="Background color for tables." />
-        
+
     <property name="border"
         description="The border around the table including header." />
 
     <style name="BORDER"
         description="Indicates that the table should have a border." />
-        
+
     <property name="background-image"
         description="Background image or gradient for table client area." />
 
@@ -84,7 +84,7 @@
           description="Table item text color" />
 
       <property name="background-color"
-          description="Table item background color" />
+          description="Table item background color. Supports rgba values" />
 
       <property name="background-image"
           description="Tree item background image/gradient" />
@@ -178,6 +178,9 @@
       <state name="horizontal"
           description="Applies for horizontal grid lines." />
 
+      <state name="header"
+          description="Applies for grid lines in header." />
+
     </element>
 
     <element name="Table-Checkbox"
@@ -185,7 +188,7 @@
 
       <property name="width" deprecated="true"
           description="Width of check boxes (deprecated, use margin instead)" />
-          
+
       <property name="margin"
           description="Space around the check boxes" />
 

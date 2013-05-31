@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,27 +12,23 @@ package org.eclipse.rap.rwt.internal.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.client.service.BrowserNavigationEvent;
 import org.eclipse.rap.rwt.client.service.BrowserNavigationListener;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.ProcessActionRunner;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CallOperation;
 import org.eclipse.swt.widgets.Display;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,8 +44,8 @@ public class BrowserNavigationImpl_Test {
   @Before
   public void setUp() {
     Fixture.setUp();
-    new Display();
     navigation = new BrowserNavigationImpl();
+    new Display();
     Fixture.fakeNewRequest();
   }
 
@@ -151,8 +147,7 @@ public class BrowserNavigationImpl_Test {
     BrowserNavigationListener listener = mock( BrowserNavigationListener.class );
     navigation.addBrowserNavigationListener( listener );
 
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( "state", "foo" );
+    JsonObject parameters = new JsonObject().add( "state", "foo" );
     Fixture.fakeNotifyOperation( TYPE, "Navigation", parameters  );
     Fixture.executeLifeCycleFromServerThread();
 
@@ -178,7 +173,7 @@ public class BrowserNavigationImpl_Test {
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( TYPE, "Navigation" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( TYPE, "Navigation" ) );
   }
 
   @Test
@@ -198,7 +193,7 @@ public class BrowserNavigationImpl_Test {
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( TYPE, "Navigation" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( TYPE, "Navigation" ) );
   }
 
   @Test
@@ -215,16 +210,16 @@ public class BrowserNavigationImpl_Test {
   }
 
   @Test
-  public void testRenderAddToHistory() throws JSONException {
+  public void testRenderAddToHistory() {
     navigation.pushState( "testId", "testText" );
 
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
     CallOperation operation = message.findCallOperation( TYPE, "addToHistory" );
-    JSONArray entries = ( JSONArray )operation.getProperty( "entries" );
-    JSONArray actual1 = entries.getJSONArray( 0 );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[\"testId\",\"testText\"]", actual1 ) );
+    JsonArray expected = new JsonArray();
+    expected.add( new JsonArray().add( "testId" ).add( "testText" ) );
+    assertEquals( expected, operation.getProperty( "entries" ) );
   }
 
   @Test
@@ -240,7 +235,7 @@ public class BrowserNavigationImpl_Test {
   }
 
   @Test
-  public void testRenderAddToHistoryOrder() throws JSONException {
+  public void testRenderAddToHistoryOrder() {
     navigation.pushState( "testId1", "testText1" );
     navigation.pushState( "testId2", "testText2" );
 
@@ -248,11 +243,10 @@ public class BrowserNavigationImpl_Test {
 
     Message message = Fixture.getProtocolMessage();
     CallOperation operation = message.findCallOperation( TYPE, "addToHistory" );
-    JSONArray entries = ( JSONArray )operation.getProperty( "entries" );
-    JSONArray actual1 = entries.getJSONArray( 0 );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[\"testId1\",\"testText1\"]", actual1 ) );
-    JSONArray actual2 = entries.getJSONArray( 1 );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[\"testId2\",\"testText2\"]", actual2 ) );
+    JsonArray expected = new JsonArray();
+    expected.add( new JsonArray().add( "testId1" ).add( "testText1" ) );
+    expected.add( new JsonArray().add( "testId2" ).add( "testText2" ) );
+    assertEquals( expected, operation.getProperty( "entries" ) );
   }
 
 }

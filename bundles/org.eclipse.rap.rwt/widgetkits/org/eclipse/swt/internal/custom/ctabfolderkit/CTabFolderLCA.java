@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,15 +13,20 @@ package org.eclipse.swt.internal.custom.ctabfolderkit;
 
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_DETAIL;
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_ITEM;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readEventPropertyValue;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.wasEventSent;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import java.io.IOException;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
@@ -113,10 +118,10 @@ public final class CTabFolderLCA extends AbstractWidgetLCA {
                       getSelectionBackgroundImage( folder ) );
     preserveSelectionBgGradient( folder );
     preserveProperty( folder, PROP_BORDER_VISIBLE, folder.getBorderVisible() );
-    preserveListener( folder, PROP_SELECTION_LISTENER, folder.isListening( SWT.Selection ) );
+    preserveListener( folder, PROP_SELECTION_LISTENER, isListening( folder, SWT.Selection ) );
     preserveListener( folder,
                       PROP_DEFAULT_SELECTION_LISTENER,
-                      folder.isListening( SWT.DefaultSelection ) );
+                      isListening( folder, SWT.DefaultSelection ) );
     preserveListener( folder, PROP_FOLDER_LISTENER, hasFolderListener( folder ) );
   }
 
@@ -158,14 +163,13 @@ public final class CTabFolderLCA extends AbstractWidgetLCA {
     IClientObject clientObject = ClientObjectFactory.getClientObject( folder );
     clientObject.create( TYPE );
     clientObject.set( "parent", WidgetUtil.getId( folder.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( folder, ALLOWED_STYLES ) );
-    String[] toolTipTexts = new String[] {
-      SWT.getMessage( "SWT_Minimize" ),
-      SWT.getMessage( "SWT_Maximize" ),
-      SWT.getMessage( "SWT_Restore" ),
-      SWT.getMessage( "SWT_ShowList" ),
-      SWT.getMessage( "SWT_Close" ),
-    };
+    clientObject.set( "style", createJsonArray( getStyles( folder, ALLOWED_STYLES ) ) );
+    JsonArray toolTipTexts = new JsonArray()
+      .add( SWT.getMessage( "SWT_Minimize" ) )
+      .add( SWT.getMessage( "SWT_Maximize" ) )
+      .add( SWT.getMessage( "SWT_Restore" ) )
+      .add( SWT.getMessage( "SWT_ShowList" ) )
+      .add( SWT.getMessage( "SWT_Close" ) );
     clientObject.set( PROP_TOOLTIP_TEXTS, toolTipTexts );
   }
 
@@ -196,9 +200,9 @@ public final class CTabFolderLCA extends AbstractWidgetLCA {
                     null);
     renderSelectionBackgroundGradient( folder );
     renderProperty( folder, PROP_BORDER_VISIBLE, folder.getBorderVisible(), false );
-    renderListener( folder, PROP_SELECTION_LISTENER, folder.isListening( SWT.Selection ), false );
+    renderListener( folder, PROP_SELECTION_LISTENER, isListening( folder, SWT.Selection ), false );
     renderListener( folder, PROP_DEFAULT_SELECTION_LISTENER,
-                    folder.isListening( SWT.DefaultSelection ),
+                    isListening( folder, SWT.DefaultSelection ),
                     false );
     renderListener( folder, PROP_FOLDER_LISTENER, hasFolderListener( folder ), false );
   }
@@ -239,17 +243,17 @@ public final class CTabFolderLCA extends AbstractWidgetLCA {
                                                    bgGradientVertical,
                                                    Boolean.FALSE );
     if( hasChanged ) {
-      Object gradient = null;
-      if( bgGradientColors!= null ) {
-        Object[] colors = new Object[ bgGradientColors.length ];
-        Integer[] percents = new Integer[ bgGradientPercents.length ];
-        for( int i = 0; i < colors.length; i++ ) {
-          colors[ i ] = ProtocolUtil.getColorAsArray( bgGradientColors[ i ], false );
+      JsonValue gradient = JsonValue.NULL;
+      if( bgGradientColors != null ) {
+        JsonArray colors = new JsonArray();
+        for( int i = 0; i < bgGradientColors.length; i++ ) {
+          colors.add( ProtocolUtil.getJsonForColor( bgGradientColors[ i ], false ) );
         }
-        for( int i = 0; i < bgGradientPercents.length; i++ ) {
-          percents[ i ] =  Integer.valueOf( bgGradientPercents[ i ] );
-        }
-        gradient = new Object[] { colors, percents, bgGradientVertical };
+        JsonValue percents = createJsonArray( bgGradientPercents );
+        gradient = new JsonArray()
+          .add( colors )
+          .add( percents )
+          .add( bgGradientVertical.booleanValue() );
       }
       IClientObject clientObject = ClientObjectFactory.getClientObject( folder );
       clientObject.set( PROP_SELECTION_BG_GRADIENT, gradient );
@@ -372,11 +376,11 @@ public final class CTabFolderLCA extends AbstractWidgetLCA {
   }
 
   private boolean hasFolderListener( CTabFolder folder ) {
-    return folder.isListening( EventTypes.CTAB_FOLDER_CLOSE )
-        || folder.isListening( EventTypes.CTAB_FOLDER_MAXIMIZE )
-        || folder.isListening( EventTypes.CTAB_FOLDER_MINIMIZE )
-        || folder.isListening( EventTypes.CTAB_FOLDER_RESTORE )
-        || folder.isListening( EventTypes.CTAB_FOLDER_SHOW_LIST );
+    return isListening( folder, EventTypes.CTAB_FOLDER_CLOSE )
+        || isListening( folder, EventTypes.CTAB_FOLDER_MAXIMIZE )
+        || isListening( folder, EventTypes.CTAB_FOLDER_MINIMIZE )
+        || isListening( folder, EventTypes.CTAB_FOLDER_RESTORE )
+        || isListening( folder, EventTypes.CTAB_FOLDER_SHOW_LIST );
   }
 
 }

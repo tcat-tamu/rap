@@ -11,24 +11,30 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.browser.browserkit;
 
+import static org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory.getClientObject;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.jsonToJava;
 import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readPropertyValue;
 import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readPropertyValue;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.wasEventSent;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
-import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
+import org.eclipse.rap.rwt.internal.protocol.JsonUtil;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
@@ -53,7 +59,9 @@ public final class BrowserLCA extends AbstractWidgetLCA {
   private static final String TYPE = "rwt.widgets.Browser";
   private static final String[] ALLOWED_STYLES = new String[] { "BORDER" };
 
-  static final String BLANK_HTML = "<html><script></script></html>";
+  // Background color is set due to bug 401300 and 401278
+  static final String BLANK_HTML
+    = "<html><script></script><body style=\"background-color: transparent;\"></body></html>";
 
   public static final String EVENT_PROGRESS = "Progress";
 
@@ -99,10 +107,10 @@ public final class BrowserLCA extends AbstractWidgetLCA {
   @Override
   public void renderInitialization( Widget widget ) throws IOException {
     Browser browser = ( Browser )widget;
-    IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
+    IClientObject clientObject = getClientObject( browser );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( browser.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( browser, ALLOWED_STYLES ) );
+    clientObject.set( "parent", getId( browser.getParent() ) );
+    clientObject.set( "style", createJsonArray( getStyles( browser, ALLOWED_STYLES ) ) );
   }
 
   @Override
@@ -119,17 +127,17 @@ public final class BrowserLCA extends AbstractWidgetLCA {
   }
 
   private static void fireProgressEvent( Browser browser ) {
-    if( WidgetLCAUtil.wasEventSent( browser, EVENT_PROGRESS ) ) {
+    if( wasEventSent( browser, EVENT_PROGRESS ) ) {
       IBrowserAdapter browserAdapter = browser.getAdapter( IBrowserAdapter.class );
       browserAdapter.sendProgressCompletedEvent();
     }
   }
 
   private static void readExecuteResult( Browser browser ) {
-    String executeValue = WidgetLCAUtil.readPropertyValue( browser, PARAM_EXECUTE_RESULT );
+    String executeValue = readPropertyValue( browser, PARAM_EXECUTE_RESULT );
     if( executeValue != null ) {
-      Object evalValue
-        = ProtocolUtil.readPropertyValue( getId( browser ), PARAM_EVALUATE_RESULT );
+      JsonValue value = readPropertyValue( getId( browser ), PARAM_EVALUATE_RESULT );
+      Object evalValue = jsonToJava( value );
       boolean executeResult = Boolean.valueOf( executeValue ).booleanValue();
       Object evalResult = null;
       if( evalValue != null && evalValue instanceof Object[] ) {
@@ -141,8 +149,7 @@ public final class BrowserLCA extends AbstractWidgetLCA {
 
   private static void renderUrl( Browser browser ) throws IOException {
     if( hasUrlChanged( browser ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
-      clientObject.set( "url", getUrl( browser ) );
+      getClientObject( browser ).set( "url", getUrl( browser ) );
       browser.getAdapter( IBrowserAdapter.class ).resetUrlChanged();
     }
   }
@@ -174,18 +181,17 @@ public final class BrowserLCA extends AbstractWidgetLCA {
 //      // [if] Put the execution to the end of the rendered script. This is very
 //      // important when Browser#execute is called from within a BrowserFunction,
 //      // because then we have a synchronous requests.
-//      RWTFactory.getLifeCycleFactory().getLifeCycle().addPhaseListener( new PhaseListener() {
+//      final LifeCycle lifeCycle = getApplicationContext().getLifeCycleFactory().getLifeCycle();
+//      lifeCycle.addPhaseListener( new PhaseListener() {
 //        public void beforePhase( PhaseEvent event ) {
 //        }
 //        public void afterPhase( PhaseEvent event ) {
 //          if( browser.getDisplay() == LifeCycleUtil.getSessionDisplay() ) {
 //            try {
-//              IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
-//              Map<String, Object> properties = new HashMap<String, Object>();
-//              properties.put( PARAM_SCRIPT, executeScript );
-//              clientObject.call( METHOD_EVALUATE, properties );
+//              JsonObject parameters = new JsonObject().add( PARAM_SCRIPT, executeScript );
+//              getClientObject( browser ).call( METHOD_EVALUATE, parameters );
 //            } finally {
-//              RWTFactory.getLifeCycleFactory().getLifeCycle().removePhaseListener( this );
+//              lifeCycle.removePhaseListener( this );
 //            }
 //          }
 //        }
@@ -211,10 +217,8 @@ public final class BrowserLCA extends AbstractWidgetLCA {
           public void afterPhase( PhaseEvent event ) {
             if( browser.getDisplay() == LifeCycleUtil.getSessionDisplay() ) {
               try {
-                IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
-                Map<String, Object> properties = new HashMap<String, Object>();
-                properties.put( PARAM_SCRIPT, browserScript.getScript() );
-                clientObject.call( METHOD_EVALUATE, properties );
+                JsonObject parameters = new JsonObject().add( PARAM_SCRIPT, browserScript.getScript() );
+                getClientObject( browser ).call( METHOD_EVALUATE, parameters );
               } finally {
                 lifeCycle.removePhaseListener( this );
               }
@@ -260,10 +264,9 @@ public final class BrowserLCA extends AbstractWidgetLCA {
     String id = WidgetUtil.getId( browser );
     String[] functions = ( String[] )serviceStore.getAttribute( FUNCTIONS_TO_CREATE + id );
     if( functions != null ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
-      Map<String, Object> properties = new HashMap<String, Object>();
-      properties.put( PARAM_FUNCTIONS, functions );
-      clientObject.call( METHOD_CREATE_FUNCTIONS, properties );
+      JsonObject parameters = new JsonObject()
+        .add( PARAM_FUNCTIONS, JsonUtil.createJsonArray( functions ) );
+      getClientObject( browser ).call( METHOD_CREATE_FUNCTIONS, parameters );
     }
   }
 
@@ -272,17 +275,16 @@ public final class BrowserLCA extends AbstractWidgetLCA {
     String id = WidgetUtil.getId( browser );
     String[] functions = ( String[] )serviceStore.getAttribute( FUNCTIONS_TO_DESTROY + id );
     if( functions != null ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
-      Map<String, Object> properties = new HashMap<String, Object>();
-      properties.put( PARAM_FUNCTIONS, functions );
-      clientObject.call( METHOD_DESTROY_FUNCTIONS, properties );
+      JsonObject parameters = new JsonObject()
+        .add( PARAM_FUNCTIONS, JsonUtil.createJsonArray( functions ) );
+      getClientObject( browser ).call( METHOD_DESTROY_FUNCTIONS, parameters );
     }
   }
 
   private static void executeFunction( final Browser browser ) {
     String function = WidgetLCAUtil.readPropertyValue( browser, PARAM_EXECUTE_FUNCTION );
-    final Object[] arguments
-      = ( Object[] )readPropertyValue( getId( browser ), PARAM_EXECUTE_ARGUMENTS );
+    JsonValue value = readPropertyValue( getId( browser ), PARAM_EXECUTE_ARGUMENTS );
+    final Object[] arguments = ( Object[] )jsonToJava( value );
     if( function != null ) {
       IBrowserAdapter adapter = browser.getAdapter( IBrowserAdapter.class );
       BrowserFunction[] functions = adapter.getBrowserFunctions();
@@ -309,40 +311,36 @@ public final class BrowserLCA extends AbstractWidgetLCA {
 
   private static void renderFunctionResult( Browser browser ) {
     ServiceStore serviceStore = ContextProvider.getServiceStore();
-    String id = WidgetUtil.getId( browser );
+    String id = getId( browser );
     String name = ( String )serviceStore.getAttribute( EXECUTED_FUNCTION_NAME + id );
     if( name != null ) {
       Object result = serviceStore.getAttribute( EXECUTED_FUNCTION_RESULT + id );
       String error = ( String )serviceStore.getAttribute( EXECUTED_FUNCTION_ERROR + id );
-      IClientObject clientObject = ClientObjectFactory.getClientObject( browser );
       Object[] value = new Object[] {
         name, result, error
       };
-      clientObject.set( PARAM_FUNCTION_RESULT, value );
+      getClientObject( browser ).set( PARAM_FUNCTION_RESULT, createJsonArray( value ) );
     }
   }
 
   private static void setExecutedFunctionName( Browser browser, String name ) {
     ServiceStore serviceStore = ContextProvider.getServiceStore();
-    String id = WidgetUtil.getId( browser );
-    serviceStore.setAttribute( EXECUTED_FUNCTION_NAME + id, name );
+    serviceStore.setAttribute( EXECUTED_FUNCTION_NAME + getId( browser ), name );
   }
 
   private static void setExecutedFunctionResult( Browser browser, Object result ) {
     ServiceStore serviceStore = ContextProvider.getServiceStore();
-    String id = WidgetUtil.getId( browser );
-    serviceStore.setAttribute( EXECUTED_FUNCTION_RESULT + id, result );
+    serviceStore.setAttribute( EXECUTED_FUNCTION_RESULT + getId( browser ), result );
   }
 
   private static void setExecutedFunctionError( Browser browser, String error ) {
     ServiceStore serviceStore = ContextProvider.getServiceStore();
-    String id = WidgetUtil.getId( browser );
-    serviceStore.setAttribute( EXECUTED_FUNCTION_ERROR + id, error );
+    serviceStore.setAttribute( EXECUTED_FUNCTION_ERROR + getId( browser ), error );
   }
 
   private boolean hasProgressListener( Browser browser ) {
-    return browser.isListening( EventTypes.PROGRESS_CHANGED )
-        || browser.isListening( EventTypes.PROGRESS_COMPLETED );
+    return isListening( browser, EventTypes.PROGRESS_CHANGED )
+        || isListening( browser, EventTypes.PROGRESS_COMPLETED );
   }
 
 }

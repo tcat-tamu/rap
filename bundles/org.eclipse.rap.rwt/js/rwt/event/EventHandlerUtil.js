@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
+ *  Copyright: 2004, 2013 1&1 Internet AG, Germany, http://www.1und1.de,
  *                        and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -8,7 +8,7 @@
  *
  *  Contributors:
  *    1&1 Internet AG and others - original API and implementation
- *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
+ *    EclipseSource - adaptation for the Eclipse Remote Application Platform
  ******************************************************************************/
 
 rwt.qx.Class.define( "rwt.event.EventHandlerUtil", {
@@ -351,7 +351,7 @@ rwt.qx.Class.define( "rwt.event.EventHandlerUtil", {
         result = this._keyCodeToIdentifierMap[ keyCode ];
       } else if( this._specialCharCodeMap[ keyCode ] !== undefined ) {
         result = this._specialCharCodeMap[ keyCode ];
-      } else if( this._isAlphaNumericKeyCode( keyCode ) ) {
+      } else if( this.isAlphaNumericKeyCode( keyCode ) ) {
         result = String.fromCharCode( keyCode );
       }
       return result;
@@ -384,12 +384,32 @@ rwt.qx.Class.define( "rwt.event.EventHandlerUtil", {
       return keyCode >= 16 && keyCode <= 20 && keyCode !== 19;
     },
 
-    _isAlphaNumericKeyCode : function( keyCode ) {
+    isAlphaNumericKeyCode : function( keyCode ) {
       var result = false;
       if(    ( keyCode >= this._charCodeA && keyCode <= this._charCodeZ )
           || ( keyCode >= this._charCode0 && keyCode <= this._charCode9 ) )
       {
         result = true;
+      }
+      return result;
+    },
+
+    /**
+     * Determines if this key event should be blocked if key events are disabled
+     */
+    shouldBlock : function( type, keyCode, charCode, event ) {
+      var result = true;
+      var keyIdentifier;
+      if( !isNaN( keyCode ) && keyCode !== 0 ) {
+        keyIdentifier = this.keyCodeToIdentifier( keyCode );
+      } else {
+        keyIdentifier = this.charCodeToIdentifier( charCode );
+      }
+      if( this._nonBlockableKeysMap[ keyIdentifier ] || event.altKey ) {
+        result = false;
+      } else if( event.ctrlKey ) {
+        // block only those combos that are used for text editing:
+        result = this._blockableCtrlKeysMap[ keyIdentifier ] === true;
       }
       return result;
     },
@@ -401,6 +421,36 @@ rwt.qx.Class.define( "rwt.event.EventHandlerUtil", {
       13  : "Enter",
       27  : "Escape",
       32 : "Space"
+    },
+
+    _nonBlockableKeysMap : {
+      "Control" : true,
+      "Alt" : true,
+      "Shift" : true,
+      "Meta" : true,
+      "Win" : true,
+      "F1" : true,
+      "F2" : true,
+      "F3" : true,
+      "F4" : true,
+      "F5" : true,
+      "F6" : true,
+      "F7" : true,
+      "F8" : true,
+      "F9" : true,
+      "F10" : true,
+      "F11" : true,
+      "F12" : true
+    },
+
+    _blockableCtrlKeysMap : {
+      "F" : true,
+      "A" : true,
+      "C" : true,
+      "V" : true,
+      "X" : true,
+      "Z" : true,
+      "Y" : true
     },
 
     _keyCodeToIdentifierMap : {

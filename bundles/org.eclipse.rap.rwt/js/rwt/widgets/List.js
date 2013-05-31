@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 EclipseSource and others.
+ * Copyright (c) 2010, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,6 +23,9 @@ rwt.qx.Class.define( "rwt.widgets.List", {
     var selMgr = this.getManager();
     selMgr.addEventListener( "changeLeadItem", this._onChangeLeadItem, this );
     selMgr.addEventListener( "changeSelection", this._onSelectionChange, this );
+    this.addEventListener( "mousedown", this._handleHyperlinkActivation, this );
+    this.addEventListener( "mouseup", this._handleHyperlinkActivation, this );
+    this.addEventListener( "click", this._handleHyperlinkActivation, this );
     this.addEventListener( "focus", this._onFocusIn, this );
     this.addEventListener( "blur", this._onFocusOut, this );
     this.addEventListener( "dblclick", this._onDblClick, this );
@@ -35,6 +38,9 @@ rwt.qx.Class.define( "rwt.widgets.List", {
     var selMgr = this.getManager();
     selMgr.removeEventListener( "changeLeadItem", this._onChangeLeadItem, this );
     selMgr.removeEventListener( "changeSelection", this._onSelectionChange, this );
+    this.removeEventListener( "mousedown", this._handleHyperlinkActivation, this );
+    this.removeEventListener( "mouseup", this._handleHyperlinkActivation, this );
+    this.removeEventListener( "click", this._handleHyperlinkActivation, this );
     this.removeEventListener( "focus", this._onFocusIn, this );
     this.removeEventListener( "blur", this._onFocusOut, this );
     this.removeEventListener( "dblclick", this._onDblClick, this );
@@ -51,9 +57,8 @@ rwt.qx.Class.define( "rwt.widgets.List", {
     _applyTopIndex : function( newIndex ) {
       var items = this.getManager().getItems();
       if( items.length > 0 && items[ 0 ].isCreated() ) {
-        var itemHeight = this.getManager().getItemHeight( items[ 0 ] );
-        if( itemHeight > 0 ) {
-          this.setVBarSelection( newIndex * itemHeight );
+        if( this._itemHeight > 0 ) {
+          this.setVBarSelection( newIndex * this._itemHeight );
         }
       }
     },
@@ -92,11 +97,8 @@ rwt.qx.Class.define( "rwt.widgets.List", {
 
     _onChangeLeadItem : function( evt ) {
       if( !rwt.remote.EventUtil.getSuspended() ) {
-        var wm = rwt.remote.WidgetManager.getInstance();
-        var id = wm.findIdByWidget( this );
-        var req = rwt.remote.Server.getInstance();
         var focusIndex = this._clientArea.indexOf( this.getManager().getLeadItem() );
-        req.addParameter( id + ".focusIndex", focusIndex );
+        rwt.remote.Server.getInstance().getRemoteObject( this ).set( "focusIndex", focusIndex );
       }
     },
 
@@ -121,16 +123,37 @@ rwt.qx.Class.define( "rwt.widgets.List", {
     },
 
     _onUserScroll : function( horizontal ) {
-      var topIndex = this._isCreated ? this._getTopIndex() : 0;
-      var server = rwt.remote.Server.getInstance();
-      var remoteObject = server.getRemoteObject( this );
-      remoteObject.set( "topIndex", topIndex );
+      this._topIndex = this._isCreated ? this._getTopIndex() : 0;
+      rwt.remote.Server.getInstance().getRemoteObject( this ).set( "topIndex", this._topIndex );
     },
 
     _onDblClick : function( evt ) {
       if( !rwt.remote.EventUtil.getSuspended() && this._hasDefaultSelectionListener ) {
         rwt.remote.EventUtil.notifyDefaultSelected( this );
       }
+    },
+
+    _handleHyperlinkActivation : function( event ) {
+      if( this._isRWTHyperlinkTarget( event ) ) {
+        event.setDefaultPrevented( true );
+        if( event.getType() === "click" && this._hasSelectionListener ) {
+          var domTarget = event.getDomTarget();
+          var text = domTarget.getAttribute( "href" );
+          if( !text ) {
+            text = domTarget.innerHTML;
+          }
+          var properties = {
+            "detail" : "hyperlink",
+            "text" : text
+          };
+          rwt.remote.EventUtil.notifySelected( this, properties );
+        }
+      }
+    },
+
+    _isRWTHyperlinkTarget : function( event ) {
+      var domTarget = event.getDomTarget();
+      return this._isHyperlinkTarget( event ) && domTarget.getAttribute( "target" ) === "_rwt";
     },
 
     _onFocusIn : function( evt ) {

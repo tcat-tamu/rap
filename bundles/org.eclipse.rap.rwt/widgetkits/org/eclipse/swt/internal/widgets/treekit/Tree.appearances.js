@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,16 +28,25 @@ var appearances = {
     style : function( states ) {
       var tv = new rwt.theme.ThemeValues( states );
       var result = {};
-      result.itemBackground = tv.getCssColor( "TreeItem", "background-color" );
-      result.itemBackgroundImage = tv.getCssImage( "TreeItem", "background-image" );
-      result.itemBackgroundGradient = tv.getCssGradient( "TreeItem", "background-image" );
-      result.itemForeground = tv.getCssColor( "TreeItem", "color" );
-      result.overlayBackground = tv.getCssColor( "Tree-RowOverlay", "background-color" );
-      result.overlayBackgroundImage = tv.getCssImage( "Tree-RowOverlay", "background-image" );
-      result.overlayBackgroundGradient = tv.getCssGradient( "Tree-RowOverlay", "background-image" );
-      result.overlayForeground = tv.getCssColor( "Tree-RowOverlay", "color" );
+      result.background = tv.getCssColor( "TreeItem", "background-color" );
+      result.backgroundImage = tv.getCssImage( "TreeItem", "background-image" );
+      result.backgroundGradient = tv.getCssGradient( "TreeItem", "background-image" );
+      result.foreground = tv.getCssColor( "TreeItem", "color" );
       result.textDecoration = tv.getCssIdentifier( "TreeItem", "text-decoration" );
       result.textShadow = tv.getCssShadow( "TreeItem", "text-shadow" );
+      return result;
+    }
+  },
+
+  "tree-row-overlay" : {
+    style : function( states ) {
+      var tv = new rwt.theme.ThemeValues( states );
+      var result = {};
+      result.background = tv.getCssColor( "Tree-RowOverlay", "background-color" );
+      result.backgroundAlpha = tv.getCssAlpha( "Tree-RowOverlay", "background-color" );
+      result.backgroundImage = tv.getCssImage( "Tree-RowOverlay", "background-image" );
+      result.backgroundGradient = tv.getCssGradient( "Tree-RowOverlay", "background-image" );
+      result.foreground = tv.getCssColor( "Tree-RowOverlay", "color" );
       return result;
     }
   },
@@ -84,8 +93,8 @@ var appearances = {
       var borderWidths = [ 0, 0, 0, 0 ];
       var borderStyles = [ "solid", "solid", "solid", "solid" ];
       if( !states.dummy && !states.footer ) {
-        var verticalState = { "vertical" : true };
-        var tvGrid = new rwt.theme.ThemeValues( verticalState );
+        var gridLineStates = { "vertical" : true, "header" : true };
+        var tvGrid = new rwt.theme.ThemeValues( gridLineStates );
         var gridColor = tvGrid.getCssColor( "Tree-GridLine", "color" );
         gridColor = gridColor == "undefined" ? "transparent" : gridColor;
         borderColors[ 1 ] = gridColor;
@@ -134,6 +143,16 @@ var appearances = {
         result.backgroundImage = [ source, 10, 7 ];
       }
       return result;
+    }
+  },
+
+  "tree-cell" : {
+    style : function( states ) {
+       var tv = new rwt.theme.ThemeValues( states );
+       var result = {};
+       result.spacing = tv.getCssDimension( "Tree-Cell", "spacing" );
+       result.padding = tv.getCssBoxDimensions( "Tree-Cell", "padding" );
+       return result;
     }
   }
 

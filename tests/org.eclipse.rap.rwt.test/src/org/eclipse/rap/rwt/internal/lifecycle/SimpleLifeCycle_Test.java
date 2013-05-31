@@ -26,7 +26,6 @@ import java.util.List;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.client.WebClient;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.UISessionImpl;
 import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
@@ -52,9 +51,7 @@ public class SimpleLifeCycle_Test {
   @Before
   public void setUp() {
     Fixture.setUp();
-    UISession uiSession = ContextProvider.getUISession();
-    ApplicationContextUtil.set( uiSession, ApplicationContextUtil.getInstance() );
-    lifeCycle = new SimpleLifeCycle( ApplicationContextUtil.getInstance() );
+    lifeCycle = new SimpleLifeCycle( getApplicationContext() );
   }
 
   @After

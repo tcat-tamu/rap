@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -133,6 +133,20 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridColumnTest", {
 
       var label = this._getColumnLabel( tree, column );
       assertEquals( "foo&lt;&gt;&quot; bar", label.getCellContent( 1 ).toString() );
+      column.dispose();
+      tree.destroy();
+    },
+
+    testRenderToolTip : function() {
+      var tree = this._createTreeByProtocol( "w3", "w2", [] );
+      var column = this._createColumnByProtocol( "w4", "w3", [] );
+
+      TestUtil.protocolSet( "w4", { "toolTip" : "hello blue world" } );
+      TestUtil.flush();
+
+      var label = this._getColumnLabel( tree, column );
+      assertEquals( "hello blue world", label.getUserData( "toolTipText" ) );
+      assertTrue( label.getToolTip() !== null );
       column.dispose();
       tree.destroy();
     },
@@ -440,6 +454,19 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridColumnTest", {
       var label = this._getColumnLabel( tree, column );
       assertTrue( label.hasState( "variant_blue" ) );
       column.dispose();
+      tree.destroy();
+    },
+
+
+    testSetHtmlAttribute : function() {
+      var tree = this._createTreeByProtocol( "w3", "w2", [] );
+      var column = this._createColumnByProtocol( "w4", "w3", [] );
+
+      column.setHtmlAttribute( "foo", "bar" );
+      TestUtil.flush();
+
+      var label = this._getColumnLabel( tree, column );
+      assertEquals( "bar", label.getHtmlAttribute( "foo" ) );
       tree.destroy();
     },
 
@@ -1130,6 +1157,21 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridColumnTest", {
       assertEquals( 0, label.getTop() );
       assertEquals( 10, label.getLeft() );
       assertEquals( 40, label.getWidth() );
+      column.dispose();
+      tree.destroy();
+    },
+
+    testRenderColumnBoundsZero : function() {
+      var tree = this._createTreeByProtocol( "w3", "w2", [] );
+      tree.setHeaderHeight( 50 );
+      var column = this._createColumnByProtocol( "w4", "w3", [] );
+
+      TestUtil.protocolSet( "w4", { "left" : 10, "width": 0 } );
+      TestUtil.flush();
+
+      var label = this._getColumnLabel( tree, column );
+      assertEquals( 0, label.getWidth() );
+      assertFalse( label.getVisibility() );
       column.dispose();
       tree.destroy();
     },

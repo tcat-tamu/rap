@@ -11,6 +11,7 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.textsize;
 
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
 import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 import static org.eclipse.rap.rwt.internal.textsize.MeasurementOperator.METHOD_MEASURE_ITEMS;
 import static org.eclipse.rap.rwt.internal.textsize.MeasurementOperator.METHOD_STORE_MEASUREMENTS;
@@ -21,10 +22,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CallOperation;
@@ -211,15 +210,14 @@ public class MeasurementOperator_Test {
                                                  MeasurementItem measurementItem )
   {
     Fixture.fakeNewRequest();
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    Map<String, Object> results = new HashMap<String, Object>();
+    JsonObject results = new JsonObject();
     if( fontData != null ) {
-      results.put( MeasurementUtil.getId( fontData ), new int[] { 3, 4 } );
+      results.add( MeasurementUtil.getId( fontData ), createJsonArray( 3, 4 ) );
     }
     if( measurementItem != null ) {
-      results.put( MeasurementUtil.getId( measurementItem ), new int[] { 12, 4 } );
+      results.add( MeasurementUtil.getId( measurementItem ), createJsonArray( 12, 4 ) );
     }
-    parameters.put( PROPERTY_RESULTS, results );
+    JsonObject parameters = new JsonObject().add( PROPERTY_RESULTS, results );
     Fixture.fakeCallOperation( TYPE, METHOD_STORE_MEASUREMENTS, parameters  );
   }
 
@@ -252,7 +250,7 @@ public class MeasurementOperator_Test {
   private void checkResponseContainsMeasurementCall() {
     Message message = Fixture.getProtocolMessage();
     CallOperation operation = message.findCallOperation( TYPE, METHOD_MEASURE_ITEMS );
-    Object itemsProperty = operation.getProperty( PROPERTY_ITEMS );
+    JsonValue itemsProperty = operation.getProperty( PROPERTY_ITEMS );
     String[] expected = getMeasurementCall();
     checkResponseContainsContent( expected, itemsProperty.toString() );
   }
@@ -260,7 +258,7 @@ public class MeasurementOperator_Test {
   private void checkResponseContainsProbeCall() {
     Message message = Fixture.getProtocolMessage();
     CallOperation operation = message.findCallOperation( TYPE, METHOD_MEASURE_ITEMS );
-    Object itemsProperty = operation.getProperty( PROPERTY_ITEMS );
+    JsonValue itemsProperty = operation.getProperty( PROPERTY_ITEMS );
     String[] expected = getProbeCall();
     checkResponseContainsContent( expected, itemsProperty.toString() );
   }
@@ -295,9 +293,9 @@ public class MeasurementOperator_Test {
 
   private void askForTextSizes() {
     Font[] fonts = new Font[] {
-      Graphics.getFont( "arial", 10, SWT.BOLD ),
-      Graphics.getFont( "helvetia, ms sans serif", 12, SWT.BOLD ),
-      Graphics.getFont( "\"Bogus\" \\ Font \" Name", 12, SWT.BOLD )
+      new Font( display, "arial", 10, SWT.BOLD ),
+      new Font( display, "helvetia, ms sans serif", 12, SWT.BOLD ),
+      new Font( display, "\"Bogus\" \\ Font \" Name", 12, SWT.BOLD )
     };
     TextSizeUtil.stringExtent( fonts[ 0 ], "FirstString" );
     TextSizeUtil.stringExtent( fonts[ 1 ], "SecondString" );

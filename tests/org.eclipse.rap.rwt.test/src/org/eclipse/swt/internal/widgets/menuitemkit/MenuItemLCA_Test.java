@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -27,10 +27,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
@@ -38,6 +39,7 @@ import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CreateOperation;
 import org.eclipse.rap.rwt.testfixture.Message.DestroyOperation;
 import org.eclipse.rap.rwt.testfixture.Message.Operation;
+import org.eclipse.rap.rwt.testfixture.internal.TestUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ArmEvent;
 import org.eclipse.swt.events.ArmListener;
@@ -48,6 +50,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.internal.widgets.Props;
+import org.eclipse.swt.internal.widgets.WidgetDataUtil;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -55,15 +58,12 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 
-@SuppressWarnings("deprecation")
 public class MenuItemLCA_Test {
 
   private Display display;
@@ -110,7 +110,7 @@ public class MenuItemLCA_Test {
   }
 
   @Test
-  public void testWidgetSelected() {
+  public void testSelectionEvent() {
     shell.setMenu( menu );
     MenuItem menuItem = new MenuItem( menu, SWT.PUSH );
     SelectionListener listener = mock( SelectionListener.class );
@@ -120,7 +120,7 @@ public class MenuItemLCA_Test {
     Fixture.readDataAndProcessAction( menuItem );
 
     ArgumentCaptor<SelectionEvent> captor = ArgumentCaptor.forClass( SelectionEvent.class );
-    verify( listener, times( 1 ) ).widgetSelected( captor.capture() );
+    verify( listener ).widgetSelected( captor.capture() );
     SelectionEvent event = captor.getValue();
     assertEquals( menuItem, event.getSource() );
     assertEquals( null, event.item );
@@ -133,11 +133,24 @@ public class MenuItemLCA_Test {
   }
 
   @Test
+  public void testSelectionEventOnBarItem() {
+    shell.setMenuBar( menuBar );
+    MenuItem menuItem = new MenuItem( menuBar, SWT.PUSH );
+    SelectionListener listener = mock( SelectionListener.class );
+    menuItem.addSelectionListener( listener );
+
+    Fixture.fakeNotifyOperation( getId( menuItem ), ClientMessageConst.EVENT_SELECTION, null );
+    Fixture.readDataAndProcessAction( menuItem );
+
+    verify( listener ).widgetSelected( any( SelectionEvent.class ) );
+  }
+
+  @Test
   public void testCheckItemSelected() {
     shell.setMenu( menu );
     MenuItem menuItem = new MenuItem( menu, SWT.CHECK );
 
-    Fixture.fakeSetParameter( getId( menuItem ), "selection", Boolean.TRUE );
+    Fixture.fakeSetProperty( getId( menuItem ), "selection", true );
     Fixture.readDataAndProcessAction( menuItem );
 
     assertTrue( menuItem.getSelection() );
@@ -152,7 +165,7 @@ public class MenuItemLCA_Test {
     SelectionListener listener = mock( SelectionListener.class );
     item.addSelectionListener( listener );
 
-    Fixture.fakeSetParameter( getId( item ), "selection", Boolean.TRUE );
+    Fixture.fakeSetProperty( getId( item ), "selection", true );
     Fixture.fakeNotifyOperation( getId( item ), ClientMessageConst.EVENT_SELECTION, null );
     Fixture.readDataAndProcessAction( item );
 
@@ -171,7 +184,7 @@ public class MenuItemLCA_Test {
     SelectionListener listener = mock( SelectionListener.class );
     item.addSelectionListener( listener );
 
-    Fixture.fakeSetParameter( getId( item ), "selection", Boolean.FALSE );
+    Fixture.fakeSetProperty( getId( item ), "selection", false );
     Fixture.fakeNotifyOperation( getId( item ), ClientMessageConst.EVENT_SELECTION, null );
     Fixture.readDataAndProcessAction( item );
 
@@ -197,8 +210,8 @@ public class MenuItemLCA_Test {
     radioItem1.addSelectionListener( listener );
     radioItem2.addSelectionListener( listener );
 
-    Fixture.fakeSetParameter( getId( radioItem1 ), "selection", Boolean.TRUE );
-    Fixture.fakeSetParameter( getId( radioItem2 ), "selection", Boolean.FALSE );
+    Fixture.fakeSetProperty( getId( radioItem1 ), "selection", true );
+    Fixture.fakeSetProperty( getId( radioItem2 ), "selection", false );
     Fixture.fakeNotifyOperation( getId( radioItem1 ), EVENT_SELECTION, null );
     Fixture.fakeNotifyOperation( getId( radioItem2 ), EVENT_SELECTION, null );
     Fixture.readDataAndProcessAction( display );
@@ -223,8 +236,8 @@ public class MenuItemLCA_Test {
     radioItem1.addListener( SWT.Selection, listener );
     radioItem2.addListener( SWT.Selection, listener );
 
-    Fixture.fakeSetParameter( getId( radioItem1 ), "selection", Boolean.TRUE );
-    Fixture.fakeSetParameter( getId( radioItem2 ), "selection", Boolean.FALSE );
+    Fixture.fakeSetProperty( getId( radioItem1 ), "selection", true );
+    Fixture.fakeSetProperty( getId( radioItem2 ), "selection", false );
     Fixture.fakeNotifyOperation( getId( radioItem1 ), EVENT_SELECTION, null );
     Fixture.fakeNotifyOperation( getId( radioItem2 ), EVENT_SELECTION, null );
     Fixture.readDataAndProcessAction( display );
@@ -351,7 +364,7 @@ public class MenuItemLCA_Test {
     lca.renderInitialization( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Integer.valueOf( 0 ), message.findCreateProperty( item, "index" ) );
+    assertEquals( 0, message.findCreateProperty( item, "index" ).asInt() );
   }
 
   @Test
@@ -386,7 +399,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( WidgetUtil.getId( subMenu ), message.findSetProperty( item, "menu" ) );
+    assertEquals( getId( subMenu ), message.findSetProperty( item, "menu" ).asString() );
   }
 
   @Test
@@ -423,7 +436,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findSetProperty( item, "enabled" ) );
+    assertEquals( JsonValue.FALSE, message.findSetProperty( item, "enabled" ) );
   }
 
   @Test
@@ -459,7 +472,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( item, "selection" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( item, "selection" ) );
   }
 
   @Test
@@ -495,7 +508,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "variant_blue", message.findSetProperty( item, "customVariant" ) );
+    assertEquals( "variant_blue", message.findSetProperty( item, "customVariant" ).asString() );
   }
 
   @Test
@@ -513,7 +526,7 @@ public class MenuItemLCA_Test {
   }
 
   @Test
-  public void testRenderInitialTexts() throws IOException {
+  public void testRenderInitialText() throws IOException {
     MenuItem item = new MenuItem( menu, SWT.CHECK );
 
     lca.render( item );
@@ -524,18 +537,29 @@ public class MenuItemLCA_Test {
   }
 
   @Test
-  public void testRenderTexts() throws IOException {
+  public void testRenderText() throws IOException {
     MenuItem item = new MenuItem( menu, SWT.CHECK );
 
     item.setText( "foo" );
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( item, "text" ) );
+    assertEquals( "foo", message.findSetProperty( item, "text" ).asString() );
   }
 
   @Test
-  public void testRenderTextsUnchanged() throws IOException {
+  public void testRenderText_WithMnemonic() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.CHECK );
+
+    item.setText( "f&oo" );
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( "foo", message.findSetProperty( item, "text" ).asString() );
+  }
+
+  @Test
+  public void testRenderTextUnchanged() throws IOException {
     MenuItem item = new MenuItem( menu, SWT.CHECK );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
@@ -546,6 +570,67 @@ public class MenuItemLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findSetOperation( item, "text" ) );
+  }
+
+  @Test
+  public void testRenderInitialMnemonicIndex() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.CHECK );
+
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( item, "mnemonicIndex" ) );
+  }
+
+  @Test
+  public void testRenderMnemonicIndex() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.CHECK );
+
+    item.setText( "te&st" );
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 2, message.findSetProperty( item, "mnemonicIndex" ).asInt() );
+  }
+
+  @Test
+  public void testRenderMnemonicIndexOnSeparator() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.SEPARATOR );
+
+    item.setText( "te&st" );
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( item, "mnemonicIndex" ) );
+  }
+
+  @Test
+  public void testRenderMnemonicIndex_OnTextChange() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.CHECK );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( item );
+
+    item.setText( "te&st" );
+    Fixture.preserveWidgets();
+    item.setText( "aa&bb" );
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 2, message.findSetProperty( item, "mnemonicIndex" ).asInt() );
+  }
+
+  @Test
+  public void testRenderMnemonicIndexUnchanged() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.CHECK );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( item );
+
+    item.setText( "te&st" );
+    Fixture.preserveWidgets();
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findSetOperation( item, "mnemonicIndex" ) );
   }
 
   @Test
@@ -560,17 +645,17 @@ public class MenuItemLCA_Test {
   }
 
   @Test
-  public void testRenderImages() throws IOException, JSONException {
+  public void testRenderImages() throws IOException {
     MenuItem item = new MenuItem( menu, SWT.CHECK );
-    Image image = Graphics.getImage( Fixture.IMAGE1 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE1 );
 
     item.setImage( image );
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( item, "image" );
-    String expected = "[\"rwt-resources/generated/90fb0bfe.gif\",58,12]";
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected
+      = new JsonArray().add( "rwt-resources/generated/90fb0bfe.gif" ).add( 58 ).add( 12 );
+    assertEquals( expected, message.findSetProperty( item, "image" ) );
   }
 
   @Test
@@ -578,7 +663,7 @@ public class MenuItemLCA_Test {
     MenuItem item = new MenuItem( menu, SWT.CHECK );
     Fixture.markInitialized( display );
     Fixture.markInitialized( item );
-    Image image = Graphics.getImage( Fixture.IMAGE1 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE1 );
 
     item.setImage( image );
     Fixture.preserveWidgets();
@@ -599,7 +684,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( item, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( item, "Selection" ) );
     assertNull( message.findListenOperation( item, "DefaultSelection" ) );
   }
 
@@ -616,7 +701,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( item, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( item, "Selection" ) );
     assertNull( message.findListenOperation( item, "DefaultSelection" ) );
   }
 
@@ -649,7 +734,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( item, "Help" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( item, "Help" ) );
   }
 
   @Test
@@ -668,7 +753,7 @@ public class MenuItemLCA_Test {
     lca.renderChanges( item );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( item, "Help" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( item, "Help" ) );
   }
 
   @Test
@@ -688,4 +773,35 @@ public class MenuItemLCA_Test {
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findListenOperation( item, "help" ) );
   }
+
+  @Test
+  public void testRenderData() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.PUSH );
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo", "bar" } );
+    item.setData( "foo", "string" );
+    item.setData( "bar", Integer.valueOf( 1 ) );
+
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    JsonObject data = ( JsonObject )message.findSetProperty( item, "data" );
+    assertEquals( "string", data.get( "foo" ).asString() );
+    assertEquals( 1, data.get( "bar" ).asInt() );
+  }
+
+  @Test
+  public void testRenderDataUnchanged() throws IOException {
+    MenuItem item = new MenuItem( menu, SWT.PUSH );
+    WidgetDataUtil.fakeWidgetDataWhiteList( new String[]{ "foo" } );
+    item.setData( "foo", "string" );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( item );
+
+    Fixture.preserveWidgets();
+    lca.renderChanges( item );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( 0, message.getOperationCount() );
+  }
+
 }

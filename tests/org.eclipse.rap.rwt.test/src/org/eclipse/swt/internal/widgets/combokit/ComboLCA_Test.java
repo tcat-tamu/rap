@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,9 +22,10 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -49,9 +50,6 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -135,11 +133,11 @@ public class ComboLCA_Test {
     assertEquals( Boolean.FALSE, adapter.getPreserved( ComboLCA.PROP_EDITABLE ) );
     Fixture.clearPreserved();
     //foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     combo.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     combo.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     combo.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( combo );
@@ -178,7 +176,7 @@ public class ComboLCA_Test {
     combo.add( "item 1" );
     combo.add( "item 2" );
 
-    Fixture.fakeSetParameter( getId( combo ), "listVisible", Boolean.TRUE );
+    Fixture.fakeSetProperty( getId( combo ), "listVisible", true );
     lca.readData( combo );
 
     assertTrue( combo.getListVisible() );
@@ -189,7 +187,7 @@ public class ComboLCA_Test {
     combo.add( "item 1" );
     combo.add( "item 2" );
 
-    Fixture.fakeSetParameter( getId( combo ), "selectionIndex", Integer.valueOf( 1 ) );
+    Fixture.fakeSetProperty( getId( combo ), "selectionIndex", 1 );
     lca.readData( combo );
 
     assertEquals( 1, combo.getSelectionIndex() );
@@ -219,7 +217,7 @@ public class ComboLCA_Test {
 
   @Test
   public void testReadData_Text() {
-    Fixture.fakeSetParameter( getId( combo ), "text", "abc" );
+    Fixture.fakeSetProperty( getId( combo ), "text", "abc" );
 
     lca.readData( combo );
 
@@ -228,9 +226,9 @@ public class ComboLCA_Test {
 
   @Test
   public void testReadData_TextAndSelection() {
-    Fixture.fakeSetParameter( getId( combo ), "text", "abc" );
-    Fixture.fakeSetParameter( getId( combo ), "selectionStart", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( combo ), "selectionLength", Integer.valueOf( 1 ) );
+    Fixture.fakeSetProperty( getId( combo ), "text", "abc" );
+    Fixture.fakeSetProperty( getId( combo ), "selectionStart", 1 );
+    Fixture.fakeSetProperty( getId( combo ), "selectionLength", 1 );
 
     lca.readData( combo );
 
@@ -243,7 +241,7 @@ public class ComboLCA_Test {
     Fixture.markInitialized( shell );
     Fixture.markInitialized( combo );
 
-    Fixture.fakeSetParameter( getId( combo ), "text", "some text" );
+    Fixture.fakeSetProperty( getId( combo ), "text", "some text" );
     Fixture.executeLifeCycleFromServerThread();
 
     // ensure that no text is sent back to the client
@@ -262,7 +260,7 @@ public class ComboLCA_Test {
     VerifyListener listener = mock( VerifyListener.class );
     combo.addVerifyListener( listener );
 
-    Fixture.fakeSetParameter( getId( combo ), "text", "verify me" );
+    Fixture.fakeSetProperty( getId( combo ), "text", "verify me" );
     Fixture.executeLifeCycleFromServerThread();
 
     assertEquals( "verify me", combo.getText() );
@@ -347,7 +345,7 @@ public class ComboLCA_Test {
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 0 ), message.findSetProperty( combo, PROP_SELECTION_INDEX ) );
+    assertEquals( 0, message.findSetProperty( combo, PROP_SELECTION_INDEX ).asInt() );
   }
 
   @Test
@@ -379,11 +377,11 @@ public class ComboLCA_Test {
 
   @Test
   public void testRenderItemHeight() throws IOException {
-    combo.setFont( Graphics.getFont( "Arial", 16, SWT.NONE ) );
+    combo.setFont( new Font( display, "Arial", 16, SWT.NONE ) );
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 22 ), message.findSetProperty( combo, "itemHeight" ) );
+    assertEquals( 28, message.findSetProperty( combo, "itemHeight" ).asInt() );
   }
 
   @Test
@@ -391,7 +389,7 @@ public class ComboLCA_Test {
     Fixture.markInitialized( display );
     Fixture.markInitialized( combo );
 
-    combo.setFont( Graphics.getFont( "Arial", 16, SWT.NONE ) );
+    combo.setFont( new Font( display, "Arial", 16, SWT.NONE ) );
     Fixture.preserveWidgets();
     lca.renderChanges( combo );
 
@@ -414,7 +412,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( combo, "visibleItemCount" ) );
+    assertEquals( 10, message.findSetProperty( combo, "visibleItemCount" ).asInt() );
   }
 
   @Test
@@ -440,14 +438,14 @@ public class ComboLCA_Test {
   }
 
   @Test
-  public void testRenderItems() throws IOException, JSONException {
+  public void testRenderItems() throws IOException {
     combo.setItems( new String[] { "a", "b", "c" } );
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    String expected = "[ \"a\", \"b\", \"c\" ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( combo, "items" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = JsonArray.readFrom( "[ \"a\", \"b\", \"c\" ]" );
+    JsonArray actual = ( JsonArray )message.findSetProperty( combo, "items" );
+    assertEquals( expected, actual );
   }
 
   @Test
@@ -478,7 +476,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( combo, "listVisible" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( combo, "listVisible" ) );
   }
 
   @Test
@@ -511,7 +509,7 @@ public class ComboLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( combo );
-    assertEquals( Boolean.FALSE, operation.getProperty( "editable" ) );
+    assertEquals( JsonValue.FALSE, operation.getProperty( "editable" ) );
   }
 
   @Test
@@ -531,7 +529,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 1 ), message.findSetProperty( combo, "selectionIndex" ) );
+    assertEquals( 1, message.findSetProperty( combo, "selectionIndex" ).asInt() );
   }
 
   @Test
@@ -563,7 +561,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( combo, "text" ) );
+    assertEquals( "foo", message.findSetProperty( combo, "text" ).asString() );
   }
 
   @Test
@@ -600,15 +598,15 @@ public class ComboLCA_Test {
   }
 
   @Test
-  public void testRenderSelection() throws IOException, JSONException {
+  public void testRenderSelection() throws IOException {
     combo.setText( "foo bar" );
 
     combo.setSelection( new Point( 1, 3 ) );
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( combo, "selection" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[ 1, 3 ]", actual ) );
+    JsonArray actual = ( JsonArray )message.findSetProperty( combo, "selection" );
+    assertEquals( JsonArray.readFrom( "[ 1, 3 ]" ), actual );
   }
 
   @Test
@@ -640,7 +638,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( combo, "textLimit" ) );
+    assertEquals( 10, message.findSetProperty( combo, "textLimit" ).asInt() );
   }
 
   @Test
@@ -654,7 +652,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( combo, "textLimit" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( combo, "textLimit" ) );
   }
 
   @Test
@@ -681,7 +679,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( combo, "textLimit" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( combo, "textLimit" ) );
   }
 
   @Test
@@ -695,7 +693,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( combo, "textLimit" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( combo, "textLimit" ) );
   }
 
   @Test
@@ -708,7 +706,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( combo, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( combo, "Selection" ) );
     assertNull( message.findListenOperation( combo, "DefaultSelection" ) );
   }
 
@@ -723,7 +721,7 @@ public class ComboLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findListenOperation( combo, "Selection" ) );
-    assertEquals( Boolean.TRUE, message.findListenProperty( combo, "DefaultSelection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( combo, "DefaultSelection" ) );
   }
 
   @Test
@@ -738,7 +736,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( combo, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( combo, "Selection" ) );
   }
 
   @Test
@@ -753,7 +751,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( combo, "DefaultSelection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( combo, "DefaultSelection" ) );
   }
 
   @Test
@@ -783,7 +781,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( combo, "Modify" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( combo, "Modify" ) );
   }
 
   @Test
@@ -801,7 +799,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( combo, "Modify" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( combo, "Modify" ) );
   }
 
   @Test
@@ -834,7 +832,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( combo, "Modify" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( combo, "Modify" ) );
   }
 
   @Test
@@ -852,7 +850,7 @@ public class ComboLCA_Test {
     lca.renderChanges( combo );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( combo, "Modify" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( combo, "Modify" ) );
   }
 
   @Test
@@ -873,8 +871,9 @@ public class ComboLCA_Test {
   }
 
   private void fakeTextAndSelectionParameters( String text, int start, int length ) {
-    Fixture.fakeSetParameter( getId( combo ), "text", text );
-    Fixture.fakeSetParameter( getId( combo ), "selectionStart", Integer.valueOf( start ) );
-    Fixture.fakeSetParameter( getId( combo ), "selectionLength", Integer.valueOf( length ) );
+    Fixture.fakeSetProperty( getId( combo ), "text", text );
+    Fixture.fakeSetProperty( getId( combo ), "selectionStart", start );
+    Fixture.fakeSetProperty( getId( combo ), "selectionLength", length );
   }
+
 }

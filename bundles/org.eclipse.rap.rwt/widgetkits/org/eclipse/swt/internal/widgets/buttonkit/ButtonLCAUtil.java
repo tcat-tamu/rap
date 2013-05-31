@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,16 +11,20 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.buttonkit;
 
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
+import org.eclipse.rap.rwt.internal.util.MnemonicUtil;
 import org.eclipse.rap.rwt.lifecycle.ControlLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
-import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 
@@ -32,12 +36,13 @@ final class ButtonLCAUtil {
     "ARROW", "CHECK", "PUSH", "RADIO", "TOGGLE", "FLAT", "WRAP", "BORDER"
   };
 
-  static final String PROP_TEXT = "text";
-  static final String PROP_IMAGE = "image";
-  static final String PROP_SELECTION = "selection";
-  static final String PROP_GRAYED = "grayed";
-  static final String PROP_ALIGNMENT = "alignment";
-  static final String PROP_SELECTION_LISTENERS = "Selection";
+  private static final String PROP_TEXT = "text";
+  private static final String PROP_MNEMONIC_INDEX = "mnemonicIndex";
+  private static final String PROP_IMAGE = "image";
+  private static final String PROP_SELECTION = "selection";
+  private static final String PROP_GRAYED = "grayed";
+  private static final String PROP_ALIGNMENT = "alignment";
+  private static final String PROP_SELECTION_LISTENERS = "Selection";
 
   private static final String PARAM_SELECTION = "selection";
   private static final String DEFAULT_ALIGNMENT = "center";
@@ -54,25 +59,26 @@ final class ButtonLCAUtil {
     preserveProperty( button, PROP_SELECTION, Boolean.valueOf( button.getSelection() ) );
     preserveProperty( button, PROP_GRAYED, Boolean.valueOf( button.getGrayed() ) );
     preserveProperty( button, PROP_ALIGNMENT, getAlignment( button ) );
-    preserveListener( button, PROP_SELECTION_LISTENERS, button.isListening( SWT.Selection ) );
+    preserveListener( button, PROP_SELECTION_LISTENERS, isListening( button, SWT.Selection ) );
   }
 
   static void renderInitialization( Button button ) {
     IClientObject clientObject = ClientObjectFactory.getClientObject( button );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( button.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( button, ALLOWED_STYLES ) );
+    clientObject.set( "parent", getId( button.getParent() ) );
+    clientObject.set( "style", createJsonArray( getStyles( button, ALLOWED_STYLES ) ) );
   }
 
   static void renderChanges( Button button ) {
     ControlLCAUtil.renderChanges( button );
     WidgetLCAUtil.renderCustomVariant( button );
-    renderProperty( button, PROP_TEXT, button.getText(), "" );
+    renderText( button );
+    renderMnemonicIndex( button );
     renderProperty( button, PROP_IMAGE, button.getImage(), null );
     renderProperty( button, PROP_ALIGNMENT, getAlignment( button ), DEFAULT_ALIGNMENT );
     renderProperty( button, PROP_SELECTION, button.getSelection(), false );
     renderProperty( button, PROP_GRAYED, button.getGrayed(), false );
-    renderListener( button, PROP_SELECTION_LISTENERS, button.isListening( SWT.Selection ), false );
+    renderListener( button, PROP_SELECTION_LISTENERS, isListening( button, SWT.Selection ), false );
   }
 
   static boolean readSelection( Button button ) {
@@ -104,4 +110,25 @@ final class ButtonLCAUtil {
     }
     return result;
   }
+
+  private static void renderText( Button button ) {
+    String newValue = button.getText();
+    if( WidgetLCAUtil.hasChanged( button, PROP_TEXT, newValue, "" ) ) {
+      String text = MnemonicUtil.removeAmpersandControlCharacters( newValue );
+      IClientObject clientObject = ClientObjectFactory.getClientObject( button );
+      clientObject.set( PROP_TEXT, text );
+    }
+  }
+
+  private static void renderMnemonicIndex( Button button ) {
+    String text = button.getText();
+    if( WidgetLCAUtil.hasChanged( button, PROP_TEXT, text, "" ) ) {
+      int mnemonicIndex = MnemonicUtil.findMnemonicCharacterIndex( text );
+      if( mnemonicIndex != -1 ) {
+        IClientObject clientObject = ClientObjectFactory.getClientObject( button );
+        clientObject.set( PROP_MNEMONIC_INDEX, mnemonicIndex );
+      }
+    }
+  }
+
 }

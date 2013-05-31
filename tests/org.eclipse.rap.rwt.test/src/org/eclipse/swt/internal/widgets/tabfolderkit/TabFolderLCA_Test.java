@@ -22,10 +22,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
@@ -135,11 +132,11 @@ public class TabFolderLCA_Test {
     assertEquals( rectangle, adapter.getPreserved( Props.BOUNDS ) );
     Fixture.clearPreserved();
     //foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     folder.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     folder.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     folder.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( folder );
@@ -259,7 +256,7 @@ public class TabFolderLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( folder );
-    assertEquals( WidgetUtil.getId( item ), operation.getProperty( "selection" ) );
+    assertEquals( getId( item ), operation.getProperty( "selection" ).asString() );
   }
 
   @Test
@@ -272,7 +269,7 @@ public class TabFolderLCA_Test {
     lca.renderChanges( folder );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( WidgetUtil.getId( item ), message.findSetProperty( folder, "selection" ) );
+    assertEquals( getId( item ), message.findSetProperty( folder, "selection" ).asString() );
   }
 
   @Test
@@ -320,15 +317,13 @@ public class TabFolderLCA_Test {
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( WidgetUtil.getId( item1 ), message.findSetProperty( folder, "selection" ) );
+    assertEquals( getId( item1 ), message.findSetProperty( folder, "selection" ).asString() );
   }
 
   private void fakeWidgetSelected( TabFolder folder, TabItem item ) {
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( ClientMessageConst.EVENT_PARAM_ITEM, getId( item ) );
-    Fixture.fakeNotifyOperation( getId( folder ),
-                                 ClientMessageConst.EVENT_SELECTION,
-                                 parameters );
+    JsonObject parameters = new JsonObject()
+      .add( ClientMessageConst.EVENT_PARAM_ITEM, getId( item ) );
+    Fixture.fakeNotifyOperation( getId( folder ), ClientMessageConst.EVENT_SELECTION, parameters );
   }
 
 }

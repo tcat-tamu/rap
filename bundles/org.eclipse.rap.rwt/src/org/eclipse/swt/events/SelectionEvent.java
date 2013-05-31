@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -67,15 +67,19 @@ public class SelectionEvent extends TypedEvent {
    * This will be either the text of the hyperlink or the value of its HREF,
    * if one was specified.
    *
+   * If the hyperlink was embedded in a widget using {@link org.eclipse.rap.rwt.RWT#MARKUP_ENABLED},
+   * the client (especially Internet Explorer) may re-write the value to be an absolute URL.
+   *
    * @see org.eclipse.swt.widgets.Link#setText(String)
+   * @see org.eclipse.rap.rwt.RWT#HYPERLINK
    */
   public String text;
 
-	/**
-	 * A flag indicating whether the operation should be allowed.
-	 * Setting this field to <code>false</code> will cancel the
-	 * operation, depending on the widget.
-	 */
+  /**
+   * A flag indicating whether the operation should be allowed.
+   * Setting this field to <code>false</code> will cancel the
+   * operation, depending on the widget.
+   */
   public boolean doit;
 
   /**
@@ -99,6 +103,7 @@ public class SelectionEvent extends TypedEvent {
    * -->
    * </ul></p><p><b>Table and Tree</b><ul>
    * <li>{@link org.eclipse.swt.SWT#CHECK}</li>
+   * <li>{@link org.eclipse.rap.rwt.RWT#HYPERLINK}</li>
    * <!--
    * </ul></p><p><b>Text</b><ul>
    * <li>{@link org.eclipse.swt.SWT#CANCEL}</li>

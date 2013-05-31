@@ -10,26 +10,23 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.protocol;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.eclipse.rap.rwt.internal.theme.JsonArray;
-import org.eclipse.rap.rwt.internal.theme.JsonValue;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 
 
 final class Operation {
 
   private final String action;
   private final String target;
-  private final Map<String, Object> details;
-  private final Map<String, JsonValue> properties;
+  private final String detail;
+  private final JsonObject properties;
 
-  Operation( String target, String action ) {
+  Operation( String target, String action, String detail, JsonObject properties ) {
     this.target = target;
     this.action = action;
-    details = new LinkedHashMap<String, Object>();
-    properties = new LinkedHashMap<String, JsonValue>();
+    this.detail = detail;
+    this.properties = properties == null ? new JsonObject() : properties;
   }
 
   String getTarget() {
@@ -40,47 +37,22 @@ final class Operation {
     return action;
   }
 
-  void appendProperty( String key, JsonValue value ) {
-    properties.put( key, value );
-  }
-
-  void appendProperties( Map<String, Object> properties ) {
-    if( properties != null && !properties.isEmpty() ) {
-      for( String key : properties.keySet() ) {
-        appendProperty( key, JsonUtil.createJsonValue( properties.get( key ) ) );
-      }
-    }
-  }
-
-  Object getDetail( String key ) {
-    return details.get( key );
-  }
-
-  void appendDetail( String key, Object value ) {
-    if( details.containsKey( key ) ) {
-      throw new IllegalArgumentException( "Duplicate detail " + key );
-    }
-    replaceDetail( key, value );
-  }
-
-  void replaceDetail( String key, Object value ) {
-    details.put( key, value );
+  void putProperty( String key, JsonValue value ) {
+    properties.remove( key );
+    properties.add( key, value );
   }
 
   JsonValue toJson() {
     JsonArray json = new JsonArray();
-    json.append( action );
-    json.append( target );
-    if( !details.isEmpty() ) {
-      Set<String> keySet = details.keySet();
-      for( String key : keySet ) {
-        json.append( JsonUtil.createJsonValue( details.get( key ) ) );
-      }
+    json.add( action );
+    json.add( target );
+    if( detail != null ) {
+      json.add( detail );
     }
-    if( !properties.isEmpty() ) {
-      JsonValue jsonObject = JsonUtil.createJsonObject( properties );
-      json.append( jsonObject );
+    if( properties != null && !properties.isEmpty() ) {
+      json.add( properties );
     }
     return json;
   }
+
 }

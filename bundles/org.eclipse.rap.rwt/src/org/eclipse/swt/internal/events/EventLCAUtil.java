@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,13 +10,15 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.events;
 
+import static org.eclipse.rap.rwt.internal.clientscripting.ClientScriptingSupport.isClientListener;
 import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readEventPropertyValueAsString;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.wasEventSent;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Scrollable;
 import org.eclipse.swt.widgets.Widget;
@@ -71,28 +73,38 @@ public final class EventLCAUtil {
     boolean result = false;
     ScrollBar horizontalBar = scrollable.getHorizontalBar();
     if( horizontalBar != null ) {
-      result = result || horizontalBar.isListening( SWT.Selection );
+      result = result || isListening( horizontalBar, SWT.Selection );
     }
     ScrollBar verticalBar = scrollable.getVerticalBar();
     if( verticalBar != null ) {
-      result = result || verticalBar.isListening( SWT.Selection );
+      result = result || isListening( verticalBar, SWT.Selection );
     }
     return result;
   }
 
   public static void processRadioSelection( Widget widget, boolean isWidgetSelected ) {
     String eventName = ClientMessageConst.EVENT_SELECTION;
-    if( WidgetLCAUtil.wasEventSent( widget, eventName ) ) {
+    if( wasEventSent( widget, eventName ) ) {
       Event event = new Event();
       if( !isWidgetSelected ) {
         event.time = -1;
       }
-      event.stateMask = EventLCAUtil.readStateMask( widget, eventName );
+      event.stateMask = readStateMask( widget, eventName );
       widget.notifyListeners( SWT.Selection, event );
     }
+  }
+
+  public static boolean isListening( Widget widget, int eventType ) {
+    for( Listener listener : widget.getListeners( eventType ) ) {
+      if( !isClientListener( listener ) ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private EventLCAUtil() {
     // prevent instantiation
   }
+
 }

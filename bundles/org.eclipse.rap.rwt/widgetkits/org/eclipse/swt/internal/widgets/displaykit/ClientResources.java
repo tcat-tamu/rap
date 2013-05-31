@@ -12,14 +12,13 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.displaykit;
 
-import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 import org.eclipse.rap.rwt.internal.RWTProperties;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.resources.ContentBuffer;
 import org.eclipse.rap.rwt.internal.theme.QxAppearanceWriter;
 import org.eclipse.rap.rwt.internal.theme.Theme;
@@ -36,7 +35,7 @@ public final class ClientResources {
   private static final String[] JAVASCRIPT_FILES = new String[] {
     "debug-settings.js",
     "rwt/runtime/Bootstrap.js",
-    "rwt/runtime/PrototypeExtender.js",
+    "rwt/runtime/BrowserFixes.js",
     "rwt/util/Arrays.js",
     "rwt/util/Variant.js",
     "rwt/client/Client.js",
@@ -274,6 +273,9 @@ public final class ClientResources {
     "rwt/remote/RemoteObjectFactory.js",
     "rwt/remote/KeyEventSupport.js",
     "rwt/client/JavaScriptExecutor.js",
+    "rwt/remote/handler/ConnectionMessagesHandler.js",
+    "rwt/client/ClientMessages.js",
+    "rwt/remote/handler/ClientMessagesHandler.js",
     "rwt/remote/handler/JavaScriptExecutorHandler.js",
     "rwt/client/UrlLauncher.js",
     "rwt/remote/handler/UrlLauncherHandler.js",
@@ -281,6 +283,7 @@ public final class ClientResources {
     "rwt/remote/handler/JavaScriptLoaderHandler.js",
     "rwt/runtime/System.js",
     "rwt/remote/handler/ClientInfoHandler.js",
+    "rwt/widgets/util/MnemonicHandler.js",
     "rap.js"
   };
 
@@ -307,12 +310,14 @@ public final class ClientResources {
     "resource/widget/rap/scale/v_line.gif"
   };
 
+  private final ApplicationContextImpl applicationContext;
   private final ResourceManager resourceManager;
   private final ThemeManager themeManager;
 
-  public ClientResources( ResourceManager resourceManager, ThemeManager themeManager ) {
-    this.resourceManager = resourceManager;
-    this.themeManager = themeManager;
+  public ClientResources( ApplicationContextImpl applicationContext ) {
+    this.applicationContext = applicationContext;
+    resourceManager = applicationContext.getResourceManager();
+    themeManager = applicationContext.getThemeManager();
   }
 
   public void registerResources() {
@@ -326,7 +331,9 @@ public final class ClientResources {
     }
   }
 
-  private void registerJavascriptFiles() throws IOException {
+  private void registerJavascriptFiles()
+    throws IOException
+  {
     ContentBuffer contentBuffer = new ContentBuffer();
     String appearanceCode = getQxAppearanceThemeCode();
     if( RWTProperties.isDevelopmentMode() ) {
@@ -362,7 +369,7 @@ public final class ClientResources {
     String[] themeIds = themeManager.getRegisteredThemeIds();
     for( String themeId : themeIds ) {
       Theme theme = themeManager.getTheme( themeId );
-      theme.registerResources( resourceManager );
+      theme.registerResources( applicationContext );
     }
   }
 
@@ -383,9 +390,7 @@ public final class ClientResources {
     }
   }
 
-  private void registerJavascriptResource( ContentBuffer buffer, String name )
-    throws IOException
-  {
+  private void registerJavascriptResource( ContentBuffer buffer, String name ) throws IOException {
     InputStream inputStream = buffer.getContentAsStream();
     try {
       resourceManager.register( name, inputStream );
@@ -393,7 +398,7 @@ public final class ClientResources {
       inputStream.close();
     }
     String location = resourceManager.getLocation( name );
-    getApplicationContext().getStartupPage().setClientJsLibrary( location );
+    applicationContext.getStartupPage().setClientJsLibrary( location );
   }
 
   private String readResourceContent( String location ) throws IOException {

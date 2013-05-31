@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 Frank Appel and others.
+ * Copyright (c) 2011, 2013 Frank Appel and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,7 +14,6 @@ package org.eclipse.rap.rwt.osgi.internal;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -33,6 +32,7 @@ import javax.servlet.http.HttpServlet;
 
 import org.eclipse.rap.rwt.application.*;
 import org.eclipse.rap.rwt.osgi.ApplicationReference;
+import org.eclipse.rap.rwt.testfixture.FileUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.junit.*;
 import org.mockito.invocation.InvocationOnMock;
@@ -72,7 +72,7 @@ public class ApplicationLauncherImpl_Test {
 
   @After
   public void tearDown() {
-    Fixture.delete( Fixture.WEB_CONTEXT_DIR );
+    FileUtil.delete( Fixture.WEB_CONTEXT_DIR );
     Fixture.resetSkipResourceDeletion();
   }
 
@@ -83,7 +83,6 @@ public class ApplicationLauncherImpl_Test {
     applicationLauncher.launch( configuration, httpService, null, null, path );
 
     checkDefaultAliasHasBeenRegistered();
-    checkWebContextResourcesHaveBeenCreated();
     checkHttpContextHasBeenCreated();
     checkApplicationReferenceHasBeenRegisteredAsService();
   }
@@ -95,7 +94,6 @@ public class ApplicationLauncherImpl_Test {
     applicationLauncher.launch( configuration, httpService, httpContext, null, path );
 
     checkDefaultAliasHasBeenRegistered();
-    checkWebContextResourcesHaveBeenCreated();
     checkHttpContextHasBeenWrapped();
     checkApplicationReferenceHasBeenRegisteredAsService();
   }
@@ -105,7 +103,6 @@ public class ApplicationLauncherImpl_Test {
     launchApplication();
 
     checkDefaultAliasHasBeenRegistered();
-    checkWebContextResourcesHaveBeenCreated();
   }
 
   @Test
@@ -126,7 +123,6 @@ public class ApplicationLauncherImpl_Test {
     context.stopApplication();
 
     checkDefaultAliasHasBeenUnregistered();
-    checkWebContextResourcesHaveBeenDeleted();
     checkApplicationReferenceHasBeenUnregisteredAsService();
   }
 
@@ -149,7 +145,6 @@ public class ApplicationLauncherImpl_Test {
     checkDeactivateStateOfApplicationReference( applicationReference );
     checkDeactivatedStateOfApplicationLauncher();
     checkDefaultAliasHasBeenUnregistered();
-    checkWebContextResourcesHaveBeenDeleted();
   }
 
   @Test
@@ -204,7 +199,6 @@ public class ApplicationLauncherImpl_Test {
     registerServiceReferences();
 
     checkDefaultAliasHasBeenRegistered();
-    checkWebContextResourcesHaveBeenCreated();
   }
 
   @Test
@@ -224,7 +218,6 @@ public class ApplicationLauncherImpl_Test {
 
     assertSame( configuration, added );
     checkDefaultAliasHasBeenRegistered();
-    checkWebContextResourcesHaveBeenCreated();
   }
 
   @Test
@@ -235,7 +228,6 @@ public class ApplicationLauncherImpl_Test {
     applicationLauncher.removeConfiguration( configuration );
 
     checkDefaultAliasHasBeenUnregistered();
-    checkWebContextResourcesHaveBeenDeleted();
   }
 
   @Test
@@ -246,7 +238,6 @@ public class ApplicationLauncherImpl_Test {
 
     assertSame( httpService, added );
     checkDefaultAliasHasBeenRegistered();
-    checkWebContextResourcesHaveBeenCreated();
   }
 
   @Test
@@ -258,7 +249,6 @@ public class ApplicationLauncherImpl_Test {
 
     assertFalse( reference1.isAlive() );
     assertFalse( reference2.isAlive() );
-    checkWebContextResourcesHaveBeenDeleted();
   }
 
   @Test
@@ -374,14 +364,6 @@ public class ApplicationLauncherImpl_Test {
   private void checkAliasHasBeenUnregistered( String alias ) {
     verify( httpService ).unregister( alias );
     verify( httpService ).unregister( getResourcesDirectory( alias ) );
-  }
-
-  private void checkWebContextResourcesHaveBeenCreated() {
-    assertTrue( Fixture.WEB_CONTEXT_RWT_RESOURCES_DIR.exists() );
-  }
-
-  private void checkWebContextResourcesHaveBeenDeleted() {
-    assertFalse( Fixture.WEB_CONTEXT_RWT_RESOURCES_DIR.exists() );
   }
 
   private void checkDeactivateStateOfApplicationReference( ApplicationReference reference ) {

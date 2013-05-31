@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,14 +13,14 @@ package org.eclipse.swt.internal.events;
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_SELECTION;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.eclipse.rap.clientscripting.ClientListener;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.swt.SWT;
@@ -28,6 +28,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
 import org.junit.Before;
@@ -60,10 +61,10 @@ public class EventLCAUtil_Test {
     SelectionListener listener = mock( SelectionListener.class );
     button.addSelectionListener( listener );
 
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( "altKey", Boolean.TRUE );
-    parameters.put( "ctrlKey", Boolean.FALSE );
-    parameters.put( "shiftKey", Boolean.FALSE );
+    JsonObject parameters = new JsonObject()
+      .add( "altKey", true )
+      .add( "ctrlKey", false )
+      .add( "shiftKey", false );
     Fixture.fakeNotifyOperation( getId( button ), EVENT_SELECTION, parameters );
     Fixture.readDataAndProcessAction( button );
 
@@ -149,6 +150,38 @@ public class EventLCAUtil_Test {
     assertEquals( 0, button & SWT.BUTTON3 );
     assertEquals( 0, button & SWT.BUTTON4 );
     assertTrue( ( button & SWT.BUTTON5 ) != 0 );
+  }
+
+  @Test
+  public void testIsListening_withoutListeners() {
+    Button button = new Button( shell, SWT.PUSH );
+
+    assertFalse( EventLCAUtil.isListening( button, SWT.Selection ) );
+  }
+
+  @Test
+  public void testIsListening_withSWTListenerOnly() {
+    Button button = new Button( shell, SWT.PUSH );
+    button.addListener( SWT.Selection, mock( Listener.class ) );
+
+    assertTrue( EventLCAUtil.isListening( button, SWT.Selection ) );
+  }
+
+  @Test
+  public void testIsListening_withClientListenerOnly() {
+    Button button = new Button( shell, SWT.PUSH );
+    button.addListener( SWT.Selection, new ClientListener() );
+
+    assertFalse( EventLCAUtil.isListening( button, SWT.Selection ) );
+  }
+
+  @Test
+  public void testIsListening_withClientListenerAndSWTListener() {
+    Button button = new Button( shell, SWT.PUSH );
+    button.addListener( SWT.Selection, mock( Listener.class ) );
+    button.addListener( SWT.Selection, new ClientListener() );
+
+    assertTrue( EventLCAUtil.isListening( button, SWT.Selection ) );
   }
 
 }

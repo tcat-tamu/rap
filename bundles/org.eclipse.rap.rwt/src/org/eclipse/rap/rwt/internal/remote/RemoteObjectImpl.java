@@ -13,8 +13,8 @@ package org.eclipse.rap.rwt.internal.remote;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
@@ -26,6 +26,7 @@ public class RemoteObjectImpl implements RemoteObject, Serializable {
 
   private final String id;
   private final List<RenderRunnable> renderQueue;
+  private boolean created;
   private boolean destroyed;
   private OperationHandler handler;
 
@@ -86,7 +87,7 @@ public class RemoteObjectImpl implements RemoteObject, Serializable {
     } );
   }
 
-  public void set( final String name, final Object value ) {
+  public void set( final String name, final JsonValue value ) {
     ParamCheck.notNullOrEmpty( name, "name" );
     checkState();
     renderQueue.add( new RenderRunnable() {
@@ -106,12 +107,12 @@ public class RemoteObjectImpl implements RemoteObject, Serializable {
     } );
   }
 
-  public void call( final String method, final Map<String, Object> properties ) {
+  public void call( final String method, final JsonObject parameters ) {
     ParamCheck.notNullOrEmpty( method, "method" );
     checkState();
     renderQueue.add( new RenderRunnable() {
       public void render( ProtocolMessageWriter writer ) {
-        writer.appendCall( id, method, properties );
+        writer.appendCall( id, method, parameters );
       }
     } );
   }
@@ -139,8 +140,13 @@ public class RemoteObjectImpl implements RemoteObject, Serializable {
   }
 
   public void render( ProtocolMessageWriter writer ) {
-    for( RenderRunnable runnable : renderQueue ) {
-      runnable.render( writer );
+    if( destroyed && !created ) {
+      // skip rendering for objects that are disposed just after creation (see bug 395272)
+    } else {
+      for( RenderRunnable runnable : renderQueue ) {
+        runnable.render( writer );
+      }
+      created = true;
     }
     renderQueue.clear();
   }

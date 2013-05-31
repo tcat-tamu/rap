@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ package org.eclipse.swt.internal.widgets.shellkit;
 import static org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil.getId;
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_ACTIVATE;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.rap.rwt.testfixture.internal.TestUtil.createImage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -27,9 +28,10 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.ControlLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
@@ -61,26 +63,25 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 
-@SuppressWarnings("deprecation")
 public class ShellLCA_Test {
 
   private Display display;
   private Shell shell;
+  private Image image;
 
   @Before
-  public void setUp() {
+  public void setUp() throws IOException {
     Fixture.setUp();
     display = new Display();
     shell = new Shell( display );
     Fixture.fakeNewRequest();
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
+    image = createImage( display, Fixture.IMAGE1 );
   }
 
   @After
@@ -122,7 +123,6 @@ public class ShellLCA_Test {
     shellAdapter.setActiveControl( button );
     shell.addShellListener( new ShellAdapter() { } );
     shell.setMaximized( true );
-    Image image = Graphics.getImage( Fixture.IMAGE1 );
     shell.setImage( image );
     shell.setMinimumSize( 100, 100 );
     Fixture.preserveWidgets();
@@ -176,11 +176,11 @@ public class ShellLCA_Test {
     assertEquals( rectangle, adapter.getPreserved( Props.BOUNDS ) );
     Fixture.clearPreserved();
     // foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background =new Color( display, 122, 33, 203 );
     shell.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground =new Color( display, 211, 178, 211 );
     shell.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     shell.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( shell );
@@ -217,7 +217,7 @@ public class ShellLCA_Test {
     Label otherLabel = new Label( shell, SWT.NONE );
     setActiveControl( shell, otherLabel );
 
-    Fixture.fakeSetParameter( getId( shell ), "activeControl", getId( label ) );
+    Fixture.fakeSetProperty( getId( shell ), "activeControl", getId( label ) );
     Fixture.readDataAndProcessAction( display );
 
     assertSame( label, getActiveControl( shell ) );
@@ -227,7 +227,7 @@ public class ShellLCA_Test {
   public void testReadDataForMode_Maximixed() {
     shell.open();
 
-    Fixture.fakeSetParameter( getId( shell ), "mode", "maximized" );
+    Fixture.fakeSetProperty( getId( shell ), "mode", "maximized" );
     Fixture.readDataAndProcessAction( shell );
 
     assertTrue( shell.getMaximized() );
@@ -238,7 +238,7 @@ public class ShellLCA_Test {
   public void testReadDataForMode_Minimixed() {
     shell.open();
 
-    Fixture.fakeSetParameter( getId( shell ), "mode", "minimized" );
+    Fixture.fakeSetProperty( getId( shell ), "mode", "minimized" );
     Fixture.readDataAndProcessAction( shell );
 
     assertFalse( shell.getMaximized() );
@@ -250,7 +250,7 @@ public class ShellLCA_Test {
     shell.open();
     shell.setMaximized( true );
 
-    Fixture.fakeSetParameter( getId( shell ), "mode", "null" );
+    Fixture.fakeSetProperty( getId( shell ), "mode", "null" );
     Fixture.readDataAndProcessAction( shell );
 
     assertFalse( shell.getMaximized() );
@@ -428,7 +428,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 23 ), message.findSetProperty( shell, "alpha" ) );
+    assertEquals( 23, message.findSetProperty( shell, "alpha" ).asInt() );
   }
 
   @Test
@@ -440,7 +440,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "maximized", message.findSetProperty( shell, "mode" ) );
+    assertEquals( "maximized", message.findSetProperty( shell, "mode" ).asString() );
   }
 
   @Test
@@ -456,7 +456,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( shell, "mode" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( shell, "mode" ) );
   }
 
   @Test
@@ -468,7 +468,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "fullscreen", message.findSetProperty( shell, "mode" ) );
+    assertEquals( "fullscreen", message.findSetProperty( shell, "mode" ).asString() );
   }
 
   @Test
@@ -490,7 +490,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( WidgetUtil.getId( button ), message.findSetProperty( shell, "defaultButton" ) );
+    assertEquals( getId( button ), message.findSetProperty( shell, "defaultButton" ).asString() );
   }
 
   @Test
@@ -520,7 +520,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( shell, "defaultButton" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( shell, "defaultButton" ) );
   }
 
   @Test
@@ -531,15 +531,15 @@ public class ShellLCA_Test {
     Text text = new Text( shell, SWT.NONE );
 
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( display ), "focusControl", getId( button ) );
+    Fixture.fakeSetProperty( getId( display ), "focusControl", getId( button ) );
     Fixture.executeLifeCycleFromServerThread();
 
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( display ), "focusControl", getId( text ) );
+    Fixture.fakeSetProperty( getId( display ), "focusControl", getId( text ) );
     Fixture.executeLifeCycleFromServerThread();
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( shell, "defaultButton" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( shell, "defaultButton" ) );
   }
 
   @Test
@@ -562,7 +562,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( WidgetUtil.getId( button ), message.findSetProperty( shell, "activeControl" ) );
+    assertEquals( getId( button ), message.findSetProperty( shell, "activeControl" ).asString() );
   }
 
   @Test
@@ -595,7 +595,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( shell, "activeControl" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( shell, "activeControl" ) );
   }
 
   @Test
@@ -649,7 +649,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( shell, "text" ) );
+    assertEquals( "foo", message.findSetProperty( shell, "text" ).asString() );
   }
 
   // NOTE: Resize and Move are currently always set to listen after creation. This is to keep
@@ -664,8 +664,8 @@ public class ShellLCA_Test {
     lca.renderInitialization( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( shell, "Resize" ) );
-    assertEquals( Boolean.TRUE, message.findListenProperty( shell, "Move" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( shell, "Resize" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( shell, "Move" ) );
   }
 
   @Test
@@ -678,7 +678,7 @@ public class ShellLCA_Test {
     lca.render( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( shell, "Activate" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( shell, "Activate" ) );
   }
 
   @Test
@@ -691,7 +691,7 @@ public class ShellLCA_Test {
     lca.render( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( shell, "Close" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( shell, "Close" ) );
   }
 
   @Test
@@ -707,7 +707,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( shell, "active" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( shell, "active" ) );
   }
 
   @Test
@@ -722,8 +722,8 @@ public class ShellLCA_Test {
     lca.renderInitialization( dialogShell );
 
     Message message = Fixture.getProtocolMessage();
-    String parentId = WidgetUtil.getId( parentShell );
-    assertEquals( parentId, message.findCreateProperty( dialogShell, "parentShell" ) );
+    String parentId = getId( parentShell );
+    assertEquals( parentId, message.findCreateProperty( dialogShell, "parentShell" ).asString() );
   }
 
   @Test
@@ -734,14 +734,13 @@ public class ShellLCA_Test {
     Fixture.preserveWidgets();
     ShellLCA lca = new ShellLCA();
 
-    shell.setImage( Graphics.getImage( Fixture.IMAGE1 ) );
+    shell.setImage( image );
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( shell.getImage() );
-    String expected = "[\"" + imageLocation + "\", 58, 12 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( shell, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 58 ).add( 12 );
+    assertEquals( expected, message.findSetProperty( shell, "image" ) );
   }
 
   @Test
@@ -752,7 +751,7 @@ public class ShellLCA_Test {
     Fixture.preserveWidgets();
     ShellLCA lca = new ShellLCA();
 
-    shell.setImage( Graphics.getImage( Fixture.IMAGE1 ) );
+    shell.setImage( image );
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
@@ -767,14 +766,13 @@ public class ShellLCA_Test {
     Fixture.preserveWidgets();
     ShellLCA lca = new ShellLCA();
 
-    shell.setImage( Graphics.getImage( Fixture.IMAGE1 ) );
+    shell.setImage( image );
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( shell.getImage() );
-    String expected = "[\"" + imageLocation + "\", 58, 12 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( shell, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 58 ).add( 12 );
+    assertEquals( expected, message.findSetProperty( shell, "image" ) );
   }
 
   @Test
@@ -785,14 +783,13 @@ public class ShellLCA_Test {
     Fixture.preserveWidgets();
     ShellLCA lca = new ShellLCA();
 
-    shell.setImages( new Image[] { Graphics.getImage( Fixture.IMAGE1 ) } );
+    shell.setImages( new Image[] { image } );
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( shell.getImages()[ 0 ] );
-    String expected = "[\"" + imageLocation + "\", 58, 12 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( shell, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 58 ).add( 12 );
+    assertEquals( expected, message.findSetProperty( shell, "image" ) );
   }
 
   @Test
@@ -813,7 +810,7 @@ public class ShellLCA_Test {
     lca.renderChanges( shell );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findSetProperty( shell, "visibility" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( shell, "visibility" ) );
   }
 
   private static Control getActiveControl( Shell shell ) {
@@ -834,11 +831,11 @@ public class ShellLCA_Test {
   }
 
   private void fakeModeAndBounds( String mode, int x, int y, int width, int heigth ) {
-    Fixture.fakeSetParameter( getId( shell ), "mode", mode );
-    Fixture.fakeSetParameter( getId( shell ), "bounds.x", Integer.valueOf( x ) );
-    Fixture.fakeSetParameter( getId( shell ), "bounds.y", Integer.valueOf( y ) );
-    Fixture.fakeSetParameter( getId( shell ), "bounds.width", Integer.valueOf( width ) );
-    Fixture.fakeSetParameter( getId( shell ), "bounds.heigth", Integer.valueOf( heigth ) );
+    Fixture.fakeSetProperty( getId( shell ), "mode", mode );
+    Fixture.fakeSetProperty( getId( shell ), "bounds.x", x );
+    Fixture.fakeSetProperty( getId( shell ), "bounds.y", y );
+    Fixture.fakeSetProperty( getId( shell ), "bounds.width", width );
+    Fixture.fakeSetProperty( getId( shell ), "bounds.heigth", heigth );
   }
 
 }

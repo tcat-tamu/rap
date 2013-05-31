@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -45,6 +45,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.MenuItem", {
     "menu",
     "enabled",
     "text",
+    "mnemonicIndex",
     "image",
     "selection",
     "customVariant"
@@ -60,15 +61,16 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.MenuItem", {
     },
     "text" : function( widget, value ) {
       if( !widget.hasState( "rwt_SEPARATOR" ) ) {
-        var EncodingUtil = rwt.util.Encoding;
         var text = value;
         // Strip accelerator text
         var index = text.indexOf( "\t" );
+        var accelerator = null;
         if( index != -1 ) {
+          accelerator = text.substring( index + 1 );
           text = text.substring( 0, index );
         }
-        text = EncodingUtil.escapeText( text, true );
         widget.setText( text );
+        widget.setAccelerator( accelerator );
       }
     },
     "image" : function( widget, value ) {

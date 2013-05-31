@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 EclipseSource and others.
+ * Copyright (c) 2010, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -35,6 +35,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
         return touch;
       };
     }
+    // At least Mobile Chrome does some shifting for no(?) reason:
+    var refTouch = this.createTouch( document.body, 10, 10 );
+    this._clientOffset = [ 10 - refTouch.pageX, 10 - refTouch.pageY ];
   },
 
   destruct : function() {
@@ -52,8 +55,8 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
     testCreateTouch : function() {
       var div = document.createElement( "div" );
       var touch = this.createTouch( div, 3, 6 );
-      assertEquals( 3, touch.screenX );
-      assertEquals( 6, touch.screenY );
+      assertEquals( 3, touch.pageX );
+      assertEquals( 6, touch.pageY );
       assertIdentical( div, touch.target );
     },
 
@@ -253,47 +256,6 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
       }
     },
 
-    testTextFocusIOS : function() {
-      if( rwt.client.Client.isMobileSafari() ) {
-        var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-        var text = new rwt.widgets.Text( false );
-        text.addToDocument();
-        TestUtil.flush();
-        assertFalse( text.isFocused() );
-        var node = text._inputElement;
-        var over = false;
-        text.addEventListener( "mouseover", function(){
-          over = true;
-        } );
-
-        this.touch( node, "touchstart" );
-        TestUtil.fakeMouseEventDOM( node, "mouseover", 1, 0, 0, 0, true ); // fakes "native" event
-        if( !over ) {
-          // the ipad will only send a mousedown if mouseover is not processed
-          TestUtil.fakeMouseEventDOM( node, "mousedown", 1, 0, 0, 0, true );
-        }
-
-        assertTrue( text.isFocused() );
-      }
-    },
-
-    testTextFocusAndroid : function() {
-      if( rwt.client.Client.isAndroidBrowser() ) {
-        var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-        var text = new rwt.widgets.Text( false );
-        text.addToDocument();
-        TestUtil.flush();
-        var node = text._inputElement;
-        var log = [];
-
-        log.push( this.touch( node, "touchstart" ) );
-        log.push( this.touch( node, "touchend" ) );
-
-        assertEquals( [ true, false ], log );
-        assertTrue( text.isFocused() );
-      }
-    },
-
     /////////
     // Events
 
@@ -450,22 +412,25 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
     },
 
     testCoordinatesMouseDownUp : function() {
-      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
-      var widget = new rwt.widgets.base.Terminator();
-      widget.addToDocument();
-      TestUtil.flush();
-      var log = [];
-      var logger = function( event ){
-        log.push( event.getPageX(), event.getPageY() );
-      };
-      widget.addEventListener( "mousedown", logger );
-      widget.addEventListener( "mouseup", logger );
-      var node = widget._getTargetNode();
-      this.touchAt( node, "touchstart", 1, 2 );
-      this.touchAt( node, "touchend", 3, 4 );
-      assertEquals( [ 1, 2, 3, 4 ], log );
-      widget.destroy();
-      this.resetMobileWebkitSupport();
+      // There is an y-offset in chrome (at least on some devices) that shouldn't be there
+      if( !rwt.client.Client.isMobileChrome() ) {
+        var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+        var widget = new rwt.widgets.base.Terminator();
+        widget.addToDocument();
+        TestUtil.flush();
+        var log = [];
+        var logger = function( event ){
+          log.push( event.getPageX(), event.getPageY() );
+        };
+        widget.addEventListener( "mousedown", logger );
+        widget.addEventListener( "mouseup", logger );
+        var node = widget._getTargetNode();
+        this.touchAt( node, "touchstart", 1, 2 );
+        this.touchAt( node, "touchend", 3, 4 );
+        assertEquals( [ 1, 2, 3, 4 ], log );
+        widget.destroy();
+        this.resetMobileWebkitSupport();
+      }
     },
 
     testPreventTapZoom : function() {
@@ -506,6 +471,92 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
       this.resetMobileWebkitSupport();
     },
 
+    testDelayedClick : function() {
+      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+      var log = [];
+      var logger = function( event ){
+        log.push( event.getType() );
+      };
+      var grid = this._createGridByProtocol();
+      grid.setScrollBarsVisible( false, true );
+      grid.setItemCount( 50 );
+      grid.setItemHeight( 20 );
+      grid.addEventListener( "mousedown", logger );
+      grid.addEventListener( "mouseup", logger );
+      grid.addEventListener( "click", logger );
+      for( var i = 0; i < 50; i++ ) {
+        new rwt.widgets.GridItem( grid.getRootItem(), i );
+      }
+      TestUtil.flush();
+      var node = grid.getRowContainer()._getTargetNode().childNodes[ 10 ];
+
+      log.push( "touchstart" );
+      this.touchAt( node, "touchstart", 0, 500 );
+      //this.touchAt( node, "touchmove", 0, 450 );
+      log.push( "touchend" );
+      this.touchAt( node, "touchend", 0, 500 );
+
+      var expected = [ "touchstart", "touchend", "mousedown", "mouseup", "click" ];
+      assertEquals( expected, log );
+      grid.destroy();
+    },
+
+    testDelayedClickOnText : function() {
+      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+      var log = [];
+      var logger = function( event ){
+        log.push( event.getType() );
+      };
+      var text = new rwt.widgets.Text();
+      text.addEventListener( "mousedown", logger );
+      text.addEventListener( "mouseup", logger );
+      text.addEventListener( "click", logger );
+      text.addToDocument();
+      TestUtil.flush();
+      //var node = text.getInputElement(); // emulation of touch events does not work on input?
+      var node = text.getElement();
+
+      log.push( "touchstart" );
+      this.touchAt( node, "touchstart", 0, 500 );
+      log.push( "touchend" );
+      this.touchAt( node, "touchend", 0, 500 );
+
+      var expected = [ "touchstart", "touchend", "mousedown", "mouseup", "click" ];
+      assertEquals( expected, log );
+      text.destroy();
+    },
+
+    testDelayedClickAborted : function() {
+      var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
+      var log = [];
+      var logger = function( event ){
+        log.push( event.getType() );
+      };
+      var grid = this._createGridByProtocol();
+      grid.setScrollBarsVisible( false, true );
+      grid.setItemCount( 50 );
+      grid.setItemHeight( 20 );
+      grid.addEventListener( "mousedown", logger );
+      grid.addEventListener( "mouseup", logger );
+      grid.addEventListener( "click", logger );
+      for( var i = 0; i < 50; i++ ) {
+        new rwt.widgets.GridItem( grid.getRootItem(), i );
+      }
+      TestUtil.flush();
+      var node = grid.getRowContainer()._getTargetNode().childNodes[ 10 ];
+
+      log.push( "touchstart" );
+      this.touchAt( node, "touchstart", 0, 500 );
+      log.push( "touchmove" );
+      this.touchAt( node, "touchmove", 0, 450 );
+      log.push( "touchend" );
+      this.touchAt( node, "touchend", 0, 500 );
+
+      var expected = [ "touchstart", "touchmove", "touchend" ];
+      assertEquals( expected, log );
+      grid.destroy();
+    },
+
     testNoClickOnDifferentTargets : function() {
       var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
       var widget = new rwt.widgets.base.Terminator();
@@ -527,7 +578,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
     },
 
     testIsDraggableShell : function() {
-      var widget = new rwt.widgets.Shell( {} );
+      var widget = TestUtil.createShellByProtocol( "w2" );
       widget.addToDocument();
       widget.initialize();
       widget.open();
@@ -907,6 +958,8 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
       if( !rwt.client.Client.isAndroidBrowser() ) {
         var TestUtil = org.eclipse.rwt.test.fixture.TestUtil;
         var composite = new rwt.widgets.ScrolledComposite();
+        TestUtil.addToRegistry( "w4", composite );
+        composite.setScrollBarsVisible( true, true );
         composite.setLeft( 10 );
         composite.setTop( 10 );
         composite.setWidth( 100 );
@@ -1060,7 +1113,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
         this.touchAt( node, "touchend", 0, 450 );
 
         assertEquals( 3, grid._topItemIndex );
-        assertEquals( [ false, true ], preventLog );
+        assertEquals( [ true ], preventLog );
         grid.destroy();
       }
     },
@@ -1092,7 +1145,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
         this.touchAt( node, "touchend", 0, 550 );
 
         assertEquals( 0, grid._topItemIndex );
-        assertEquals( [ false, false ], preventLog );
+        assertEquals( [ false ], preventLog );
         grid.destroy();
       }
     },
@@ -1124,7 +1177,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
         this.touchAt( node, "touchend", 0, 480 );
 
         assertEquals( 1, grid._topItemIndex );
-        assertEquals( [ false, true ], preventLog );
+        assertEquals( [ true ], preventLog );
         grid.destroy();
       }
     },
@@ -1155,7 +1208,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
         this.touchAt( node, "touchend", 0, 450 );
 
         assertEquals( 25, grid._topItemIndex );
-        assertEquals( [ false, false ], preventLog );
+        assertEquals( [ false ], preventLog );
         grid.destroy();
       }
     },
@@ -1190,7 +1243,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
         this.touchAt( node, "touchend", 0, 480 );
 
         assertEquals( 24, grid._topItemIndex );
-        assertEquals( [ false, true ], preventLog );
+        assertEquals( [ true ], preventLog );
         grid.destroy();
       }
     },
@@ -1200,13 +1253,14 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MobileWebkitSupportTest", {
 
     createTouch : function( target, x, y ) {
       // TODO [tb] : identifier, page vs. screen
+      var offset = this._clientOffset ? this._clientOffset : [ 0, 0 ];
       var result = document.createTouch( window, //view
                                          target,
                                          1, //identifier
-                                         x, //pageX,
-                                         y, //pageY,
-                                         x, //screenX,
-                                         y //screenY
+                                         x + offset[ 0 ], //pageX,
+                                         y + offset[ 1 ], //pageY,
+                                         x + offset[ 0 ], //screenX,
+                                         y + offset[ 1 ] //screenY
       );
       return result;
     },

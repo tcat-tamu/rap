@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,8 +24,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -50,7 +51,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -181,11 +181,11 @@ public class SpinnerLCA_Test {
     assertEquals( rectangle, adapter.getPreserved( Props.BOUNDS ) );
     Fixture.clearPreserved();
     // foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     spinner.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     spinner.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     spinner.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( spinner );
@@ -208,7 +208,7 @@ public class SpinnerLCA_Test {
   public void testReadSelection() {
     spinner.setMaximum( 100 );
 
-    Fixture.fakeSetParameter( getId( spinner ), "selection", Integer.valueOf( 77 ) );
+    Fixture.fakeSetProperty( getId( spinner ), "selection", 77 );
     Fixture.readDataAndProcessAction( display );
 
     assertEquals( 77, spinner.getSelection() );
@@ -218,7 +218,7 @@ public class SpinnerLCA_Test {
   public void testReadSelection_Invalid() {
     spinner.setMaximum( 100 );
 
-    Fixture.fakeSetParameter( getId( spinner ), "selection", Integer.valueOf( 777 ) );
+    Fixture.fakeSetProperty( getId( spinner ), "selection", 777 );
     Fixture.readDataAndProcessAction( display );
 
     assertEquals( spinner.getMaximum(), spinner.getSelection() );
@@ -251,7 +251,7 @@ public class SpinnerLCA_Test {
     ModifyListener listener = mock( ModifyListener.class );
     spinner.addModifyListener( listener );
 
-    Fixture.fakeSetParameter( getId( spinner ), "selection", Integer.valueOf( 2 ) );
+    Fixture.fakeSetProperty( getId( spinner ), "selection", 2 );
     Fixture.readDataAndProcessAction( spinner );
 
     verify( listener, times( 1 ) ).modifyText( any( ModifyEvent.class ) );
@@ -303,7 +303,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( spinner, "minimum" ) );
+    assertEquals( 10, message.findSetProperty( spinner, "minimum" ).asInt() );
   }
 
   @Test
@@ -334,7 +334,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( spinner, "maximum" ) );
+    assertEquals( 10, message.findSetProperty( spinner, "maximum" ).asInt() );
   }
 
   @Test
@@ -365,7 +365,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( spinner, "selection" ) );
+    assertEquals( 10, message.findSetProperty( spinner, "selection" ).asInt() );
   }
 
   @Test
@@ -396,7 +396,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 2 ), message.findSetProperty( spinner, "digits" ) );
+    assertEquals( 2, message.findSetProperty( spinner, "digits" ).asInt() );
   }
 
   @Test
@@ -427,7 +427,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 2 ), message.findSetProperty( spinner, "increment" ) );
+    assertEquals( 2, message.findSetProperty( spinner, "increment" ).asInt() );
   }
 
   @Test
@@ -458,7 +458,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 20 ), message.findSetProperty( spinner, "pageIncrement" ) );
+    assertEquals( 20, message.findSetProperty( spinner, "pageIncrement" ).asInt() );
   }
 
   @Test
@@ -488,7 +488,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( spinner, "textLimit" ) );
+    assertEquals( 10, message.findSetProperty( spinner, "textLimit" ).asInt() );
   }
 
   @Test
@@ -515,7 +515,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( spinner, "textLimit" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( spinner, "textLimit" ) );
   }
 
   @Test
@@ -529,7 +529,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( spinner, "textLimit" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( spinner, "textLimit" ) );
   }
 
   @Test
@@ -548,7 +548,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( ",", message.findSetProperty( spinner, "decimalSeparator" ) );
+    assertEquals( ",", message.findSetProperty( spinner, "decimalSeparator" ).asString() );
   }
 
   @Test
@@ -574,7 +574,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( spinner, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( spinner, "Selection" ) );
     assertNull( message.findListenOperation( spinner, "DefaultSelection" ) );
   }
 
@@ -590,7 +590,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( spinner, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( spinner, "Selection" ) );
     assertNull( message.findListenOperation( spinner, "DefaultSelection" ) );
   }
 
@@ -604,7 +604,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( spinner, "DefaultSelection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( spinner, "DefaultSelection" ) );
     assertNull( message.findListenOperation( spinner, "Selection" ) );
   }
 
@@ -620,7 +620,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( spinner, "DefaultSelection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( spinner, "DefaultSelection" ) );
     assertNull( message.findListenOperation( spinner, "Selection" ) );
   }
 
@@ -651,7 +651,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( spinner, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( spinner, "Selection" ) );
   }
 
   @Test
@@ -669,7 +669,7 @@ public class SpinnerLCA_Test {
     lca.renderChanges( spinner );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( spinner, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( spinner, "Selection" ) );
   }
 
   @Test

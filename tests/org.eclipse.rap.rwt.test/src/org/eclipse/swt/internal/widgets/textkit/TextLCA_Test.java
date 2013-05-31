@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,13 +25,12 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -56,9 +55,6 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -117,7 +113,7 @@ public class TextLCA_Test {
 
   @Test
   public void testReadText() {
-    Fixture.fakeSetParameter( getId( text ), "text", "abc" );
+    Fixture.fakeSetProperty( getId( text ), "text", "abc" );
 
     WidgetUtil.getLCA( text ).readData( text );
 
@@ -126,9 +122,9 @@ public class TextLCA_Test {
 
   @Test
   public void testReadSelection() {
-    Fixture.fakeSetParameter( getId( text ), "text", "abc" );
-    Fixture.fakeSetParameter( getId( text ), "selectionStart", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( text ), "selectionLength", Integer.valueOf( 1 ) );
+    Fixture.fakeSetProperty( getId( text ), "text", "abc" );
+    Fixture.fakeSetProperty( getId( text ), "selectionStart", 1 );
+    Fixture.fakeSetProperty( getId( text ), "selectionLength", 1 );
 
     WidgetUtil.getLCA( text ).readData( text );
 
@@ -140,7 +136,7 @@ public class TextLCA_Test {
     ModifyListener listener = mock( ModifyListener.class );
     text.addModifyListener( listener );
 
-    Fixture.fakeSetParameter( getId( text ), "text", "new text" );
+    Fixture.fakeSetProperty( getId( text ), "text", "new text" );
     Fixture.fakeNotifyOperation( getId( text ), ClientMessageConst.EVENT_MODIFY, null );
     Fixture.readDataAndProcessAction( text );
 
@@ -152,7 +148,7 @@ public class TextLCA_Test {
     VerifyListener listener = mock( VerifyListener.class );
     text.addVerifyListener( listener );
 
-    Fixture.fakeSetParameter( getId( text ), "text", "verify me" );
+    Fixture.fakeSetProperty( getId( text ), "text", "verify me" );
     Fixture.fakeNotifyOperation( getId( text ), ClientMessageConst.EVENT_MODIFY, null );
     Fixture.readDataAndProcessAction( display );
 
@@ -168,9 +164,9 @@ public class TextLCA_Test {
     Fixture.markInitialized( display );
     Fixture.markInitialized( text );
 
-    Fixture.fakeSetParameter( getId( text ), "text", "verify me" );
-    Fixture.fakeSetParameter( getId( text ), "selectionStart", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( text ), "selectionLength", Integer.valueOf( 0 ) );
+    Fixture.fakeSetProperty( getId( text ), "text", "verify me" );
+    Fixture.fakeSetProperty( getId( text ), "selectionStart", 1 );
+    Fixture.fakeSetProperty( getId( text ), "selectionLength", 0 );
     Fixture.fakeNotifyOperation( getId( text ), ClientMessageConst.EVENT_MODIFY, null );
 
     Fixture.executeLifeCycleFromServerThread();
@@ -194,9 +190,9 @@ public class TextLCA_Test {
         event.text = "verified";
       }
     } );
-    Fixture.fakeSetParameter( getId( text ), "text", "verify me" );
-    Fixture.fakeSetParameter( getId( text ), "selectionStart", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( text ), "selectionLength", Integer.valueOf( 0 ) );
+    Fixture.fakeSetProperty( getId( text ), "text", "verify me" );
+    Fixture.fakeSetProperty( getId( text ), "selectionStart", 1 );
+    Fixture.fakeSetProperty( getId( text ), "selectionLength", 0 );
     Fixture.fakeNotifyOperation( getId( text ), ClientMessageConst.EVENT_MODIFY, null );
 
     Fixture.executeLifeCycleFromServerThread( );
@@ -214,9 +210,9 @@ public class TextLCA_Test {
         event.text = "";
       }
     } );
-    Fixture.fakeSetParameter( getId( text ), "text", "verify me" );
-    Fixture.fakeSetParameter( getId( text ), "selectionStart", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( text ), "selectionLength", Integer.valueOf( 0 ) );
+    Fixture.fakeSetProperty( getId( text ), "text", "verify me" );
+    Fixture.fakeSetProperty( getId( text ), "selectionStart", 1 );
+    Fixture.fakeSetProperty( getId( text ), "selectionLength", 0 );
     Fixture.fakeNotifyOperation( getId( text ), ClientMessageConst.EVENT_MODIFY, null );
 
     Fixture.executeLifeCycleFromServerThread( );
@@ -229,9 +225,9 @@ public class TextLCA_Test {
   public void testPreserveText() {
     Fixture.markInitialized( display );
     Fixture.markInitialized( text );
-    Fixture.fakeSetParameter( getId( text ), "text", "verify me" );
-    Fixture.fakeSetParameter( getId( text ), "selectionStart", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( text ), "selectionLength", Integer.valueOf( 0 ) );
+    Fixture.fakeSetProperty( getId( text ), "text", "verify me" );
+    Fixture.fakeSetProperty( getId( text ), "selectionStart", 1 );
+    Fixture.fakeSetProperty( getId( text ), "selectionLength", 0 );
 
     Fixture.executeLifeCycleFromServerThread();
 
@@ -258,9 +254,9 @@ public class TextLCA_Test {
       }
     } );
 
-    Fixture.fakeSetParameter( getId( text ), "text", "verify me" );
-    Fixture.fakeSetParameter( getId( text ), "selectionStart", Integer.valueOf( 1 ) );
-    Fixture.fakeSetParameter( getId( text ), "selectionLength", Integer.valueOf( 0 ) );
+    Fixture.fakeSetProperty( getId( text ), "text", "verify me" );
+    Fixture.fakeSetProperty( getId( text ), "selectionStart", 1 );
+    Fixture.fakeSetProperty( getId( text ), "selectionLength", 0 );
     Fixture.fakeNotifyOperation( getId( text ), ClientMessageConst.EVENT_MODIFY, null );
     Fixture.readDataAndProcessAction( text );
 
@@ -349,7 +345,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( text, "Modify" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( text, "Modify" ) );
   }
 
   @Test
@@ -447,7 +443,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "test", message.findSetProperty( text, "message" ) );
+    assertEquals( "test", message.findSetProperty( text, "message" ).asString() );
   }
 
   @Test
@@ -470,7 +466,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "?", message.findSetProperty( text, "echoChar" ) );
+    assertEquals( "?", message.findSetProperty( text, "echoChar" ).asString() );
   }
 
   @Test
@@ -497,7 +493,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "*", message.findSetProperty( text, "echoChar" ) );
+    assertEquals( "*", message.findSetProperty( text, "echoChar" ).asString() );
   }
 
   @Test
@@ -527,7 +523,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findSetProperty( text, "editable" ) );
+    assertEquals( JsonValue.FALSE, message.findSetProperty( text, "editable" ) );
   }
 
   @Test
@@ -554,19 +550,19 @@ public class TextLCA_Test {
   }
 
   @Test
-  public void testRenderSelection() throws IOException, JSONException {
+  public void testRenderSelection() throws IOException {
     text.setText( "foo bar" );
 
     text.setSelection( 1, 3 );
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( text, "selection" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[ 1, 3 ]", actual ) );
+    JsonArray expected = JsonArray.readFrom( "[ 1, 3 ]" );
+    assertEquals( expected, message.findSetProperty( text, "selection" ) );
   }
 
   @Test
-  public void testRenderSelectionAfterTextChange() throws IOException, JSONException {
+  public void testRenderSelectionAfterTextChange() throws IOException {
     // See bug 376957
     text.setText( "foo bar" );
     text.selectAll();
@@ -579,8 +575,8 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray actual = ( JSONArray )message.findSetProperty( text, "selection" );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[ 0, 7 ]", actual ) );
+    JsonArray expected = JsonArray.readFrom( "[ 0, 7 ]" );
+    assertEquals( expected, message.findSetProperty( text, "selection" ) );
   }
 
   @Test
@@ -611,7 +607,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 10 ), message.findSetProperty( text, "textLimit" ) );
+    assertEquals( 10, message.findSetProperty( text, "textLimit" ).asInt() );
   }
 
   @Test
@@ -638,7 +634,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( text, "textLimit" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( text, "textLimit" ) );
   }
 
   @Test
@@ -652,7 +648,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( text, "textLimit" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( text, "textLimit" ) );
   }
 
   @Test
@@ -665,7 +661,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( text, "DefaultSelection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( text, "DefaultSelection" ) );
     assertNull( message.findListenOperation( text, "Selection" ) );
   }
 
@@ -681,7 +677,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( text, "DefaultSelection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( text, "DefaultSelection" ) );
     assertNull( message.findListenOperation( text, "Selection" ) );
   }
 
@@ -709,7 +705,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( text, "Modify" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( text, "Modify" ) );
   }
 
   @Test
@@ -724,7 +720,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( text, "Modify" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( text, "Modify" ) );
   }
 
   @Test
@@ -751,7 +747,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( text, "Modify" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( text, "Modify" ) );
   }
 
   @Test
@@ -766,7 +762,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( text, "Modify" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( text, "Modify" ) );
   }
 
   @Test
@@ -797,7 +793,7 @@ public class TextLCA_Test {
     lca.renderChanges( text );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "test", message.findSetProperty( text, "text" ) );
+    assertEquals( "test", message.findSetProperty( text, "text" ).asString() );
   }
 
   @Test
@@ -835,8 +831,7 @@ public class TextLCA_Test {
     text = new Text( shell, SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL );
     text.addListener( SWT.DefaultSelection, new LoggingListener( events ) );
 
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( ClientMessageConst.EVENT_PARAM_DETAIL, "search" );
+    JsonObject properties = new JsonObject().add( ClientMessageConst.EVENT_PARAM_DETAIL, "search" );
     Fixture.fakeNotifyOperation( getId( text ),
                                  ClientMessageConst.EVENT_DEFAULT_SELECTION,
                                  properties );
@@ -856,8 +851,8 @@ public class TextLCA_Test {
     text = new Text( shell, SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL );
     text.addListener( SWT.DefaultSelection, new LoggingListener( events ) );
 
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( ClientMessageConst.EVENT_PARAM_DETAIL, "cancel" );
+    JsonObject properties = new JsonObject()
+      .add( ClientMessageConst.EVENT_PARAM_DETAIL, "cancel" );
     Fixture.fakeNotifyOperation( getId( text ),
                                  ClientMessageConst.EVENT_DEFAULT_SELECTION,
                                  properties );

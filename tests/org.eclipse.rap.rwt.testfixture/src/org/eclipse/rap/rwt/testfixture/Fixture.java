@@ -13,6 +13,7 @@
 package org.eclipse.rap.rwt.testfixture;
 
 import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getProtocolWriter;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -26,9 +27,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.ServletContext;
@@ -37,6 +36,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.application.Application;
 import org.eclipse.rap.rwt.application.Application.OperationMode;
 import org.eclipse.rap.rwt.application.ApplicationConfiguration;
@@ -44,7 +46,7 @@ import org.eclipse.rap.rwt.client.Client;
 import org.eclipse.rap.rwt.client.WebClient;
 import org.eclipse.rap.rwt.engine.RWTServletContextListener;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextHelper;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
@@ -53,21 +55,20 @@ import org.eclipse.rap.rwt.internal.lifecycle.IUIThreadHolder;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
-import org.eclipse.rap.rwt.internal.remote.RemoteObjectImpl;
 import org.eclipse.rap.rwt.internal.resources.ResourceDirectory;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
+import org.eclipse.rap.rwt.internal.service.UISessionBuilder;
+import org.eclipse.rap.rwt.internal.service.UISessionImpl;
 import org.eclipse.rap.rwt.internal.service.UISessionTestAdapter;
 import org.eclipse.rap.rwt.internal.util.HTTP;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
-import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
+import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.remote.Connection;
-import org.eclipse.rap.rwt.remote.RemoteObject;
 import org.eclipse.rap.rwt.service.ResourceManager;
 import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.testfixture.internal.TestResourceManager;
@@ -76,9 +77,6 @@ import org.eclipse.swt.internal.widgets.IDisplayAdapter;
 import org.eclipse.swt.internal.widgets.WidgetAdapterImpl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Widget;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 
 /**
@@ -112,6 +110,7 @@ public final class Fixture {
 
   private static ServletContext servletContext;
   private static RWTServletContextListener rwtServletContextListener;
+  private static ApplicationContextImpl applicationContext;
 
   ////////////////////////////////////////////
   // Methods to control global servlet context
@@ -119,7 +118,7 @@ public final class Fixture {
   public static ServletContext createServletContext() {
     servletContext = new TestServletContext();
     Fixture.useTestResourceManager();
-    return getServletContext();
+    return servletContext;
   }
 
   public static ServletContext getServletContext() {
@@ -165,6 +164,7 @@ public final class Fixture {
     ensureServletContext();
     createWebContextDirectory();
     triggerServletContextInitialized();
+    applicationContext = ApplicationContextImpl.getFrom( servletContext );
   }
 
   public static void disposeOfApplicationContext() {
@@ -177,6 +177,7 @@ public final class Fixture {
     if( !isPerformanceOptimizationsEnabled() ) {
       deleteWebContextDirectory();
     }
+    applicationContext = null;
   }
 
 
@@ -217,10 +218,9 @@ public final class Fixture {
 
   public static void deleteWebContextDirectory() {
     if( WEB_CONTEXT_DIR.exists() ) {
-      delete( WEB_CONTEXT_DIR );
+      FileUtil.delete( WEB_CONTEXT_DIR );
     }
   }
-
 
   //////////////////////////////
   // general setup and tear down
@@ -303,14 +303,13 @@ public final class Fixture {
   public static Message getProtocolMessage() {
     TestResponse response = ( TestResponse )ContextProvider.getResponse();
     finishResponse( response );
-    return new Message( response.getContent() );
+    return new Message( JsonObject.readFrom( response.getContent() ) );
   }
 
   private static void finishResponse( TestResponse response ) {
     if( response.getContent().length() == 0 ) {
-      ProtocolMessageWriter protocolWriter = ContextProvider.getProtocolWriter();
       try {
-        response.getWriter().write( protocolWriter.createMessage() );
+        getProtocolWriter().createMessage().writeTo( response.getWriter() );
       } catch( IOException exception ) {
         throw new IllegalStateException( "Failed to get response writer", exception );
       }
@@ -350,122 +349,120 @@ public final class Fixture {
   private static void createNewServiceContext( HttpServletRequest request,
                                                HttpServletResponse response )
   {
-    ServiceContext serviceContext = new ServiceContext( request, response );
-    serviceContext.setServiceStore( new ServiceStore() );
     ContextProvider.disposeContext();
+    ServiceContext serviceContext = new ServiceContext( request, response, applicationContext );
+    serviceContext.setServiceStore( new ServiceStore() );
     ContextProvider.setContext( serviceContext );
+    ensureUISession( serviceContext );
   }
 
   public static String createEmptyMessage() {
-    JSONObject result = new JSONObject();
-    try {
-      result.put( ClientMessage.PROP_HEAD, new JSONObject() );
-      result.put( ClientMessage.PROP_OPERATIONS, new JSONArray() );
-    } catch( JSONException exception ) {
-      throw new IllegalStateException( "Failed to create json message", exception );
-    }
+    JsonObject result = new JsonObject();
+    result.add( ClientMessage.PROP_HEAD, new JsonObject() );
+    result.add( ClientMessage.PROP_OPERATIONS, new JsonArray() );
     return result.toString();
   }
 
-  public static void fakeHeadParameter( String key, Object value ) {
+  public static void fakeHeadParameter( String key, long value ) {
+    fakeHeadParameter( key, JsonValue.valueOf( value ) );
+  }
+
+  public static void fakeHeadParameter( String key, boolean value ) {
+    fakeHeadParameter( key, JsonValue.valueOf( value ) );
+  }
+
+  public static void fakeHeadParameter( String key, String value ) {
+    fakeHeadParameter( key, JsonValue.valueOf( value ) );
+  }
+
+  public static void fakeHeadParameter( String key, JsonValue value ) {
     checkMessage();
     TestRequest request = ( TestRequest )ContextProvider.getRequest();
     String json = request.getBody();
     try {
-      JSONObject message = new JSONObject( json );
-      JSONObject header = message.getJSONObject( ClientMessage.PROP_HEAD );
-      header.put( key, value );
+      JsonObject message = JsonObject.readFrom( json );
+      JsonObject header = message.get( ClientMessage.PROP_HEAD ).asObject();
+      header.add( key, value );
       request.setBody( message.toString() );
-    } catch( JSONException exception ) {
+    } catch( Exception exception ) {
       throw new RuntimeException( "Failed to add header parameter", exception );
     }
   }
 
-  public static void fakeSetParameter( String target, String key, Object value ) {
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( key, value );
-    fakeSetOperation( target, parameters );
+  public static void fakeSetProperty( String target, String propertyName, long propertyValue ) {
+    fakeSetProperty( target, propertyName, JsonValue.valueOf( propertyValue ) );
   }
 
-  public static void fakeSetOperation( String target, Map<String, Object> parameters ) {
+  public static void fakeSetProperty( String target, String propertyName, boolean propertyValue ) {
+    fakeSetProperty( target, propertyName, JsonValue.valueOf( propertyValue ) );
+  }
+
+  public static void fakeSetProperty( String target, String propertyName, String propertyValue ) {
+    fakeSetProperty( target, propertyName, JsonValue.valueOf( propertyValue ) );
+  }
+
+  public static void fakeSetProperty( String target, String key, JsonValue value ) {
+    fakeSetOperation( target, new JsonObject().add( key, value ) );
+  }
+
+  public static void fakeSetOperation( String target, JsonObject properties ) {
     checkMessage();
     TestRequest request = ( TestRequest )ContextProvider.getRequest();
     String json = request.getBody();
     try {
-      JSONObject message = new JSONObject( json );
-      JSONArray operations = message.getJSONArray( ClientMessage.PROP_OPERATIONS );
-      JSONArray newOperation = new JSONArray();
-      newOperation.put( ClientMessage.OPERATION_SET );
-      newOperation.put( target );
-      newOperation.put( new JSONObject( parameters ) );
-      operations.put( newOperation );
+      JsonObject message = JsonObject.readFrom( json );
+      JsonArray operations = message.get( ClientMessage.PROP_OPERATIONS ).asArray();
+      JsonArray newOperation = new JsonArray();
+      newOperation.add( ClientMessage.OPERATION_SET );
+      newOperation.add( target );
+      newOperation.add( properties != null ? properties : new JsonObject() );
+      operations.add( newOperation );
       request.setBody( message.toString() );
-    } catch( JSONException exception ) {
+    } catch( Exception exception ) {
       throw new RuntimeException( "Failed to add set operation", exception );
     }
   }
 
-  public static void dispatchNotify( RemoteObject remoteObject,
-                                     String eventName,
-                                     Map<String, Object> properties )
-  {
-    RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
-    remoteObjectImpl.getHandler().handleNotify( eventName, properties );
-  }
-
-  public static void dispatchCall( RemoteObject remoteObject,
-                                   String methodName,
-                                   Map<String, Object> parameters )
-  {
-    RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
-    remoteObjectImpl.getHandler().handleCall( methodName, parameters );
-  }
-
-  public static void dispatchSet( RemoteObject remoteObject, Map<String, Object> properties ) {
-    RemoteObjectImpl remoteObjectImpl = ( RemoteObjectImpl )remoteObject;
-    remoteObjectImpl.getHandler().handleSet( properties );
-  }
-
   public static void fakeNotifyOperation( String target,
                                           String eventName,
-                                          Map<String, Object> properties )
+                                          JsonObject properties )
   {
     checkMessage();
     TestRequest request = ( TestRequest )ContextProvider.getRequest();
     String json = request.getBody();
     try {
-      JSONObject message = new JSONObject( json );
-      JSONArray operations = message.getJSONArray( ClientMessage.PROP_OPERATIONS );
-      JSONArray newOperation = new JSONArray();
-      newOperation.put( ClientMessage.OPERATION_NOTIFY );
-      newOperation.put( target );
-      newOperation.put( eventName );
-      newOperation.put( new JSONObject( properties ) );
-      operations.put( newOperation );
+      JsonObject message = JsonObject.readFrom( json );
+      JsonArray operations = message.get( ClientMessage.PROP_OPERATIONS ).asArray();
+      JsonArray newOperation = new JsonArray();
+      newOperation.add( ClientMessage.OPERATION_NOTIFY );
+      newOperation.add( target );
+      newOperation.add( eventName );
+      newOperation.add( properties != null ? properties : new JsonObject() );
+      operations.add( newOperation );
       request.setBody( message.toString() );
-    } catch( JSONException exception ) {
+    } catch( Exception exception ) {
       throw new RuntimeException( "Failed to add notify operation", exception );
     }
   }
 
   public static void fakeCallOperation( String target,
                                         String methodName,
-                                        Map<String, Object> parameters )
+                                        JsonObject parameters )
   {
     checkMessage();
     TestRequest request = ( TestRequest )ContextProvider.getRequest();
     String json = request.getBody();
     try {
-      JSONObject message = new JSONObject( json );
-      JSONArray operations = message.getJSONArray( ClientMessage.PROP_OPERATIONS );
-      JSONArray newOperation = new JSONArray();
-      newOperation.put( ClientMessage.OPERATION_CALL );
-      newOperation.put( target );
-      newOperation.put( methodName );
-      newOperation.put( new JSONObject( parameters ) );
-      operations.put( newOperation );
+      JsonObject message = JsonObject.readFrom( json );
+      JsonArray operations = message.get( ClientMessage.PROP_OPERATIONS ).asArray();
+      JsonArray newOperation = new JsonArray();
+      newOperation.add( ClientMessage.OPERATION_CALL );
+      newOperation.add( target );
+      newOperation.add( methodName );
+      newOperation.add( parameters != null ? parameters : new JsonObject() );
+      operations.add( newOperation );
       request.setBody( message.toString() );
-    } catch( JSONException exception ) {
+    } catch( Exception exception ) {
       throw new RuntimeException( "Failed to add call operation", exception );
     }
   }
@@ -505,12 +502,22 @@ public final class Fixture {
   public static void replaceServiceStore( ServiceStore serviceStore ) {
     HttpServletRequest request = ContextProvider.getRequest();
     HttpServletResponse response = ContextProvider.getResponse();
-    ServiceContext context = new ServiceContext( request, response );
-    if( serviceStore != null ) {
-      context.setServiceStore( serviceStore );
-    }
     ContextProvider.disposeContext();
-    ContextProvider.setContext( context );
+    ServiceContext serviceContext = new ServiceContext( request, response, applicationContext );
+    if( serviceStore != null ) {
+      serviceContext.setServiceStore( serviceStore );
+    }
+    ContextProvider.setContext( serviceContext );
+    ensureUISession( serviceContext );
+  }
+
+  private static void ensureUISession( ServiceContext serviceContext ) {
+    HttpSession httpSession = serviceContext.getRequest().getSession( true );
+    UISessionImpl uiSession = UISessionImpl.getInstanceFromSession( httpSession, null );
+    if( uiSession == null ) {
+      uiSession = new UISessionBuilder( serviceContext ).buildUISession();
+    }
+    serviceContext.setUISession( uiSession );
   }
 
   ////////////////
@@ -595,10 +602,6 @@ public final class Fixture {
       Thread thread = threads[ i ];
       thread.join();
     }
-  }
-
-  public static void delete( File toDelete ) {
-    ApplicationContextUtil.delete( toDelete );
   }
 
   public static byte[] serialize( Object object ) throws IOException {

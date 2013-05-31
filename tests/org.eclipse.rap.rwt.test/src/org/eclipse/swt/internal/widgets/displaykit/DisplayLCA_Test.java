@@ -13,12 +13,14 @@
 package org.eclipse.swt.internal.widgets.displaykit;
 
 import static org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil.getId;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
 import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -31,15 +33,15 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.HashMap;
 
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
-import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
 import org.eclipse.rap.rwt.internal.lifecycle.IRenderRunnable;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.RWTLifeCycle;
@@ -60,6 +62,7 @@ import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.DestroyOperation;
 import org.eclipse.rap.rwt.testfixture.Message.SetOperation;
+import org.eclipse.rap.rwt.testfixture.TestRequest;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -69,12 +72,14 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 
@@ -167,11 +172,81 @@ public class DisplayLCA_Test {
 
   @Test
   public void testReadDisplayBounds() {
-    Fixture.fakeSetParameter( getId( display ), "bounds", new int[] { 0, 0, 30, 70 } );
+    Fixture.fakeSetProperty( getId( display ), "bounds", createJsonArray( 0, 0, 30, 70 ) );
 
     displayLCA.readData( display );
 
     assertEquals( new Rectangle( 0, 0, 30, 70 ), display.getBounds() );
+  }
+
+  @Test
+  public void testFireResizeEvent() {
+    Listener listener = mock( Listener.class );
+    display.addListener( SWT.Resize, listener  );
+
+    Fixture.fakeSetProperty( getId( display ), "bounds", createJsonArray( 1, 2, 3, 4 ) );
+    Fixture.fakeNotifyOperation( getId( display ), "Resize", null );
+    Fixture.readDataAndProcessAction( display );
+
+    ArgumentCaptor<Event> captor = ArgumentCaptor.forClass( Event.class );
+    verify( listener ).handleEvent( captor.capture() );
+    Event event = captor.getValue();
+    assertSame( display, event.display );
+    assertEquals( 3, event.width );
+    assertEquals( 4, event.height );
+  }
+
+  @Test
+  public void testRenderInitialResizeListener() throws IOException {
+    displayLCA.render( display );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findListenOperation( getId( display ), "Resize" ) );
+  }
+
+  @Test
+  public void testRenderResizeListener() throws IOException {
+    Listener listener = mock( Listener.class );
+    display.addListener( SWT.Resize, listener  );
+
+    displayLCA.render( display );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( JsonValue.TRUE, message.findListenProperty( getId( display ), "Resize" ) );
+  }
+
+  @Test
+  public void testRenderResizeListener_MaximizedShell() throws IOException {
+    Shell shell = new Shell( display );
+    shell.setMaximized( true );
+
+    displayLCA.render( display );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( JsonValue.TRUE, message.findListenProperty( getId( display ), "Resize" ) );
+  }
+
+  @Test
+  public void testRenderResizeListener_FullScreenShell() throws IOException {
+    Shell shell = new Shell( display );
+    shell.setFullScreen( true );
+
+    displayLCA.render( display );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( JsonValue.TRUE, message.findListenProperty( getId( display ), "Resize" ) );
+  }
+
+  @Test
+  public void testRenderResizeListenerUnchanged() throws IOException {
+    Listener listener = mock( Listener.class );
+    display.addListener( SWT.Resize, listener  );
+
+    displayLCA.preserveValues( display );
+    displayLCA.render( display );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findListenOperation( getId( display ), "Resize" ) );
   }
 
   @Test
@@ -217,7 +292,7 @@ public class DisplayLCA_Test {
   @Test
   public void testRenderInitiallyDisposed() {
     ApplicationContextImpl applicationContext = getApplicationContext();
-    applicationContext.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
+    applicationContext.getEntryPointManager().register( TestRequest.DEFAULT_SERVLET_PATH,
                                                         TestRenderInitiallyDisposedEntryPoint.class,
                                                         null );
     RWTLifeCycle lifeCycle
@@ -234,7 +309,7 @@ public class DisplayLCA_Test {
   @Test
   public void testRenderDisposed() throws Exception {
     ApplicationContextImpl applicationContext = getApplicationContext();
-    applicationContext.getEntryPointManager().register( EntryPointManager.DEFAULT_PATH,
+    applicationContext.getEntryPointManager().register( TestRequest.DEFAULT_SERVLET_PATH,
                                                         TestRenderDisposedEntryPoint.class,
                                                         null );
     RWTLifeCycle lifeCycle = ( RWTLifeCycle )applicationContext.getLifeCycleFactory().getLifeCycle();
@@ -286,14 +361,14 @@ public class DisplayLCA_Test {
     Control control = new Button( shell, SWT.PUSH );
     shell.open();
 
-    Fixture.fakeSetParameter( getId( display ), "focusControl", getId( control ) );
+    Fixture.fakeSetProperty( getId( display ), "focusControl", getId( control ) );
     Fixture.readDataAndProcessAction( display );
     assertEquals( control, display.getFocusControl() );
 
     // Request parameter focusControl with value 'null' is ignored
     Control previousFocusControl = display.getFocusControl();
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( display ), "focusControl", "null" );
+    Fixture.fakeSetProperty( getId( display ), "focusControl", "null" );
     Fixture.readDataAndProcessAction( display );
     assertEquals( previousFocusControl, display.getFocusControl() );
   }
@@ -309,7 +384,7 @@ public class DisplayLCA_Test {
     shell2.setBounds( 0, 0, 300, 400 );
     shell2.setMaximized( true );
     // fake display resize
-    Fixture.fakeSetParameter( getId( display ), "bounds", new int[] { 0, 0, 700, 500 } );
+    Fixture.fakeSetProperty( getId( display ), "bounds", createJsonArray( 0, 0, 700, 500 ) );
 
     displayLCA.readData( display );
 
@@ -324,7 +399,7 @@ public class DisplayLCA_Test {
     Object adapter = display.getAdapter( IDisplayAdapter.class );
     IDisplayAdapter displayAdapter = ( IDisplayAdapter )adapter;
     displayAdapter.setBounds( new Rectangle( 0, 0, 800, 600 ) );
-    Fixture.fakeSetParameter( getId( display ), "cursorLocation", new int[] { 1, 2 } );
+    Fixture.fakeSetProperty( getId( display ), "cursorLocation", createJsonArray( 1, 2 ) );
 
     displayLCA.readData( display );
 
@@ -361,7 +436,7 @@ public class DisplayLCA_Test {
     // must be the first operation, before any widgets are rendered
     SetOperation firstOperation = (SetOperation)message.getOperation( 0 );
     assertEquals( DisplayUtil.getId( display ), firstOperation.getTarget() );
-    assertEquals( Boolean.TRUE, firstOperation.getProperty( "enableUiTests" ) );
+    assertEquals( JsonValue.TRUE, firstOperation.getProperty( "enableUiTests" ) );
   }
 
   @Test
@@ -408,7 +483,7 @@ public class DisplayLCA_Test {
     displayLCA.render( display );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "test", message.findSetProperty( displayId, "exitConfirmation" ) );
+    assertEquals( "test", message.findSetProperty( displayId, "exitConfirmation" ).asString() );
   }
 
   @Test
@@ -431,7 +506,7 @@ public class DisplayLCA_Test {
     displayLCA.render( display );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( displayId, "exitConfirmation" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( displayId, "exitConfirmation" ) );
   }
 
   @Test
@@ -452,13 +527,12 @@ public class DisplayLCA_Test {
     when( remoteObject.getId() ).thenReturn( "id" );
     when( remoteObject.getHandler() ).thenReturn( handler );
     RemoteObjectRegistry.getInstance().register( remoteObject );
-    HashMap<String, Object> properties = new HashMap<String, Object>();
-    properties.put( "foo", "bar" );
+    JsonObject properties = new JsonObject().add( "foo", "bar" );
     Fixture.fakeCallOperation( "id", "method", properties );
 
     displayLCA.readData( display );
 
-    verify( handler ).handleCall( eq( "method" ), eq( properties ) );
+    verify( handler ).handleCall( eq( "method" ), eq( new JsonObject().add( "foo", "bar" ) ) );
   }
 
   private static void setEnableUiTests( boolean value ) {
@@ -556,4 +630,5 @@ public class DisplayLCA_Test {
       return 0;
     }
   }
+
 }

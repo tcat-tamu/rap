@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -37,6 +37,7 @@ public class RWTTestsContribution implements TestContribution {
     "tests/ClientTest.js",
     "tests/ClientAPITest.js",
     "tests/TestUtilTest.js",
+    "tests/ErrorHandlerTest.js",
     "tests/MessageProcessorTest.js",
     "tests/ProtocolWriterTest.js",
     "tests/RequestTest.js",
@@ -63,6 +64,7 @@ public class RWTTestsContribution implements TestContribution {
     "tests/ScrollBarTest.js",
     "tests/ScrolledCompositeTest.js",
     "tests/KeyEventSupportTest.js",
+    "tests/MnemonicHandlerTest.js",
     "tests/ListTest.js",
     "tests/ComboTest.js",
     "tests/EventHandlerTest.js",
@@ -95,7 +97,6 @@ public class RWTTestsContribution implements TestContribution {
     "tests/ProgressBarTest.js",
     "tests/TabFolderTest.js",
     "tests/CTabFolderTest.js",
-    "tests/BrowserTest.js",
     "tests/FileUploadTest.js",
     "tests/ServerPushTest.js",
     "tests/ToolTipTest.js",
@@ -108,9 +109,11 @@ public class RWTTestsContribution implements TestContribution {
     "tests/BrowserNavigationTest.js",
     "tests/FontSizeCalculationTest.js",
     "tests/MessageTest.js",
+    "tests/ClientMessagesTest.js",
     "tests/ServerTest.js",
     "tests/RemoteObjectTest.js",
-    "tests/RemoteObjectFactoryTest.js"
+    "tests/RemoteObjectFactoryTest.js",
+    "tests/BrowserTest.js"
   };
 
   public String getName() {

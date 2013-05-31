@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,6 +17,7 @@ import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 
+import org.eclipse.rap.json.JsonArray;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
@@ -27,8 +28,6 @@ import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.SetOperation;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -155,7 +154,19 @@ public class ActiveKeysUtil_Test {
   }
 
   @Test
-  public void testWriteKeyBindings() throws JSONException {
+  public void testPreserveMnemonicActivator() {
+    Fixture.markInitialized( display );
+    WidgetAdapter adapter = DisplayUtil.getAdapter( display );
+
+    display.setData( RWT.MNEMONIC_ACTIVATOR, "ALT+CTRL" );
+    Fixture.preserveWidgets();
+
+    String preserved = ( String )adapter.getPreserved( ActiveKeysUtil.PROP_MNEMONIC_ACTIVATOR );
+    assertEquals( "ALT+CTRL+", preserved );
+  }
+
+  @Test
+  public void testWriteKeyBindings() {
     Fixture.fakeNewRequest();
 
     String[] keyBindings = new String[] {
@@ -176,68 +187,91 @@ public class ActiveKeysUtil_Test {
     display.setData( RWT.ACTIVE_KEYS, keyBindings );
     ActiveKeysUtil.renderActiveKeys( display );
 
-    String expected
-      =   "\"#88\","
-        + "\"ALT+#88\","
-        + "\"#69\","
-        + "\"CTRL+#45\","
-        + "\"CTRL+#69\","
-        + "\"ALT+CTRL+SHIFT+#49\","
-        + "\"ALT+CTRL+#69\","
-        + "\"#112\","
-        + "\"/\","
-        + "\"SHIFT+~\","
-        + "\"ALT+CTRL+#\","
-        + "\".\","
-        + "\",\"";
+    JsonArray expected = new JsonArray()
+      .add( "#88" )
+      .add( "ALT+#88" )
+      .add( "#69" )
+      .add( "CTRL+#45" )
+      .add( "CTRL+#69" )
+      .add( "ALT+CTRL+SHIFT+#49" )
+      .add( "ALT+CTRL+#69" )
+      .add( "#112" )
+      .add( "/" )
+      .add( "SHIFT+~" )
+      .add( "ALT+CTRL+#" )
+      .add( "." )
+      .add( "," );
     Message message = Fixture.getProtocolMessage();
     SetOperation operation = message.findSetOperation( "w1", "activeKeys" );
-    JSONArray activeKeys = ( JSONArray )operation.getProperty( "activeKeys" );
-    assertEquals( expected, activeKeys.join( "," ) );
+    assertEquals( expected, operation.getProperty( "activeKeys" ) );
   }
 
   @Test
-  public void testWriteKeyBindingsOnWidget() throws JSONException {
+  public void testWriteKeyBindingsOnWidget() {
     Fixture.fakeNewRequest();
     Shell shell = new Shell( display );
     String[] activeKeys = new String[] { "x", "ALT+x", };
     shell.setData( RWT.ACTIVE_KEYS, activeKeys );
     ActiveKeysUtil.renderActiveKeys( shell );
 
-    String expected = "\"#88\",\"ALT+#88\"";
     Message message = Fixture.getProtocolMessage();
     SetOperation operation = message.findSetOperation( shell, "activeKeys" );
-    JSONArray renderedKeys = ( JSONArray )operation.getProperty( "activeKeys" );
-    assertEquals( expected, renderedKeys.join( "," ) );
+    JsonArray expected = new JsonArray().add( "#88" ).add( "ALT+#88" );
+    assertEquals( expected, operation.getProperty( "activeKeys" ) );
   }
 
   @Test
-  public void testWriteCancelKeys() throws JSONException {
+  public void testWriteCancelKeys() {
     Fixture.fakeNewRequest();
     String[] activeKeys = new String[] { "x", "ALT+x", };
     display.setData( RWT.CANCEL_KEYS, activeKeys );
     ActiveKeysUtil.renderCancelKeys( display );
 
-    String expected = "\"#88\",\"ALT+#88\"";
     Message message = Fixture.getProtocolMessage();
     SetOperation operation = message.findSetOperation( "w1", "cancelKeys" );
-    JSONArray renderedKeys = ( JSONArray )operation.getProperty( "cancelKeys" );
-    assertEquals( expected, renderedKeys.join( "," ) );
+    JsonArray expected = new JsonArray().add( "#88" ).add( "ALT+#88" );
+    assertEquals( expected, operation.getProperty( "cancelKeys" ) );
   }
 
   @Test
-  public void testWriteCancelKeysOnWidget() throws JSONException {
+  public void testWriteCancelKeysOnWidget() {
     Fixture.fakeNewRequest();
     Shell shell = new Shell( display );
     String[] activeKeys = new String[] { "x", "ALT+x", };
     shell.setData( RWT.CANCEL_KEYS, activeKeys );
     ActiveKeysUtil.renderCancelKeys( shell );
 
-    String expected = "\"#88\",\"ALT+#88\"";
     Message message = Fixture.getProtocolMessage();
     SetOperation operation = message.findSetOperation( shell, "cancelKeys" );
-    JSONArray renderedKeys = ( JSONArray )operation.getProperty( "cancelKeys" );
-    assertEquals( expected, renderedKeys.join( "," ) );
+    JsonArray expected = new JsonArray().add( "#88" ).add( "ALT+#88" );
+    assertEquals( expected, operation.getProperty( "cancelKeys" ) );
+  }
+
+  @Test
+  public void testWriteMnemonicActivator() {
+    Fixture.fakeNewRequest();
+    display.setData( RWT.MNEMONIC_ACTIVATOR, "ALT+CTRL" );
+
+    ActiveKeysUtil.renderMnemonicActivator( display );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( "ALT+CTRL+", message.findSetProperty( "w1", "mnemonicActivator" ).asString() );
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testWriteMnemonicActivator_NotString() {
+    Fixture.fakeNewRequest();
+    display.setData( RWT.MNEMONIC_ACTIVATOR, Boolean.TRUE );
+
+    ActiveKeysUtil.renderMnemonicActivator( display );
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testWriteMnemonicActivator_NotOnlyModifiers() {
+    Fixture.fakeNewRequest();
+    display.setData( RWT.MNEMONIC_ACTIVATOR, "ALT+CTRL+1" );
+
+    ActiveKeysUtil.renderMnemonicActivator( display );
   }
 
   @Test
@@ -333,8 +367,8 @@ public class ActiveKeysUtil_Test {
 
     Message message = Fixture.getProtocolMessage();
     SetOperation operation = message.findSetOperation( "w1", "activeKeys" );
-    JSONArray activeKeys = ( JSONArray )operation.getProperty( "activeKeys" );
-    assertEquals( 0, activeKeys.length() );
+    JsonArray activeKeys = ( JsonArray )operation.getProperty( "activeKeys" );
+    assertEquals( 0, activeKeys.size() );
   }
 
   @Test
@@ -349,8 +383,8 @@ public class ActiveKeysUtil_Test {
 
     Message message = Fixture.getProtocolMessage();
     SetOperation operation = message.findSetOperation( "w1", "activeKeys" );
-    JSONArray activeKeys = ( JSONArray )operation.getProperty( "activeKeys" );
-    assertEquals( 0, activeKeys.length() );
+    JsonArray activeKeys = ( JsonArray )operation.getProperty( "activeKeys" );
+    assertEquals( 0, activeKeys.size() );
   }
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,10 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
@@ -102,11 +99,11 @@ public class ControlLCA_Test {
     Fixture.clearPreserved();
     control.setEnabled( true );
     //foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     control.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     control.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     control.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( control );
@@ -132,9 +129,9 @@ public class ControlLCA_Test {
     MenuDetectListener listener = mock( MenuDetectListener.class );
     label.addMenuDetectListener( listener );
 
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( ClientMessageConst.EVENT_PARAM_X, Integer.valueOf( 10 ) );
-    parameters.put( ClientMessageConst.EVENT_PARAM_Y, Integer.valueOf( 30 ) );
+    JsonObject parameters = new JsonObject()
+      .add( ClientMessageConst.EVENT_PARAM_X, 10 )
+      .add( ClientMessageConst.EVENT_PARAM_Y, 30 );
     Fixture.fakeNotifyOperation( getId( label ), ClientMessageConst.EVENT_MENU_DETECT, parameters );
     Fixture.readDataAndProcessAction( display );
 

@@ -9,6 +9,7 @@
  *    Innoopract Informationssysteme GmbH - initial API and implementation
  *    EclipseSource - ongoing development
  *    Frank Appel - replaced singletons and static fields (Bug 337787)
+ *    Rüdiger Herrmann - exception handler (bug 367773)
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
@@ -25,8 +26,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.rap.rwt.Adaptable;
+import org.eclipse.rap.rwt.application.ExceptionHandler;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
 import org.eclipse.rap.rwt.internal.lifecycle.IUIThreadHolder;
@@ -153,14 +154,21 @@ public class Display extends Device implements Adaptable {
     = DisplayAdapter.class.getName() + "#invalidateFocus";
   private static final String APP_NAME = Display.class.getName() + "#appName";
   private static final String APP_VERSION = Display.class.getName() + "#appVersion";
+  private static final int DOUBLE_CLICK_TIME = 500; // Keep in sync with client-side (EventUtil.js)
+  private static final int GROW_SIZE = 1024;
 
-  /* Package Name */
   static final String PACKAGE_PREFIX = "org.eclipse.swt.widgets.";
 
-  // Keep in sync with client-side (EventUtil.js)
-  private static final int DOUBLE_CLICK_TIME = 500;
-
-  private static final int GROW_SIZE = 1024;
+  private static final ExceptionHandler DEFAULT_EXCEPTION_HANDLER = new ExceptionHandler() {
+    public void handleException( Throwable throwable ) {
+      if( throwable instanceof RuntimeException ) {
+        throw ( RuntimeException )throwable;
+      }
+      if( throwable instanceof Error ) {
+        throw ( Error )throwable;
+      }
+    }
+  };
 
   /**
    * Returns the display which the currently running thread is
@@ -644,6 +652,18 @@ public class Display extends Device implements Adaptable {
     }
   }
 
+  private void notifyListeners( final int eventType, final Event event ) {
+    ProcessActionRunner.add( new Runnable() {
+      public void run() {
+        sendEvent( eventType, event );
+      }
+    } );
+  }
+
+  private boolean isListening( int eventType ) {
+    return eventTable == null ? false : eventTable.hooks( eventType );
+  }
+
   //////////
   // Dispose
 
@@ -775,7 +795,7 @@ public class Display extends Device implements Adaptable {
   }
 
   private ApplicationContextImpl getApplicationContext() {
-    return ApplicationContextUtil.get( uiSession );
+    return ( ApplicationContextImpl )uiSession.getApplicationContext();
   }
 
 
@@ -1138,9 +1158,22 @@ public class Display extends Device implements Adaptable {
    */
   public boolean readAndDispatch() {
     checkDevice();
-    runSkin();
-    runDeferredLayouts();
-    return runPendingMessages();
+    return safeReadAndDispatch();
+  }
+
+  private boolean safeReadAndDispatch() {
+    boolean result = false;
+    try {
+      runSkin();
+      runDeferredLayouts();
+      result = runPendingMessages();
+    } catch( RuntimeException runtimeException ) {
+      handleException( runtimeException );
+    } catch( Error error ) {
+      handleException( error );
+      throw error;
+    }
+    return result;
   }
 
   private boolean runPendingMessages() {
@@ -1174,6 +1207,19 @@ public class Display extends Device implements Adaptable {
       } else {
         events = EventList.getInstance().getAll();
       }
+    }
+    return result;
+  }
+
+  private void handleException( Throwable throwable ) {
+    ExceptionHandler exceptionHandler = getExceptionHandler();
+    exceptionHandler.handleException( throwable );
+  }
+
+  private ExceptionHandler getExceptionHandler() {
+    ExceptionHandler result = getApplicationContext().getExceptionHandler();
+    if( result == null ) {
+      result = DEFAULT_EXCEPTION_HANDLER;
     }
     return result;
   }
@@ -2396,6 +2442,15 @@ public class Display extends Device implements Adaptable {
     public void resetBeep() {
       beep = false;
     }
+
+    public void notifyListeners( int eventType, Event event ) {
+      Display.this.notifyListeners( eventType, event );
+    }
+
+    public boolean isListening( int eventType ) {
+      return Display.this.isListening( eventType );
+    }
+
   }
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,9 +19,8 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
     _box : null,
 
     processJavaScriptErrorInResponse : function( script, error, currentRequest ) {
-      var content = "<p>Could not process server response:</p><pre>";
-      content += this._gatherErrorInfo( error, script, currentRequest );
-      content += "</pre>";
+      var content = this._getErrorPageHeader();
+      content += "<pre>" + this._gatherErrorDetails( error, script, currentRequest ) + "</pre>";
       this.showErrorPage( content );
     },
 
@@ -47,9 +46,8 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
         // ignore: Variant may not be loaded yet
       }
       if( debug ) {
-        var content = "<p>Javascript error occurred:</p><pre>";
-        content += this._gatherErrorInfo( error );
-        content += "</pre>";
+        var content = this._getErrorPageHeader();
+        content += "<pre>" + this._gatherErrorDetails( error ) + "</pre>";
         this.showErrorPage( content );
         throw error;
       }
@@ -62,34 +60,66 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
       this._createErrorPageArea().innerHTML = content;
     },
 
-    showErrorBox : function( content, freeze ) {
-      var location = String( window.location );
-      var index = location.indexOf( "#" );
-      if( index != -1 ) {
-        location = location.substring( 0, index );
-      }
-      var hrefAttr = "href=\"" + location + "\"";
-      var html = content.replace( /\{HREF_URL\}/, hrefAttr );
-      html = rwt.util.Encoding.replaceNewLines( html, "<br/>" );
+    showErrorBox : function( errorType, freeze ) {
       if( freeze ) {
         this._freezeApplication();
       }
       this._overlay = this._createOverlay();
-      this._box = this._createErrorBoxArea( 400, 100 );
-      this._box.innerHTML = html;
-      var hyperlink = this._box.getElementsByTagName( "a" )[ 0 ];
-      hyperlink.style.outline = "none";
-      hyperlink.focus();
+      this._box = this._createErrorBoxArea( 450, 150 );
+      this._box.style.padding = "0px";
+      this._box.style.border = "1px solid #3B5998";
+      this._box.style.overflow = "hidden";
+      var errorBoxData = this._getErrorBoxData( errorType );
+      this._title = this._createErrorBoxTitleArea( this._box );
+      this._title.innerHTML = errorBoxData.title;
+      this._description = this._createErrorBoxDescriptionArea( this._box );
+      this._description.innerHTML = errorBoxData.description;
+      this._action = this._createErrorBoxActionArea( this._box );
+      if( errorBoxData.action ) {
+        this._action.innerHTML = errorBoxData.action;
+      }
+      var hyperlink = this._action.getElementsByTagName( "a" )[ 0 ];
+      if( hyperlink ) {
+        this._styleHyperlinkAsButton( hyperlink );
+        hyperlink.focus();
+      }
+    },
+
+    showWaitHint : function() {
+      this._overlay = this._createOverlay();
+      var themeStore = rwt.theme.ThemeStore.getInstance();
+      var cssElement = "SystemMessage-DisplayOverlay";
+      var icon = themeStore.getSizedImage( cssElement, {}, "background-image" );
+      if( icon && icon[ 0 ] ) {
+        this._box = this._createErrorBoxArea( icon[ 1 ], icon[ 2 ] );
+        rwt.html.Style.setBackgroundImage( this._box, icon[ 0 ] );
+        this._box.style.backgroundColor = "transparent";
+        this._box.style.border = "none";
+        this._box.style.overflow = "hidden";
+      }
     },
 
     hideErrorBox : function() {
       if( this._box ) {
-        this._box.parentElement.removeChild( this._box );
-        this._overlay.parentElement.removeChild( this._overlay );
+        this._box.parentNode.removeChild( this._box );
+        this._box = null;
       }
+      if( this._overlay ) {
+        this._overlay.parentNode.removeChild( this._overlay );
+        this._overlay = null;
+      }
+      rwt.event.EventHandler.setBlockKeyEvents( false );
     },
 
-    _gatherErrorInfo : function( error, script, currentRequest ) {
+    _getErrorPageHeader : function() {
+       var errorBoxData = this._getErrorBoxData( "client error" );
+       var result = "<h2>" + errorBoxData.title + "</h2>";
+       result += "<h3>" + errorBoxData.action + "</h3>";
+       result += "<hr/>";
+       return result;
+    },
+
+    _gatherErrorDetails : function( error, script, currentRequest ) {
       var info = [];
       try {
         info.push( "Error: " + error + "\n" );
@@ -120,14 +150,18 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
 
     _createOverlay : function() {
       var element = document.createElement( "div" );
+      var themeStore = rwt.theme.ThemeStore.getInstance();
+      var color = themeStore.getColor( "SystemMessage-DisplayOverlay", {}, "background-color" );
+      var alpha = themeStore.getAlpha( "SystemMessage-DisplayOverlay", {}, "background-color" );
       var style = element.style;
       style.position = "absolute";
       style.width = "100%";
       style.height = "100%";
-      style.backgroundColor = "#808080";
-      rwt.html.Style.setOpacity( element, 0.2 );
+      style.backgroundColor = color === "undefined" ? "transparent" : color;
+      rwt.html.Style.setOpacity( element, alpha );
       style.zIndex = 100000000;
       document.body.appendChild( element );
+      rwt.event.EventHandler.setBlockKeyEvents( true );
       return element;
     },
 
@@ -156,10 +190,7 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
       var top = ( doc.getClientHeight() - height ) / 2;
       style.left = ( left < 0 ? 0 : left ) + "px";
       style.top = ( top < 0 ? 0 : top ) + "px";
-      style.backgroundColor = "#dae9f7";
-      style.border = "1px solid black";
       style.zIndex = 100000001;
-      style.overflow = "auto";
       style.padding = "10px";
       style.textAlign = "center";
       style.fontFamily = 'verdana,"lucida sans",arial,helvetica,sans-serif';
@@ -167,6 +198,59 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
       style.fontStyle = "normal";
       style.fontWeight = "normal";
       document.body.appendChild( element );
+      return element;
+    },
+
+    _createErrorBoxTitleArea : function( parentElement ) {
+      var element = document.createElement( "div" );
+      var style = element.style;
+      style.position = "absolute";
+      style.left = "0px";
+      style.top = "0px";
+      style.width = "100%";
+      style.height = "40px";
+      style.padding = "10px";
+      style.textAlign = "left";
+      style.backgroundColor = "#406796";
+      style.color = "white";
+      style.fontSize = "14px";
+      style.fontWeight = "bold";
+      parentElement.appendChild( element );
+      return element;
+    },
+
+    _createErrorBoxDescriptionArea : function( parentElement ) {
+      var element = document.createElement( "div" );
+      var style = element.style;
+      style.position = "absolute";
+      style.left = "0px";
+      style.top = "40px";
+      style.width = "100%";
+      style.height = "70px";
+      style.padding = "10px";
+      style.overflow = "auto";
+      style.textAlign = "left";
+      style.backgroundColor = "white";
+      style.color = "#4a4a4a";
+      style.fontSize = "14px";
+      parentElement.appendChild( element );
+      return element;
+    },
+
+    _createErrorBoxActionArea : function( parentElement ) {
+      var element = document.createElement( "div" );
+      var style = element.style;
+      style.position = "absolute";
+      style.left = "0px";
+      style.top = "110px";
+      style.width = "100%";
+      style.height = "40px";
+      style.padding = "10px";
+      style.textAlign = "center";
+      style.borderTop = "1px solid #CCCCCC";
+      style.backgroundColor = "#F2F2F2";
+      style.fontSize = "14px";
+      parentElement.appendChild( element );
       return element;
     },
 
@@ -193,9 +277,71 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
       if( rwt.client.Client.isGecko() ) {
         var EventHandlerUtil = rwt.event.EventHandlerUtil;
         rwt.html.EventRegistration.removeEventListener( document.documentElement,
-                                                       "mousedown",
-                                                       EventHandlerUtil._ffMouseFixListener );
+                                                        "mousedown",
+                                                        EventHandlerUtil._ffMouseFixListener );
       }
+    },
+
+    _getErrorBoxData : function( errorType ) {
+      var result = {
+        title : "",
+        description : ""
+      };
+      var messages = rwt.client.ClientMessages.getInstance();
+      switch( errorType ) {
+        case "invalid request counter":
+        case "request failed":
+          result.title = messages.getMessage( "ServerError" );
+          result.description = messages.getMessage( "ServerErrorDescription" );
+          result.action = "<a href=\"" + this._getRestartURL() + "\">"
+                        + messages.getMessage( "Restart" ) + "</a>";
+          break;
+        case "session timeout":
+          result.title = messages.getMessage( "SessionTimeout" );
+          result.description = messages.getMessage( "SessionTimeoutDescription" );
+          result.action = "<a href=\"" + this._getRestartURL() + "\">"
+                        + messages.getMessage( "Restart" ) + "</a>";
+          break;
+        case "connection error":
+          result.title = messages.getMessage( "ConnectionError" );
+          result.description = messages.getMessage( "ConnectionErrorDescription" );
+          result.action = "<a href=\"javascript:rwt.remote.Server.getInstance()._retry();\">"
+                        + messages.getMessage( "Retry" ) + "</a>";
+          break;
+        case "client error":
+          result.title = messages.getMessage( "ClientError" );
+          result.action = messages.getMessage( "Details" );
+          break;
+        default:
+          result.title = messages.getMessage( "ServerError" );
+          result.action = "<a href=\"" + this._getRestartURL() + "\">"
+                        + messages.getMessage( "Restart" ) + "</a>";
+      }
+      result.title = rwt.util.Encoding.replaceNewLines( result.title, "" );
+      result.description = rwt.util.Encoding.replaceNewLines( result.description, "<br/>" );
+      return result;
+    },
+
+    _getRestartURL : function() {
+      var result = String( window.location );
+      var index = result.indexOf( "#" );
+      if( index != -1 ) {
+        result = result.substring( 0, index );
+      }
+      return result;
+    },
+
+    _styleHyperlinkAsButton : function( element ) {
+      var style = element.style;
+      style.outline = "none";
+      style.textDecoration = "none";
+      style.backgroundColor = "#E8E8E8";
+      style.color = "#4a4a4a";
+      style.padding = "5px 15px";
+      style.borderTop = "1px solid #CCCCCC";
+      style.borderRight = "1px solid #333333";
+      style.borderBottom = "1px solid #333333";
+      style.borderLeft = "1px solid #CCCCCC";
     }
 
   }

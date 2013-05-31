@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,10 +22,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -47,9 +46,6 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -145,11 +141,11 @@ public class LinkLCA_Test {
     assertEquals( rectangle, adapter.getPreserved( Props.BOUNDS ) );
     Fixture.clearPreserved();
     // foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     link.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     link.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     link.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( link );
@@ -232,22 +228,22 @@ public class LinkLCA_Test {
   }
 
   @Test
-  public void testRenderText() throws IOException, JSONException {
+  public void testRenderText() throws IOException {
     link.setText( "foo <a>123</a> bar" );
     lca.renderChanges( link );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray text = ( JSONArray )message.findSetProperty( link, "text" );
-    assertEquals( 3, text.length() );
-    JSONArray segment1 = ( JSONArray )text.get( 0 );
-    JSONArray segment2 = ( JSONArray )text.get( 1 );
-    JSONArray segment3 = ( JSONArray )text.get( 2 );
-    assertEquals( "foo ", segment1.get( 0 ) );
-    assertEquals( JSONObject.NULL, segment1.get( 1 ) );
-    assertEquals( "123", segment2.get( 0 ) );
-    assertEquals( new Integer( 0 ), segment2.get( 1 ) );
-    assertEquals( " bar", segment3.get( 0 ) );
-    assertEquals( JSONObject.NULL, segment3.get( 1 ) );
+    JsonArray text = ( JsonArray )message.findSetProperty( link, "text" );
+    assertEquals( 3, text.size() );
+    JsonArray segment1 = text.get( 0 ).asArray();
+    JsonArray segment2 = text.get( 1 ).asArray();
+    JsonArray segment3 = text.get( 2 ).asArray();
+    assertEquals( "foo ", segment1.get( 0 ).asString() );
+    assertEquals( JsonObject.NULL, segment1.get( 1 ) );
+    assertEquals( "123", segment2.get( 0 ).asString() );
+    assertEquals( 0, segment2.get( 1 ).asInt() );
+    assertEquals( " bar", segment3.get( 0 ).asString() );
+    assertEquals( JsonObject.NULL, segment3.get( 1 ) );
   }
 
   @Test
@@ -261,8 +257,8 @@ public class LinkLCA_Test {
     lca.renderChanges( link );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray text = ( JSONArray )message.findSetProperty( link, "text" );
-    assertEquals( 0, text.length() );
+    JsonArray text = ( JsonArray )message.findSetProperty( link, "text" );
+    assertEquals( 0, text.size() );
   }
 
   @Test
@@ -288,7 +284,7 @@ public class LinkLCA_Test {
     lca.renderChanges( link );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.TRUE, message.findListenProperty( link, "Selection" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( link, "Selection" ) );
     assertNull( message.findListenOperation( link, "DefaultSelection" ) );
   }
 
@@ -304,7 +300,7 @@ public class LinkLCA_Test {
     lca.renderChanges( link );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( Boolean.FALSE, message.findListenProperty( link, "Selection" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( link, "Selection" ) );
   }
 
   @Test
@@ -322,10 +318,8 @@ public class LinkLCA_Test {
   }
 
   private void fakeWidgetSelectedEvent() {
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( ClientMessageConst.EVENT_PARAM_INDEX, Integer.valueOf( 0 ) );
-    Fixture.fakeNotifyOperation( getId( link ),
-                                 ClientMessageConst.EVENT_SELECTION,
-                                 properties );
+    JsonObject properties = new JsonObject().add( ClientMessageConst.EVENT_PARAM_INDEX, 0 );
+    Fixture.fakeNotifyOperation( getId( link ), ClientMessageConst.EVENT_SELECTION, properties );
   }
+
 }

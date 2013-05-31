@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -25,7 +26,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.engine.RWTClusterSupport;
 import org.eclipse.rap.rwt.internal.lifecycle.SimpleLifeCycle;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
@@ -56,9 +56,8 @@ public class DisplaySerialization_Test {
     Fixture.createApplicationContext();
     Fixture.createServiceContext();
     Fixture.useDefaultResourceManager();
-    applicationContext = ApplicationContextUtil.getInstance();
+    applicationContext = getApplicationContext();
     applicationContext.getLifeCycleFactory().configure( SimpleLifeCycle.class );
-    ApplicationContextUtil.set( ContextProvider.getUISession(), applicationContext );
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
     display = new Display();
   }
@@ -266,10 +265,9 @@ public class DisplaySerialization_Test {
   private void createServiceContext( Display display ) {
     Fixture.createServiceContext();
     TestSession session = ( TestSession )ContextProvider.getRequest().getSession();
-    ApplicationContextUtil.set( session.getServletContext(), applicationContext );
     UISessionImpl uiSession = ( UISessionImpl )getUISession( display );
-    UISessionImpl.attachInstanceToSession( session, uiSession );
-    uiSession.attachHttpSession( session );
+    uiSession.setHttpSession( session );
+    uiSession.attachToHttpSession();
     Fixture.fakePhase( PhaseId.PROCESS_ACTION );
   }
 

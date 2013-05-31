@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,15 +10,16 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.testfixture;
 
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
+import org.eclipse.rap.rwt.internal.util.ParamCheck;
 import org.eclipse.swt.widgets.Widget;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 
 /**
@@ -28,51 +29,42 @@ import org.json.JSONObject;
  */
 public final class Message {
 
-  private JSONObject message;
-  private JSONArray operations;
+  private final JsonObject message;
+  private final JsonArray operations;
 
-  public Message( String string ) {
-    String json = string.trim();
+  public Message( JsonObject json ) {
+    ParamCheck.notNull( json, "json" );
+    message = json;
     try {
-      message = new JSONObject( json );
-    } catch( JSONException e ) {
-      throw new IllegalArgumentException( "Could not parse json: " + json );
-    }
-    try {
-      operations = message.getJSONArray( "operations" );
-    } catch( JSONException e ) {
+      operations = message.get( "operations" ).asArray();
+    } catch( Exception e ) {
       throw new IllegalArgumentException( "Missing operations array: " + json );
     }
   }
 
-  @Override
-  public String toString() {
-    try {
-      return message.toString( 2 );
-    } catch( JSONException e ) {
-      throw new RuntimeException( "Formatting failed" );
-    }
+  public JsonObject getHead() {
+    return message.get( "head" ).asObject();
   }
 
   public int getRequestCounter() {
-    return ( ( Integer )findHeadProperty( "requestCounter" ) ).intValue();
+    return message.get( "head" ).asObject().get( "requestCounter" ).asInt();
   }
 
   public String getError() {
-    return findHeadProperty( "error" ).toString();
+    return message.get( "head" ).asObject().get( "error" ).asString();
   }
 
   public String getErrorMessage() {
-    return findHeadProperty( "message" ).toString();
+    return message.get( "head" ).asObject().get( "message" ).asString();
   }
 
   public int getOperationCount() {
-    return operations.length();
+    return operations.size();
   }
 
   public Operation getOperation( int position ) {
     Operation result;
-    JSONArray operation = getOperationAsJson( position );
+    JsonArray operation = getOperationAsJson( position );
     String action = getOperationAction( operation );
     if( action.equals( "create" ) ) {
       result = new CreateOperation( operation, position );
@@ -90,20 +82,11 @@ public final class Message {
     return result;
   }
 
-  public Object findHeadProperty( String property ) {
-    try {
-      return message.getJSONObject( "head" ).get( property );
-    } catch( JSONException e ) {
-      throw new RuntimeException( "Head property does not exist for key: " + property );
-    }
+  public JsonValue findSetProperty( Widget widget, String property ) {
+    return findSetProperty( getId( widget ), property );
   }
 
-  public Object findSetProperty( Widget widget, String property ) {
-    String target = WidgetUtil.getId( widget );
-    return findSetProperty( target, property );
-  }
-
-  public Object findSetProperty( String target, String property ) {
+  public JsonValue findSetProperty( String target, String property ) {
     SetOperation operation = findSetOperation( target, property );
     if( operation == null ) {
       throw new IllegalStateException( "operation not found" );
@@ -112,25 +95,22 @@ public final class Message {
   }
 
   public SetOperation findSetOperation( Widget widget, String property ) {
-    String target = WidgetUtil.getId( widget );
-    return findSetOperation( target, property );
+    return findSetOperation( getId( widget ), property );
   }
 
   public ListenOperation findListenOperation( Widget widget, String property ) {
-    String target = WidgetUtil.getId( widget );
-    return findListenOperation( target, property );
+    return findListenOperation( getId( widget ), property );
   }
 
   public ListenOperation findListenOperation( String target, String property ) {
     return ( ListenOperation )findOperation( ListenOperation.class, target, property );
   }
 
-  public Object findListenProperty( Widget widget, String property ) {
-    String target = WidgetUtil.getId( widget );
-    return findListenProperty( target, property );
+  public JsonValue findListenProperty( Widget widget, String property ) {
+    return findListenProperty( getId( widget ), property );
   }
 
-  public Object findListenProperty( String target, String property ) {
+  public JsonValue findListenProperty( String target, String property ) {
     ListenOperation operation = findListenOperation( target, property );
     if( operation == null ) {
       throw new IllegalStateException( "operation not found" );
@@ -139,16 +119,14 @@ public final class Message {
   }
 
   public CreateOperation findCreateOperation( Widget widget ) {
-    String target = WidgetUtil.getId( widget );
-    return findCreateOperation( target );
+    return findCreateOperation( getId( widget ) );
   }
 
-  public Object findCreateProperty( Widget widget, String property ) {
-    String target = WidgetUtil.getId( widget );
-    return findCreateProperty( target, property );
+  public JsonValue findCreateProperty( Widget widget, String property ) {
+    return findCreateProperty( getId( widget ), property );
   }
 
-  public Object findCreateProperty( String target, String property ) {
+  public JsonValue findCreateProperty( String target, String property ) {
     CreateOperation operation = findCreateOperation( target );
     if( operation == null || operation.getPropertyNames().indexOf( property ) == -1 ) {
       throw new IllegalStateException( "operation not found" );
@@ -161,8 +139,7 @@ public final class Message {
   }
 
   public DestroyOperation findDestroyOperation( Widget widget ) {
-    String target = WidgetUtil.getId( widget );
-    return ( DestroyOperation )findOperation( DestroyOperation.class, target );
+    return ( DestroyOperation )findOperation( DestroyOperation.class, getId( widget ) );
   }
 
   public SetOperation findSetOperation( String target, String property ) {
@@ -170,8 +147,7 @@ public final class Message {
   }
 
   public CallOperation findCallOperation( Widget widget, String method ) {
-    String target = WidgetUtil.getId( widget );
-    return findCallOperation( target, method );
+    return findCallOperation( getId( widget ), method );
   }
 
   public CallOperation findCallOperation( String target, String method ) {
@@ -185,6 +161,28 @@ public final class Message {
       }
     }
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return message.toString();
+  }
+
+  @Override
+  public int hashCode() {
+    return message.hashCode();
+  }
+
+  @Override
+  public boolean equals( Object obj ) {
+    boolean equals = false;
+    if( this == obj ) {
+      equals = true;
+    } else if( obj != null && getClass() == obj.getClass() ) {
+      Message other = ( Message )obj;
+      equals = message.equals( other.message );
+    }
+    return equals;
   }
 
   private List<Operation> getOperations() {
@@ -213,21 +211,21 @@ public final class Message {
     return result;
   }
 
-  private JSONArray getOperationAsJson( int position ) {
-    JSONArray result;
+  private JsonArray getOperationAsJson( int position ) {
+    JsonArray result;
     try {
-      result = operations.getJSONArray( position );
-    } catch( JSONException e ) {
+      result = operations.get( position ).asArray();
+    } catch( Exception e ) {
       throw new IllegalStateException( "Could not find operation at position " + position );
     }
     return result;
   }
 
-  private String getOperationAction( JSONArray operation ) {
+  private String getOperationAction( JsonArray operation ) {
     String action;
     try {
-      action = operation.getString( 0 );
-    } catch( JSONException e ) {
+      action = operation.get( 0 ).asString();
+    } catch( Exception e ) {
       throw new IllegalStateException( "Could not find action for operation " + operation );
     }
     return action;
@@ -237,14 +235,14 @@ public final class Message {
 
     private final String target;
     private final int position;
-    protected final JSONArray operation;
+    protected final JsonArray operation;
 
-    private Operation( JSONArray operation, int position ) {
+    private Operation( JsonArray operation, int position ) {
       this.operation = operation;
       this.position = position;
       try {
-        target = operation.getString( 1 );
-      } catch( JSONException e ) {
+        target = operation.get( 1 ).asString();
+      } catch( Exception e ) {
         throw new IllegalStateException( "Invalid operation target", e );
       }
     }
@@ -254,71 +252,62 @@ public final class Message {
     }
 
     public List<String> getPropertyNames() {
-      JSONObject properties = getProperties();
-      String[] names = JSONObject.getNames( properties );
-      return Arrays.asList( names );
+      return getProperties().names();
     }
 
-    public Object getProperty( String key ) {
-      Object result;
-      JSONObject properties = getProperties();
-      try {
-        result = properties.get( key );
-      } catch( JSONException exception ) {
-        throw new IllegalStateException( "Property does not exist for key: " + key );
-      }
-      return result;
+    public JsonValue getProperty( String key ) {
+      return getProperties().get( key );
     }
 
     public int getPosition() {
       return position;
     }
 
-    abstract protected JSONObject getProperties();
+    abstract protected JsonObject getProperties();
 
   }
 
   public final class CreateOperation extends Operation {
 
-    private CreateOperation( JSONArray operation, int position ) {
+    private CreateOperation( JsonArray operation, int position ) {
       super( operation, position );
     }
 
     public String getParent() {
-      return ( String )getProperty( "parent" );
+      return getProperty( "parent" ).asString();
     }
 
     public String getType() {
       String result;
       try {
-        result = operation.getString( 2 );
-      } catch( JSONException e ) {
+        result = operation.get( 2 ).asString();
+      } catch( Exception e ) {
         throw new IllegalStateException( "Invalid create operation type", e );
       }
       return result;
     }
 
     @Override
-    protected JSONObject getProperties() {
-      JSONObject properties;
+    protected JsonObject getProperties() {
+      JsonObject properties;
       try {
-        properties = operation.getJSONObject( 3 );
-      } catch( JSONException e ) {
+        properties = operation.get( 3 ).asObject();
+      } catch( Exception e ) {
         throw new IllegalStateException( "Properties object missing in operation", e );
       }
       return properties;
     }
 
     public Object[] getStyles() {
-      Object detail = getProperty( "style" );
       Object[] result = null;
-      if( !detail.equals( JSONObject.NULL ) ) {
-        JSONArray parameters = ( JSONArray )detail;
-        result = new Object[ parameters.length() ];
-        for( int i = 0; i < parameters.length(); i++ ) {
+      JsonValue detail = getProperty( "style" );
+      if( detail != null ) {
+        JsonArray parameters = detail.asArray();
+        result = new Object[ parameters.size() ];
+        for( int i = 0; i < result.length; i++ ) {
           try {
-            result[ i ] = parameters.get( i );
-          } catch( JSONException e ) {
+            result[ i ] = parameters.get( i ).asString();
+          } catch( Exception e ) {
             String message = "Style array is not valid for operation ";
             throw new IllegalStateException( message );
           }
@@ -330,26 +319,26 @@ public final class Message {
 
   public final class CallOperation extends Operation {
 
-    private CallOperation( JSONArray operation, int position ) {
+    private CallOperation( JsonArray operation, int position ) {
       super( operation, position );
     }
 
     public String getMethodName() {
       String result;
       try {
-        result = operation.getString( 2 );
-      } catch( JSONException e ) {
+        result = operation.get( 2 ).asString();
+      } catch( Exception e ) {
         throw new IllegalStateException( "Invalid call operation method name", e );
       }
       return result;
     }
 
     @Override
-    protected JSONObject getProperties() {
-      JSONObject properties;
+    protected JsonObject getProperties() {
+      JsonObject properties;
       try {
-        properties = operation.getJSONObject( 3 );
-      } catch( JSONException e ) {
+        properties = operation.get( 3 ).asObject();
+      } catch( Exception e ) {
         throw new IllegalStateException( "Properties object missing in operation", e );
       }
       return properties;
@@ -359,16 +348,16 @@ public final class Message {
 
   public final class SetOperation extends Operation {
 
-    private SetOperation( JSONArray operation, int position ) {
+    private SetOperation( JsonArray operation, int position ) {
       super( operation, position );
     }
 
     @Override
-    protected JSONObject getProperties() {
-      JSONObject properties;
+    protected JsonObject getProperties() {
+      JsonObject properties;
       try {
-        properties = operation.getJSONObject( 2 );
-      } catch( JSONException e ) {
+        properties = operation.get( 2 ).asObject();
+      } catch( Exception e ) {
         throw new IllegalStateException( "Properties object missing in operation", e );
       }
       return properties;
@@ -378,20 +367,20 @@ public final class Message {
 
   public final class ListenOperation extends Operation {
 
-    private ListenOperation( JSONArray operation, int position ) {
+    private ListenOperation( JsonArray operation, int position ) {
       super( operation, position );
     }
 
     public boolean listensTo( String eventName ) {
-      return ( ( Boolean )getProperty( eventName ) ).booleanValue();
+      return getProperty( eventName ).asBoolean();
     }
 
     @Override
-    protected JSONObject getProperties() {
-      JSONObject properties;
+    protected JsonObject getProperties() {
+      JsonObject properties;
       try {
-        properties = operation.getJSONObject( 2 );
-      } catch( JSONException e ) {
+        properties = operation.get( 2 ).asObject();
+      } catch( Exception e ) {
         throw new IllegalStateException( "Properties object missing in operation", e );
       }
       return properties;
@@ -401,12 +390,12 @@ public final class Message {
 
   public final class DestroyOperation extends Operation {
 
-    private DestroyOperation( JSONArray operation, int position ) {
+    private DestroyOperation( JsonArray operation, int position ) {
       super( operation, position );
     }
 
     @Override
-    protected JSONObject getProperties() {
+    protected JsonObject getProperties() {
       throw new IllegalStateException( "Destroy operation has no properties" );
     }
 

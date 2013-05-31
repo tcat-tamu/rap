@@ -249,6 +249,30 @@ public final class RWT {
   public static final String CANCEL_KEYS = "org.eclipse.rap.rwt.cancelKeys";
 
   /**
+   * The property to use in <code>Display.setData()</code> in order to set the key combination for
+   * mnemonics activation. The value for this property has to be a String.
+   * <p>
+   * Valid string for key sequence consist of any number of modifier keys, separated by
+   * <code>+</code>.
+   * </p>
+   * <p>
+   * Mnemonics are currently supported by <code>MenuItem</code>, <code>Button</code>,
+   * <code>Label</code>, <code>CLabel</code>, <code>Group</code>, <code>ToolItem</code>,
+   * <code>TabItem</code> and <code>CTabItem</code>. Mnemonics are not supported on a widgets
+   * with enabled markup.
+   * </p>
+   * <p>
+   * Example code:<code><pre>
+   * display.setData( RWT.MNEMONIC_ACTIVATOR, &quot;ALT+CTRL&quot; );
+   * </pre></code>
+   * </p>
+   *
+   * @see Display#setData(String,Object)
+   * @since 2.1
+   */
+  public static final String MNEMONIC_ACTIVATOR = "org.eclipse.rap.rwt.mnemonicActivator";
+
+  /**
    * The property to use in <code>Control.setData()</code> in order to set a custom item height.
    * The custom item height must be specified as an <code>Integer</code> and passed to
    * <code>setData()</code> with this constant as the key.
@@ -345,6 +369,7 @@ public final class RWT {
    * </p>
    *
    * @see Control#setData(String,Object)
+   * @see RWT#HYPERLINK
    */
   public static final String MARKUP_ENABLED = "org.eclipse.rap.rwt.markupEnabled";
 
@@ -395,12 +420,31 @@ public final class RWT {
   public static final String CUSTOM_VARIANT = "org.eclipse.rap.rwt.customVariant";
 
   /**
+   * Used as extra detail information about the selection event.
+   * Indicates that a hyperlink (anchor) in the item markup text was clicked.
+   * The hyperlink must have it's target property set to "_rwt", otherwise there
+   * will be no selection event and the client will follow the URL given in the HREF attribute.
+   *
+   * <p><b>Used By:</b><ul>
+   * <li><code>Table</code></li>
+   * <li><code>Tree</code></li>
+   * <li><code>List</code></li>
+   * </ul></p>
+   *
+   * @see RWT#MARKUP_ENABLED
+   * @see org.eclipse.swt.events.SelectionEvent#detail
+   * @see org.eclipse.swt.events.SelectionEvent#text
+   * @since 2.1
+   */
+  public static final int HYPERLINK = 1 << 26;
+
+  /**
    * Returns the instance of the life cycle which is currently processed.
    *
    * @return instance of {@link ILifeCycle}
    * @deprecated As of 2.0, PhaseListeners should only be registered in an
    *             {@link ApplicationConfiguration}. For new applications and custom widgets, consider
-   *             the (provisional) {@link RemoteObject} API which is going to replace PhaseListener.
+   *             the {@link RemoteObject} API which is going to replace PhaseListener.
    * @see Application#addPhaseListener(PhaseListener)
    */
   @Deprecated

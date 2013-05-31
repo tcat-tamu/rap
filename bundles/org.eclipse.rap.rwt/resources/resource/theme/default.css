@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -60,6 +60,11 @@ Display {
   font: 14px Verdana, "Lucida Sans", Arial, Helvetica, sans-serif;
 }
 
+SystemMessage-DisplayOverlay {
+  background-color: rgba( 128, 128, 128, 0.2 );
+  background-image: url( resource/widget/rap/display/loading.gif );
+}
+
 /* Default theme for all controls */
 
 * {
@@ -78,6 +83,8 @@ Composite {
   opacity: 1;
   background-color: #ffffff;
   background-image: none;
+  background-repeat: repeat;
+  background-position: left top;
   border: none;
   box-shadow: none;
   animation: none;
@@ -93,6 +100,8 @@ Composite[BORDER] {
 Button {
   font: 14px Verdana, "Lucida Sans", Arial, Helvetica, sans-serif;
   background-image: none;
+  background-repeat: repeat;
+  background-position: left top;
   border: none;
   border-radius: 2px;
   padding: 6px 15px;
@@ -433,6 +442,8 @@ Label {
   color: #4a4a4a;
   background-color: #ffffff;
   background-image: none;
+  background-repeat: repeat;
+  background-position: left top;
   border: none;
   border-radius: 0;
   text-decoration: none;
@@ -467,6 +478,10 @@ Label-SeparatorLine[SHADOW_OUT] {
 Link {
   font: 14px Verdana, "Lucida Sans", Arial, Helvetica, sans-serif;
   color: #4a4a4a;
+  background-color: #ffffff;
+  background-image: none;
+  background-repeat: repeat;
+  background-position: left top;
   text-shadow: none;
 }
 
@@ -656,7 +671,7 @@ ProgressBar {
   background-color: #ffffff;
   background-image: url( resource/widget/rap/progressbar/progressbar-background.png );
   border: 1px solid #bdbdbd;
-  border-radius: 40px;
+  border-radius: 15px;
 }
 
 ProgressBar-Indicator {
@@ -1137,6 +1152,8 @@ Text {
   border-radius: 0;
   padding: 5px 10px 5px 10px;
   color: #4a4a4a;
+  background-repeat: repeat;
+  background-position: left top;
   background-color: #ffffff;
   background-image: none;
   text-shadow: none;
@@ -1165,7 +1182,7 @@ Text[MULTI][BORDER]:focused {
 }
 
 Text[BORDER]:disabled,
-Text[MULTI][BORDER]:disabled, 
+Text[MULTI][BORDER]:disabled,
 Text[BORDER]:read-only,
 Text[MULTI][BORDER]:read-only {
   box-shadow: none;
@@ -1539,6 +1556,8 @@ DateTime[BORDER]:focused {
 }
 
 DateTime-Field {
+  color: inherit;
+  background-color: transparent;
   padding: 5px 3px 6px 3px;
   text-shadow: none;
 }
@@ -1549,6 +1568,8 @@ DateTime[BORDER] {
 }
 
 DateTime-Calendar-Day {
+  color: inherit;
+  background-color: transparent;
   text-shadow: none;
 }
 
@@ -1983,6 +2004,8 @@ CLabel {
   color: #4a4a4a;
   background-color: #ffffff;
   background-image: none;
+  background-repeat: repeat;
+  background-position: left top;
   border: none;
   padding: 6px;
   spacing: 5px;
@@ -2057,6 +2080,8 @@ FileUpload {
     from( #f9f9f9 ),
     to( #e4e4e4 )
   );
+  background-repeat: repeat;
+  background-position: left top;
   border: 1px solid #bdbdbd;
   border-radius: 2px;
   padding: 6px 15px;

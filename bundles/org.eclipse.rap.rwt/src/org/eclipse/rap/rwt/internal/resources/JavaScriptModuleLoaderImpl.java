@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,8 +15,10 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.SingletonUtil;
+import org.eclipse.rap.rwt.internal.protocol.JsonUtil;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.util.ClassUtil;
@@ -27,6 +29,7 @@ import org.eclipse.rap.rwt.service.ResourceManager;
 public class JavaScriptModuleLoaderImpl implements JavaScriptModuleLoader {
 
   private static final String MODULES_KEY = JavaScriptModuleRegistry.class.getName() + "#instance";
+  private static final Object LOCK = new Object();
 
   public void ensureModule( Class< ? extends JavaScriptModule> type ) {
     if( !isLoaded( type ) ) {
@@ -55,7 +58,8 @@ public class JavaScriptModuleLoaderImpl implements JavaScriptModuleLoader {
     getApplicationModules().put( type, filePaths );
   }
 
-  private static String registerFile( JavaScriptModule module, String fileName ) throws IOException {
+  private static String registerFile( JavaScriptModule module, String fileName ) throws IOException
+  {
     String localPath = getLocalPath( module, fileName );
     InputStream inputStream = module.getLoader().getResourceAsStream( localPath );
     if( inputStream == null ) {
@@ -75,9 +79,8 @@ public class JavaScriptModuleLoaderImpl implements JavaScriptModuleLoader {
   private static void loadModule( Class<? extends JavaScriptModule> type ) {
     String[] files = getApplicationModules().get( type );
     ProtocolMessageWriter writer = ContextProvider.getProtocolWriter();
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( "files", files );
-    writer.appendCall( "rwt.client.JavaScriptLoader", "load", properties );
+    JsonObject parameters = new JsonObject().add( "files", JsonUtil.createJsonArray( files ) );
+    writer.appendCall( "rwt.client.JavaScriptLoader", "load", parameters );
     getSessionModules().put( type, files );
   }
 
@@ -104,12 +107,14 @@ public class JavaScriptModuleLoaderImpl implements JavaScriptModuleLoader {
 
   private static JavaScriptModuleRegistry getApplicationModules() {
     ApplicationContext context = RWT.getApplicationContext();
-    JavaScriptModuleRegistry result = ( JavaScriptModuleRegistry )context.getAttribute( MODULES_KEY );
-    if( result == null ) {
-      result = new JavaScriptModuleRegistry();
-      context.setAttribute( MODULES_KEY, result );
+    synchronized( LOCK ) {
+      JavaScriptModuleRegistry result = (JavaScriptModuleRegistry)context.getAttribute( MODULES_KEY );
+      if( result == null ) {
+        result = new JavaScriptModuleRegistry();
+        context.setAttribute( MODULES_KEY, result );
+      }
+      return result;
     }
-    return result;
   }
 
   private static JavaScriptModuleRegistry getSessionModules() {
@@ -118,8 +123,8 @@ public class JavaScriptModuleLoaderImpl implements JavaScriptModuleLoader {
 
   static private class JavaScriptModuleRegistry {
 
-    private final Map<Class< ? extends JavaScriptModule>, String[]> map
-     = new HashMap<Class<? extends JavaScriptModule>, String[]>();
+    private final Map<Class<? extends JavaScriptModule>, String[]> map
+      = new HashMap<Class<? extends JavaScriptModule>, String[]>();
 
     public void put( Class<? extends JavaScriptModule> type, String[] files ) {
       map.put( type, files );

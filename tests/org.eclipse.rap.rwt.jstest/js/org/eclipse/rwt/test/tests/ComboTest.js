@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 EclipseSource and others.
+ * Copyright (c) 2010, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -878,14 +878,13 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
     },
 
     testFiresItemsChangedEvent : function() {
-      var combo = new rwt.widgets.Combo();
+      var combo = this._createDefaultCombo();
       var log = 0;
       combo.addEventListener( "itemsChanged", function() {
         log++;
       } );
 
-      combo.setItems( [ "Eiffel", "Java", "Python", "Ruby", "Simula", "Smalltalk" ] );
-      combo.addToDocument();
+      combo.setItems( [ "Simula", "Smalltalk" ] );
       TestUtil.flush();
 
       assertEquals( 1, log );
@@ -893,15 +892,12 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
     },
 
     testFiresSelectionChangedEvent : function() {
-      var combo = new rwt.widgets.Combo();
+      var combo = this._createDefaultCombo();
       var log = 0;
       combo.addEventListener( "selectionChanged", function() {
         log++;
       } );
 
-      combo.setItems( [ "Eiffel", "Java", "Python", "Ruby", "Simula", "Smalltalk" ] );
-      combo.addToDocument();
-      TestUtil.flush();
       combo._setSelected( combo._list.getItems()[ 3 ] );
 
       assertEquals( 1, log );
@@ -909,10 +905,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
     },
 
     testApplyListId_renderHtmlIdsActivated : function() {
-      var combo = new rwt.widgets.Combo();
-      combo.addToDocument();
-
       rwt.widgets.base.Widget._renderHtmlIds = true;
+      var combo = this._createDefaultCombo();
+
       combo.applyObjectId( "123" );
 
       assertEquals( "123-listbox" ,combo._list.getHtmlAttribute( "id" ) );
@@ -920,10 +915,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
     },
 
     testApplyListId_renderHtmlIdsDeactivated : function() {
-      var combo = new rwt.widgets.Combo();
-      combo.addToDocument();
-
       rwt.widgets.base.Widget._renderHtmlIds = false;
+      var combo = this._createDefaultCombo();
+
       combo.applyObjectId( "123" );
 
       assertEquals( "" ,combo._list.getHtmlAttribute( "id" ) );
@@ -931,16 +925,72 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
     },
 
     testApplyListItemIds_renderHtmlIdsActivated : function() {
-      var combo = new rwt.widgets.Combo();
-      combo.addToDocument();
-
       rwt.widgets.base.Widget._renderHtmlIds = true;
+      var combo = this._createDefaultCombo();
+
       combo.applyObjectId( "123" );
       combo.setItems( [ "Eiffel", "Java", "Python", "Ruby", "Simula", "Smalltalk" ] );
 
       var listItemId = combo._list.getHtmlAttribute( "id" ) + "-listitem-3";
       assertEquals( listItemId, combo._list.getItems()[ 3 ].getHtmlAttribute( "id" ) );
       combo.destroy();
+    },
+
+    testPropagateEscKey_ListIsVisible : function() {
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      Processor.processOperation( {
+        "target" : "w3",
+        "action" : "create",
+        "type" : "rwt.widgets.Combo",
+        "properties" : {
+          "style" : [],
+          "parent" : "w2"
+        }
+      } );
+      TestUtil.flush();
+      var widget = ObjectManager.getObject( "w3" );
+      widget.setItems( [ "Eiffel", "Java", "Python", "Ruby", "Simula", "Smalltalk" ] );
+      widget._toggleListVisibility();
+      var propagated = false;
+      shell.addEventListener( "keydown", function( event ) {
+        if( event.getKeyIdentifier() == "Escape" ) {
+          propagated = true;
+        }
+      } );
+
+      TestUtil.press( widget, "Escape" );
+
+      assertFalse( propagated );
+      shell.destroy();
+      widget.destroy();
+    },
+
+    testPropagateEscKey_ListIsNotVisible : function() {
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      Processor.processOperation( {
+        "target" : "w3",
+        "action" : "create",
+        "type" : "rwt.widgets.Combo",
+        "properties" : {
+          "style" : [],
+          "parent" : "w2"
+        }
+      } );
+      TestUtil.flush();
+      var widget = ObjectManager.getObject( "w3" );
+      widget.setItems( [ "Eiffel", "Java", "Python", "Ruby", "Simula", "Smalltalk" ] );
+      var propagated = false;
+      shell.addEventListener( "keydown", function( event ) {
+        if( event.getKeyIdentifier() == "Escape" ) {
+          propagated = true;
+        }
+      } );
+
+      TestUtil.press( widget, "Escape" );
+
+      assertTrue( propagated );
+      shell.destroy();
+      widget.destroy();
     },
 
     //////////
@@ -954,6 +1004,8 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ComboTest", {
       combo.setItems( [ "Eiffel", "Java", "Python", "Ruby", "Simula", "Smalltalk" ] );
       combo.setVisibleItemCount( 5 );
       combo.addToDocument();
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Combo" );
+      rwt.remote.ObjectRegistry.add( "w3", combo, handler );
       TestUtil.flush();
       return combo;
     },

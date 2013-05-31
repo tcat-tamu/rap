@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -44,7 +44,6 @@ import org.eclipse.rap.rwt.cluster.testfixture.server.IServletEngineFactory;
 import org.eclipse.rap.rwt.cluster.testfixture.server.JettyFactory;
 import org.eclipse.rap.rwt.cluster.testfixture.server.TomcatFactory;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.service.UISessionImpl;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.service.UISession;
@@ -282,10 +281,10 @@ public class SessionFailover_Test {
 
   private static void attachApplicationContextToSession( IServletEngine servletEngine ) {
     HttpSession session = ClusterTestHelper.getFirstHttpSession( servletEngine );
-    UISessionImpl uiSession = UISessionImpl.getInstanceFromSession( session );
+    UISessionImpl uiSession = UISessionImpl.getInstanceFromSession( session, null );
     ServletContext servletContext = session.getServletContext();
-    ApplicationContextImpl applicationContext = ApplicationContextUtil.get( servletContext );
-    ApplicationContextUtil.set( uiSession, applicationContext );
+    ApplicationContextImpl applicationContext = ApplicationContextImpl.getFrom( servletContext );
+    uiSession.setApplicationContext( applicationContext );
   }
 
   private static void attachCurrentThreadToDisplay( IServletEngine servletEngine ) {
@@ -303,7 +302,7 @@ public class SessionFailover_Test {
     assertSame( uiSession, getDisplayAdapter( display ).getUISession() );
     assertNotNull( uiSession.getHttpSession() );
     ServletContext servletContext = session.getServletContext();
-    ApplicationContextImpl applicationContext = ApplicationContextUtil.get( servletContext );
+    ApplicationContextImpl applicationContext = ApplicationContextImpl.getFrom( servletContext );
     assertNotNull( applicationContext );
   }
 

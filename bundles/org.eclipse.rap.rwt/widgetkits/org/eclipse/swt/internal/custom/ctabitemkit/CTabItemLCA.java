@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,16 +11,21 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.custom.ctabitemkit;
 
+import static org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory.getClientObject;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.hasChanged;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 
 import java.io.IOException;
 
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
+import org.eclipse.rap.rwt.internal.util.MnemonicUtil;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
-import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.graphics.Font;
@@ -36,6 +41,7 @@ public final class CTabItemLCA extends AbstractWidgetLCA {
   private static final String[] ALLOWED_STYLES = new String[] { "CLOSE" };
 
   private static final String PROP_TEXT = "text";
+  private static final String PROP_MNEMONIC_INDEX = "mnemonicIndex";
   private static final String PROP_IMAGE = "image";
   private static final String PROP_SHOWING = "showing";
   private static final String PROP_SHOW_CLOSE = "showClose";
@@ -44,6 +50,7 @@ public final class CTabItemLCA extends AbstractWidgetLCA {
   public void preserveValues( Widget widget ) {
     CTabItem item = ( CTabItem )widget;
     WidgetLCAUtil.preserveCustomVariant( item );
+    WidgetLCAUtil.preserveData( item );
     WidgetLCAUtil.preserveToolTipText( item, item.getToolTipText() );
     WidgetLCAUtil.preserveBounds( item, item.getBounds() );
     WidgetLCAUtil.preserveFont( item, getFont( item ) );
@@ -62,19 +69,21 @@ public final class CTabItemLCA extends AbstractWidgetLCA {
     CTabFolder parent = item.getParent();
     IClientObject clientObject = ClientObjectFactory.getClientObject( item );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( parent ) );
+    clientObject.set( "parent", getId( parent ) );
     clientObject.set( "index", parent.indexOf( item ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( item, ALLOWED_STYLES ) );
+    clientObject.set( "style", createJsonArray( getStyles( item, ALLOWED_STYLES ) ) );
   }
 
   @Override
   public void renderChanges( Widget widget ) throws IOException {
     CTabItem item = ( CTabItem )widget;
     WidgetLCAUtil.renderCustomVariant( item );
+    WidgetLCAUtil.renderData( item );
     WidgetLCAUtil.renderToolTip( item, item.getToolTipText() );
     WidgetLCAUtil.renderBounds( item, item.getBounds() );
     WidgetLCAUtil.renderFont( item, getFont( item ) );
-    renderProperty( item, PROP_TEXT, getText( item ), "" );
+    renderText( item );
+    renderMnemonicIndex( item );
     renderProperty( item, PROP_IMAGE, getImage( item ), null );
     renderProperty( item, PROP_SHOWING, item.isShowing(), true );
     renderProperty( item, PROP_SHOW_CLOSE, item.getShowClose(), false );
@@ -82,6 +91,24 @@ public final class CTabItemLCA extends AbstractWidgetLCA {
 
   ////////////////////////////////////////////
   // Helping methods to obtain item properties
+
+  private static void renderText( CTabItem item ) {
+    String newValue = getText( item );
+    if( hasChanged( item, PROP_TEXT, newValue, "" ) ) {
+      String text = MnemonicUtil.removeAmpersandControlCharacters( newValue );
+      getClientObject( item ).set( PROP_TEXT, text );
+    }
+  }
+
+  private static void renderMnemonicIndex( CTabItem item ) {
+    String text = getText( item );
+    if( hasChanged( item, PROP_TEXT, text, "" ) ) {
+      int mnemonicIndex = MnemonicUtil.findMnemonicCharacterIndex( text );
+      if( mnemonicIndex != -1 ) {
+        getClientObject( item ).set( PROP_MNEMONIC_INDEX, mnemonicIndex );
+      }
+    }
+  }
 
   private static String getText( CTabItem item ) {
     return getCTabFolderAdapter( item ).getShortenedItemText( item );

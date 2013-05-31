@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -57,10 +57,12 @@ rwt.qx.Class.define( "rwt.widgets.util.FontSizeCalculation", {
       element.innerHTML = text;
       if( wrapWidth ) {
         style.width = wrapWidth + "px";
+        style.whiteSpace = "normal";
+      } else {
+        style.width = "auto";
+        style.whiteSpace = "nowrap";
       }
-      var result = this._measureElement( element );
-      style.width = "auto";
-      return result;
+      return this._measureElement( element );
     },
 
     _measureElement : rwt.util.Variant.select( "qx.client", {
@@ -105,9 +107,6 @@ rwt.qx.Class.define( "rwt.widgets.util.FontSizeCalculation", {
         style.visibility = "hidden";
         style.position = "absolute";
         style.zIndex = "-1";
-        // [if] Move the measure node to the left to prevent text split on
-        // small browser window - see bug 298798
-        style.left = -1000;
         document.body.appendChild( node );
         this._measureNode = node;
       }
@@ -115,11 +114,6 @@ rwt.qx.Class.define( "rwt.widgets.util.FontSizeCalculation", {
         node.style.font = "";
       }
       return node;
-    },
-
-    _addRequestParam : function ( name, value ) {
-      var request = rwt.remote.Server.getInstance();
-      request.addParameter( name, value );
     },
 
     _storeMeasurements : function( id, results ) {

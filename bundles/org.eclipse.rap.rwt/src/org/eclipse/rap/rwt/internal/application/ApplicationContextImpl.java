@@ -14,6 +14,7 @@ package org.eclipse.rap.rwt.internal.application;
 import javax.servlet.ServletContext;
 
 import org.eclipse.rap.rwt.application.ApplicationConfiguration;
+import org.eclipse.rap.rwt.application.ExceptionHandler;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
 import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleAdapterFactory;
@@ -41,19 +42,35 @@ import org.eclipse.swt.internal.graphics.ImageFactory;
 import org.eclipse.swt.internal.graphics.InternalImageFactory;
 import org.eclipse.swt.internal.graphics.ResourceFactory;
 import org.eclipse.swt.internal.widgets.DisplaysHolder;
+import org.eclipse.swt.internal.widgets.displaykit.ClientResources;
 
 
 public class ApplicationContextImpl implements ApplicationContext {
+
+  private final static String ATTR_APPLICATION_CONTEXT
+    = ApplicationContextImpl.class.getName() + "#instance";
+
   // TODO [fappel]: this allows to set a fake double of the resource manager for testing purpose.
   //                Think about a less intrusive solution.
   // [rst] made public to allow access from testfixture in OSGi (bug 391510)
   public static ResourceManager testResourceManager;
+
+  // TODO [fappel]: this flag is used to skip resource registration. Think about
+  //                a less intrusive solution.
+  // [rst] made public to allow access from testfixture in OSGi (bug 391510)
+  public static boolean skipResoureRegistration;
+
+  // TODO [fappel]: this flag is used to skip resource deletion. Think about
+  //                a less intrusive solution.
+  // [rst] made public to allow access from testfixture in OSGi (bug 391510)
+  public static boolean skipResoureDeletion;
 
   // TODO [fappel]: themeManager isn't final for performance reasons of the testsuite.
   //                TestServletContext#setAttribute(String,Object) will replace the runtime
   //                implementation with an optimized version for testing purpose. Think about
   //                a less intrusive solution.
   private ThemeManager themeManager;
+
   private final ApplicationConfiguration applicationConfiguration;
   private final ResourceDirectory resourceDirectory;
   private final ResourceManagerImpl resourceManager;
@@ -75,8 +92,8 @@ public class ApplicationContextImpl implements ApplicationContext {
   private final TextSizeStorage textSizeStorage;
   private final ProbeStore probeStore;
   private final ServletContext servletContext;
-  private final ApplicationContextActivator contextActivator;
   private final ClientSelector clientSelector;
+  private ExceptionHandler exceptionHandler;
   private boolean active;
 
   public ApplicationContextImpl( ApplicationConfiguration applicationConfiguration,
@@ -104,8 +121,19 @@ public class ApplicationContextImpl implements ApplicationContext {
     displaysHolder = new DisplaysHolder();
     textSizeStorage = new TextSizeStorage();
     probeStore = new ProbeStore( textSizeStorage );
-    contextActivator = new ApplicationContextActivator( this );
     clientSelector = new ClientSelector();
+  }
+
+  public static ApplicationContextImpl getFrom( ServletContext servletContext ) {
+    return ( ApplicationContextImpl )servletContext.getAttribute( ATTR_APPLICATION_CONTEXT );
+  }
+
+  public void attachToServletContext() {
+    servletContext.setAttribute( ATTR_APPLICATION_CONTEXT, this );
+  }
+
+  public void removeFromServletContext() {
+    servletContext.removeAttribute( ATTR_APPLICATION_CONTEXT );
   }
 
   public void setAttribute( String name, Object value ) {
@@ -236,6 +264,14 @@ public class ApplicationContextImpl implements ApplicationContext {
     return clientSelector;
   }
 
+  public ExceptionHandler getExceptionHandler() {
+    return exceptionHandler;
+  }
+
+  public void setExceptionHandler( ExceptionHandler exceptionHandler ) {
+    this.exceptionHandler = exceptionHandler;
+  }
+
   private void checkIsNotActivated() {
     if( !active ) {
       throw new IllegalStateException( "The ApplicationContext has not been activated." );
@@ -255,11 +291,26 @@ public class ApplicationContextImpl implements ApplicationContext {
     addInternalPhaseListeners();
     addInternalServiceHandlers();
     setInternalSettingStoreFactory();
-    contextActivator.activate();
+    startupPage.activate();
+    lifeCycleFactory.activate();
+    // Note: order is crucial here
+    themeManager.activate();
+    if( !skipResoureRegistration ) {
+      ClientResources clientResources = new ClientResources( this );
+      clientResources.registerResources();
+    }
+    resourceRegistry.registerResources();
+    clientSelector.activate();
   }
 
   private void doDeactivate() {
-    contextActivator.deactivate();
+    startupPage.deactivate();
+    lifeCycleFactory.deactivate();
+    serviceManager.clear();
+    themeManager.deactivate();
+    if( !skipResoureDeletion ) {
+      getResourceDirectory().deleteDirectory();
+    }
     entryPointManager.deregisterAll();
     phaseListenerRegistry.removeAll();
     resourceRegistry.clear();

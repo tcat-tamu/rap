@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,10 +17,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.internal.theme.JsonValue;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CallOperation;
@@ -49,39 +48,15 @@ public class Message_Test {
     Fixture.tearDown();
   }
 
-  @Test
+  @Test( expected = NullPointerException.class )
   public void testConstructWithNull() {
-    try {
-      new Message( null );
-      fail();
-    } catch( NullPointerException expected ) {
-    }
-  }
-
-  @Test
-  public void testConstructWithEmptyString() {
-    try {
-      new Message( "" );
-      fail();
-    } catch( IllegalArgumentException expected ) {
-      assertTrue( expected.getMessage().contains( "Could not parse json" ) );
-    }
-  }
-
-  @Test
-  public void testConstructWithInvalidJson() {
-    try {
-      new Message( "{" );
-      fail();
-    } catch( IllegalArgumentException expected ) {
-      assertTrue( expected.getMessage().contains( "Could not parse json" ) );
-    }
+    new Message( (JsonObject)null );
   }
 
   @Test
   public void testConstructWithoutOperations() {
     try {
-      new Message( "{ \"foo\": 23 }" );
+      new Message( new JsonObject().add( "foo", 23 ) );
       fail();
     } catch( IllegalArgumentException expected ) {
       assertTrue( expected.getMessage().contains( "Missing operations array" ) );
@@ -91,7 +66,7 @@ public class Message_Test {
   @Test
   public void testConstructWithInvalidOperations() {
     try {
-      new Message( "{ \"operations\": 23 }" );
+      new Message( new JsonObject().add( "operations", 23 ) );
       fail();
     } catch( IllegalArgumentException expected ) {
       assertTrue( expected.getMessage().contains( "Missing operations array" ) );
@@ -163,7 +138,8 @@ public class Message_Test {
 
   @Test
   public void testGetOperationWithUnknownType() {
-    Message message = new Message( "{ \"operations\" : [ { \"action\" : \"foo\" } ] }" );
+    JsonObject json = JsonObject.readFrom( "{ \"operations\" : [ { \"action\" : \"foo\" } ] }" );
+    Message message = new Message( json );
     try {
       message.getOperation( 0 );
       fail();
@@ -192,16 +168,16 @@ public class Message_Test {
 
   @Test
   public void testCallOperation() {
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( "key1", "a" );
-    properties.put( "key2", new Integer( 2 ) );
-    writer.appendCall( "w2", "method", properties );
+    JsonObject parameters = new JsonObject()
+      .add( "key1", "a" )
+      .add( "key2", 2 );
+    writer.appendCall( "w2", "method", parameters );
 
     CallOperation operation = ( CallOperation )getMessage().getOperation( 0 );
     assertEquals( "w2", operation.getTarget() );
     assertEquals( "method", operation.getMethodName() );
-    assertEquals( "a", operation.getProperty( "key1" ) );
-    assertEquals( new Integer( 2 ), operation.getProperty( "key2" ) );
+    assertEquals( "a", operation.getProperty( "key1" ).asString() );
+    assertEquals( 2, operation.getProperty( "key2" ).asInt() );
   }
 
   @Test
@@ -211,8 +187,8 @@ public class Message_Test {
 
     SetOperation operation = ( SetOperation )getMessage().getOperation( 0 );
     assertEquals( "w1", operation.getTarget() );
-    assertEquals( Boolean.TRUE, operation.getProperty( "key" ) );
-    assertEquals( "value", operation.getProperty( "key2" ) );
+    assertEquals( JsonValue.TRUE, operation.getProperty( "key" ) );
+    assertEquals( JsonValue.valueOf( "value" ), operation.getProperty( "key2" ) );
   }
 
   @Test
@@ -253,7 +229,7 @@ public class Message_Test {
     Message message = getMessage();
 
     SetOperation operation = message.findSetOperation( "w1", "key" );
-    assertEquals( Boolean.TRUE, operation.getProperty( "key" ) );
+    assertEquals( JsonValue.TRUE, operation.getProperty( "key" ) );
   }
 
   @Test
@@ -272,7 +248,7 @@ public class Message_Test {
 
     Message message = getMessage();
 
-    assertEquals( Boolean.TRUE, message.findSetProperty( "w1", "key" ) );
+    assertEquals( JsonValue.TRUE, message.findSetProperty( "w1", "key" ) );
   }
 
   @Test
@@ -302,7 +278,7 @@ public class Message_Test {
     Message message = getMessage();
 
     ListenOperation operation = message.findListenOperation( "w1", "key" );
-    assertEquals( Boolean.TRUE, operation.getProperty( "key" ) );
+    assertEquals( JsonValue.TRUE, operation.getProperty( "key" ) );
   }
 
   @Test
@@ -321,7 +297,7 @@ public class Message_Test {
 
     Message message = getMessage();
 
-    assertEquals( Boolean.TRUE, message.findListenProperty( "w1", "key" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( "w1", "key" ) );
   }
 
   @Test
@@ -354,7 +330,7 @@ public class Message_Test {
     CreateOperation operation = message.findCreateOperation( "w2" );
     assertEquals( "w2", operation.getTarget() );
     assertEquals( "myType", operation.getType() );
-    assertEquals( Boolean.TRUE, operation.getProperty( "key" ) );
+    assertEquals( JsonValue.TRUE, operation.getProperty( "key" ) );
   }
 
   @Test
@@ -373,7 +349,7 @@ public class Message_Test {
 
     Message message = getMessage();
 
-    assertEquals( Boolean.TRUE, message.findCreateProperty( "w2", "key" ) );
+    assertEquals( JsonValue.TRUE, message.findCreateProperty( "w2", "key" ) );
   }
 
   @Test
@@ -423,21 +399,8 @@ public class Message_Test {
     writer.appendSet( "w1", "foo", 23 );
     SetOperation operation = ( SetOperation )getMessage().getOperation( 0 );
 
-    assertEquals( Integer.valueOf( 23 ), operation.getProperty( "foo" ) );
+    assertEquals( 23, operation.getProperty( "foo" ).asInt() );
   }
-
-  @Test
-  public void testOperationGetPropertyWithNonExistingValue() {
-    writer.appendSet( "w1", "foo", 23 );
-
-    SetOperation operation = ( SetOperation )getMessage().getOperation( 0 );
-    try {
-      operation.getProperty( "bar" );
-      fail();
-    } catch ( IllegalStateException expected ) {
-    }
-  }
-
 
   @Test
   public void testNonExistingOperation() {
@@ -480,6 +443,29 @@ public class Message_Test {
       fail();
     } catch ( RuntimeException expected ) {
     }
+  }
+
+  @Test
+  public void testEquals() {
+    JsonObject json = new JsonObject().add( "operations", new JsonArray() );
+
+    Message message1 = new Message( json );
+    Message message2 = new Message( json );
+
+    assertEquals( message1, message2 );
+  }
+
+  @Test
+  public void testEquals_withDifferentObjects() {
+    JsonObject json1 = new JsonObject().add( "operations", new JsonArray() );
+    JsonObject json2 = new JsonObject()
+      .add( "head", new JsonObject() )
+      .add( "operations", new JsonArray() );
+
+    Message message1 = new Message( json1 );
+    Message message2 = new Message( json2 );
+
+    assertFalse( message1.equals( message2 ) );
   }
 
   private Message getMessage() {

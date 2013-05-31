@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2012, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,8 +16,11 @@ package org.eclipse.rap.rwt.internal.protocol;
  */
 public final class ClientMessageConst {
 
-  //////////////////////////
-  // Request parameter names
+  // Head parameters
+  public static final String RWT_INITIALIZE = "rwt_initialize";
+  public static final String RWT_SHUTDOWN = "rwt_shutdown";
+  public static final String QUERY_STRING = "queryString";
+  public static final String UI_SESSION = "uiSession";
 
   // SWT keys used to identify which kind of SWT-Event is requested
   public static final String EVENT_SELECTION = "Selection";
@@ -50,6 +53,7 @@ public final class ClientMessageConst {
   public static final String EVENT_CLOSE = "Close";
 
   public static final String EVENT_PARAM_DETAIL = "detail";
+  public static final String EVENT_PARAM_TEXT = "text";
   public static final String EVENT_PARAM_ITEM = "item";
   public static final String EVENT_PARAM_INDEX = "index";
   public static final String EVENT_PARAM_MODIFIER = "modifier";

@@ -170,6 +170,52 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MenuTest", {
       widget.destroy();
     },
 
+    testCreateMenuItemWithMnemonicByProtocol : function() {
+      var menu = createPopUpMenuByProtocol( "w3" );
+      var item = createMenuItemByProtocol( "w4", "w3", [ "PUSH" ] );
+
+      TestUtil.protocolSet( "w4", { "mnemonicIndex" : 1 } );
+
+      assertEquals( 1, item.getMnemonicIndex() );
+      menu.destroy();
+      item.destroy();
+    },
+
+    testSetTextResetsMnemonic : function() {
+      var menu = createPopUpMenuByProtocol( "w3" );
+      var item = createMenuItemByProtocol( "w4", "w3", [ "PUSH" ] );
+      TestUtil.protocolSet( "w4", { "mnemonicIndex" : 1 } );
+
+      TestUtil.protocolSet( "w4", { "text" : "foo" } );
+
+      assertNull( item.getMnemonicIndex() );
+      menu.destroy();
+      item.destroy();
+    },
+
+    testAccelerator_SetWithText : function() {
+      var menu = createPopUpMenuByProtocol( "w3" );
+      var item = createMenuItemByProtocol( "w4", "w3", [ "PUSH" ] );
+
+      TestUtil.protocolSet( "w4", { "text" : "foo\tac&c" } );
+
+      assertEquals( "foo", item.getCellContent( 2 ) );
+      assertEquals( "&nbsp;&nbsp;&nbsp; ac&amp;c", item.getCellContent( 3 ) );
+      menu.destroy();
+    },
+
+    testAccelerator_HasTextAlignRight : function() {
+      var menu = createPopUpMenuByProtocol( "w3" );
+      var item = createMenuItemByProtocol( "w4", "w3", [ "PUSH" ] );
+
+      TestUtil.protocolSet( "w4", { "text" : "foo\tac&c" } );
+      menu.show();
+      TestUtil.flush();
+
+      assertEquals( "right", item.getCellNode( 3 ).style.textAlign );
+      menu.destroy();
+    },
+
     testDestroyMenuItemWithPopupMenuByProtocol : function() {
       var menu = createPopUpMenuByProtocol( "w3" );
       var item = createMenuItemByProtocol( "w4", "w3", [ "PUSH" ] );
@@ -334,16 +380,28 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MenuTest", {
       disposeMenu();
     },
 
-    testArrowOnly : function() {
+    testArrowUrl : function() {
       createSimpleMenu( "push" );
+
       menuItem.setArrow( [ "url.jpg", 13, 13 ] );
       TestUtil.flush();
+
       assertEquals( 1, menuItem._getTargetNode().childNodes.length );
       var node = menuItem._getTargetNode().firstChild;
-      assertContains(
-        "url.jpg",
-        TestUtil.getCssBackgroundImage( node )
-      );
+      assertContains( "url.jpg", TestUtil.getCssBackgroundImage( node ) );
+      disposeMenu();
+    },
+
+    testArrowDimension : function() {
+      createSimpleMenu( "push" );
+
+      menuItem.setArrow( [ "url.jpg", 13, 14 ] );
+      TestUtil.flush();
+
+      var node = menuItem._getTargetNode().firstChild;
+      var bounds = TestUtil.getElementBounds( node );
+      assertEquals( 13, bounds.width );
+      assertEquals( 14, bounds.height );
       disposeMenu();
     },
 
@@ -470,6 +528,237 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MenuTest", {
       TestUtil.click( TestUtil.getDocument() );
       TestUtil.flush();
       assertFalse( menu.isSeeable() );
+      disposeMenuBar();
+    },
+
+    testMenuBarItemWithMnemonic_RenderMnemonic : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      TestUtil.flush();
+
+      assertEquals( "f<span style=\"text-decoration:underline\">o</span>o", menuBarItem.getCellContent( 2 ) );
+      disposeMenuBar();
+    },
+
+    testMenuBarItemWithMnemonic_HideMnemonic : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().deactivate();
+      TestUtil.flush();
+
+      assertEquals( "foo", menuBarItem.getCellContent( 2 ) );
+      disposeMenuBar();
+    },
+
+    testMenuBarItemWithMnemonic_Trigger : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+      var success = false;
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      success = rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+
+      assertTrue( success );
+      assertTrue( menu.isSeeable() );
+      assertFalse( rwt.widgets.util.MnemonicHandler.getInstance().isActive() );
+      disposeMenuBar();
+    },
+
+    testMenuBarItemWithMnemonic_NoMnemonicShowWhileVisible : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+      TestUtil.click( menuBarItem );
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+
+      assertFalse( rwt.widgets.util.MnemonicHandler.getInstance().isActive() );
+      disposeMenuBar();
+    },
+
+    testMenuBarItemWithMnemonic_TriggerShowsMenuMnemonics : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      menuItem.setText( "foo" );
+      menuItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+
+      assertEquals( "f<span style=\"text-decoration:underline\">o</span>o", menuItem.getCellContent( 2 ) );
+      disposeMenuBar();
+    },
+
+    testMenuWithMnemonic_RenderMnemonicsOnNewItems : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+
+      var newMenuItem = new MenuItem( "push" );
+      menu.addMenuItemAt( newMenuItem, 0 );
+      newMenuItem.setText( "foo" );
+      newMenuItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      assertEquals(
+        "f<span style=\"text-decoration:underline\">o</span>o",
+        newMenuItem.getCellContent( 2 )
+      );
+      disposeMenuBar();
+    },
+
+    testMenuWithMnemonic_TriggerSendsSelection : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      menuItem.setText( "foo" );
+      menuItem.setMnemonicIndex( 1 );
+      rwt.remote.ObjectRegistry.add( "w3", menuItem, menuItemHandler );
+      menuItem.setHasSelectionListener( true );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+      TestUtil.press( menu, "O", true );
+      TestUtil.flush();
+
+      assertNotNull( TestUtil.getMessageObject().findNotifyOperation( "w3", "Selection" ) );
+      disposeMenuBar();
+    },
+
+    testMenuWithMnemonic_AndSeparator : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      menuItem.setText( "foo" );
+      menuItem.setMnemonicIndex( 1 );
+      menu.addMenuItemAt( new rwt.widgets.MenuItemSeparator(), 0 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+      TestUtil.press( menu, "O", true );
+      TestUtil.flush();
+
+      disposeMenuBar();
+    },
+
+    testMenuWithMnemonic_TriggerClosesMenu : function() {
+      createMenuBar( "push" );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      menuItem.setText( "foo" );
+      menuItem.setMnemonicIndex( 1 );
+      rwt.remote.ObjectRegistry.add( "w3", menuItem, menuItemHandler );
+      menuItem.setHasSelectionListener( true );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+      TestUtil.press( menu, "O", true );
+      TestUtil.flush();
+
+      assertFalse( menu.isSeeable() );
+      disposeMenuBar();
+    },
+
+    testMenuWithMnemonic_TriggerOpensCascade : function() {
+      createMenuBar( "cascade" );
+      var subMenu = new Menu();
+      var subMenuItem = new MenuItem( "push" );
+      subMenu.addMenuItemAt( subMenuItem, 0 );
+      subMenuItem.setText( "bar" );
+      menuItem.setSubMenu( subMenu );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      menuItem.setText( "foo" );
+      menuItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+      TestUtil.press( menu, "O", true );
+      TestUtil.flush();
+
+      assertTrue( menu.isSeeable() );
+      assertTrue( subMenu.isSeeable() );
+      subMenu.destroy();
+      disposeMenuBar();
+    },
+
+    testMenuWithMnemonic_CascadeMenuIsHovered : function() {
+      createMenuBar( "cascade" );
+      var subMenu = new Menu();
+      var subMenuItem = new MenuItem( "push" );
+      subMenu.addMenuItemAt( subMenuItem, 0 );
+      subMenuItem.setText( "bar" );
+      menuItem.setSubMenu( subMenu );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      menuItem.setText( "foo" );
+      menuItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+      TestUtil.press( menu, "O", true );
+      TestUtil.flush();
+
+      assertIdentical( menuItem, menu.getHoverItem() );
+      assertIdentical( subMenuItem, subMenu.getHoverItem() );
+      subMenu.destroy();
+      disposeMenuBar();
+    },
+
+    testMenuWithMnemonic_CascadeMenuRendersMnemonics : function() {
+      createMenuBar( "cascade" );
+      var subMenu = new Menu();
+      var subMenuItem = new MenuItem( "push" );
+      subMenu.addMenuItemAt( subMenuItem, 0 );
+      subMenuItem.setText( "bar" );
+      subMenuItem.setMnemonicIndex( 1 );
+      menuItem.setSubMenu( subMenu );
+      menuBarItem.setText( "foo" );
+      menuBarItem.setMnemonicIndex( 1 );
+      menuItem.setText( "foo" );
+      menuItem.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+      TestUtil.press( menu, "O", true );
+      TestUtil.flush();
+
+      assertEquals(
+        "b<span style=\"text-decoration:underline\">a</span>r",
+        subMenuItem.getCellContent( 2 )
+      );
+      subMenu.destroy();
       disposeMenuBar();
     },
 
@@ -763,6 +1052,22 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MenuTest", {
       disposeMenu();
     },
 
+    testExecutePushItemInMenuBar : function() {
+      createMenuBar( "push" );
+      rwt.remote.ObjectRegistry.add( "w3", menuBarItem, menuItemHandler );
+      TestUtil.flush();
+      TestUtil.clearRequestLog();
+      TestUtil.click( menuBarItem );
+      assertEquals( 0, TestUtil.getRequestsSend() );
+      menuBarItem.setHasSelectionListener( true );
+      TestUtil.clearRequestLog();
+      TestUtil.click( menuBarItem );
+      assertEquals( 1, TestUtil.getRequestsSend() );
+      assertNotNull( TestUtil.getMessageObject().findNotifyOperation( "w3", "Selection" ) );
+      TestUtil.clearRequestLog();
+      disposeMenuBar();
+    },
+
     testExecuteCheckItem: function() {
       createSimpleMenu( "check" );
       rwt.remote.ObjectRegistry.add( "w3", menuItem, menuItemHandler );
@@ -798,36 +1103,61 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MenuTest", {
       menuItem.setSelection( false );
       menuItem.setHasSelectionListener( true );
       TestUtil.clearRequestLog();
+
       TestUtil.click( menuItem );
+
       assertEquals( 1, TestUtil.getRequestsSend() );
       assertTrue( menuItem.hasState( "selected" ) );
       assertTrue( TestUtil.getMessageObject().findSetProperty( "w3", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject().findNotifyOperation( "w3", "Selection" ) );
+      disposeMenu();
+    },
+
+    testExecuteRadioButton_DeselectSiblings : function() {
+      createSimpleMenu( "radio" );
+      rwt.remote.ObjectRegistry.add( "w3", menuItem, menuItemHandler );
+      TestUtil.flush();
       TestUtil.clearRequestLog();
       TestUtil.click( menuItem );
-      assertEquals( 1, TestUtil.getRequestsSend() );
-      assertTrue( menuItem.hasState( "selected" ) );
-      assertTrue( TestUtil.getMessageObject().findSetProperty( "w3", "selection" ) );
+      assertEquals( 0, TestUtil.getRequestsSend() );
+      menuItem.setSelection( false );
+      menuItem.setHasSelectionListener( true );
       var item2 = new MenuItem( "radio" );
       menu.addMenuItemAt( item2, 0 );
       rwt.remote.ObjectRegistry.add( "w2", item2, menuItemHandler );
+      item2.setSelection( true );
       item2.setHasSelectionListener( true );
       TestUtil.clearRequestLog();
+
+      TestUtil.click( menuItem );
+
+      assertEquals( 2, TestUtil.getRequestsSend() );
+      assertFalse( item2.hasState( "selected" ) );
+      assertFalse( TestUtil.getMessageObject( 0 ).findSetProperty( "w2", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject( 0 ).findNotifyOperation( "w2", "Selection" ) );
+      assertTrue( menuItem.hasState( "selected" ) );
+      assertTrue( TestUtil.getMessageObject( 1 ).findSetProperty( "w3", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject( 1 ).findNotifyOperation( "w3", "Selection" ) );
+      disposeMenu();
+    },
+
+    testExecuteSelectedRadioButton : function() {
+      createSimpleMenu( "radio" );
+      rwt.remote.ObjectRegistry.add( "w3", menuItem, menuItemHandler );
       TestUtil.flush();
-      TestUtil.click( item2 );
-      assertFalse( menuItem.hasState( "selected" ) );
-      assertTrue( item2.hasState( "selected" ) );
-      assertEquals( 1, TestUtil.getRequestsSend() );
-      assertFalse( TestUtil.getMessageObject().findSetProperty( "w3", "selection" ) );
-      assertTrue( TestUtil.getMessageObject().findSetProperty( "w2", "selection" ) );
       TestUtil.clearRequestLog();
-      // bug 328437
-      TestUtil.click( item2 );
-      assertFalse( menuItem.hasState( "selected" ) );
-      assertTrue( item2.hasState( "selected" ) );
+      TestUtil.click( menuItem );
+      assertEquals( 0, TestUtil.getRequestsSend() );
+      menuItem.setSelection( true );
+      menuItem.setHasSelectionListener( true );
+      TestUtil.clearRequestLog();
+
+      TestUtil.click( menuItem );
+
       assertEquals( 1, TestUtil.getRequestsSend() );
+      assertTrue( menuItem.hasState( "selected" ) );
       assertNull( TestUtil.getMessageObject().findSetOperation( "w3", "selection" ) );
-      assertTrue( TestUtil.getMessageObject().findSetProperty( "w2", "selection" ) );
-      TestUtil.clearRequestLog();
+      assertNotNull( TestUtil.getMessageObject().findNotifyOperation( "w3", "Selection" ) );
       disposeMenu();
     },
 
@@ -1260,19 +1590,128 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MenuTest", {
       menuBar.addMenuItemAt( separator, 0 );
     },
 
-    testHasNativeMenu : function() {
+    testGetAllowContextMenu_Text : function() {
       var text = new rwt.widgets.Text( false );
       text.addToDocument();
       TestUtil.flush();
       var element = text.getElement().getElementsByTagName( "input" )[ 0 ];
-      assertTrue( rwt.widgets.Menu._hasNativeMenu( element ) );
-      text.dispose();
-      text = new rwt.widgets.Text( true );
+
+      assertTrue( rwt.widgets.Menu.getAllowContextMenu( text, element ) );
+      text.destroy();
+    },
+
+    testGetAllowContextMenu_Disabled : function() {
+      var text = new rwt.widgets.Text( false );
       text.addToDocument();
       TestUtil.flush();
-      element = text.getElement().getElementsByTagName( "textarea" )[ 0 ];
-      assertTrue( rwt.widgets.Menu._hasNativeMenu( element ) );
-      text.dispose();
+      var element = text.getElement().getElementsByTagName( "input" )[ 0 ];
+
+      text.setEnabled( false );
+
+      assertFalse( rwt.widgets.Menu.getAllowContextMenu( text, element ) );
+      text.destroy();
+    },
+
+    testGetAllowContextMenu_HasMenuWidget : function() {
+      var text = new rwt.widgets.Text( false );
+      text.addToDocument();
+      TestUtil.flush();
+      var element = text.getElement().getElementsByTagName( "input" )[ 0 ];
+
+      text.setContextMenu( new rwt.widgets.Menu() );
+
+      assertFalse( rwt.widgets.Menu.getAllowContextMenu( text, element ) );
+      text.destroy();
+    },
+
+    testGetAllowContextMenu_MultiText : function() {
+      var text = new rwt.widgets.Text( true );
+      text.addToDocument();
+      TestUtil.flush();
+      var element = text.getElement().getElementsByTagName( "textarea" )[ 0 ];
+
+      assertTrue( rwt.widgets.Menu.getAllowContextMenu( text, element ) );
+      text.destroy();
+    },
+
+    testGetAllowContextMenu_LabelLink : function() {
+      var label = new rwt.widgets.Label( { "MARKUP_ENABLED" : true } );
+      label.addToDocument();
+
+      label.setText( "foo<a href='asdf.html' >bar</a>foo" );
+      TestUtil.flush();
+
+      var element = label.getElement().getElementsByTagName( "a" )[ 0 ];
+      assertTrue( rwt.widgets.Menu.getAllowContextMenu( label, element ) );
+      label.destroy();
+    },
+
+    testGetAllowContextMenu_LabelLinkNoHref : function() {
+      var label = new rwt.widgets.Label( { "MARKUP_ENABLED" : true } );
+      label.addToDocument();
+
+      label.setText( "foo<a>bar</a>foo" );
+      TestUtil.flush();
+
+      var element = label.getElement().getElementsByTagName( "a" )[ 0 ];
+      assertFalse( rwt.widgets.Menu.getAllowContextMenu( label, element ) );
+      label.destroy();
+    },
+
+    testGetAllowContextMenu_Grid : function() {
+      var args = { "appearance": "tree" };
+      args[ "selectionPadding" ] = [ 2, 4 ];
+      args[ "indentionWidth" ] = 16;
+      var tree = new rwt.widgets.Grid( args );
+      tree.setItemHeight( 20 );
+      tree.setItemMetrics( 0, 0, 500, 0, 0, 0, 500, 0, 10 );
+      tree.addToDocument();
+      TestUtil.flush();
+      tree.getRenderConfig().markupEnabled = true;
+      tree.setItemCount( 1 );
+      var item = new rwt.widgets.GridItem( tree.getRootItem(), 0, false );
+
+      item.setTexts( [ "<a href=\"foo\">Test</a>" ] );
+      TestUtil.flush();
+
+      var row = tree.getRowContainer().getChildren()[ 0 ];
+      var element = row.getElement().getElementsByTagName( "a" )[ 0 ];
+      assertTrue( rwt.widgets.Menu.getAllowContextMenu( row, element ) );
+      tree.destroy();
+    },
+
+    testGetAllowContextMenu_List : function() {
+      rwt.remote.EventUtil.setSuspended( true );
+      var list = new rwt.widgets.List( true );
+      list.setItemDimensions( 100, 20 );
+      list.addToDocument();
+      list.setMarkupEnabled( true );
+
+      list.setItems( [ "<a href=\"foo\" >Test</a>" ] );
+      TestUtil.flush();
+
+      var item = list.getItems()[ 0 ];
+      var element = item.getElement().getElementsByTagName( "a" )[ 0 ];
+      assertTrue( rwt.widgets.Menu.getAllowContextMenu( item, element ) );
+      list.destroy();
+      rwt.remote.EventUtil.setSuspended( false );
+    },
+
+    testGetAllowContextMenu_ListTargetIsRWT : function() {
+      rwt.remote.EventUtil.setSuspended( true );
+      var list = new rwt.widgets.List( true );
+      list.setItemDimensions( 100, 20 );
+      list.addToDocument();
+      list.setMarkupEnabled( true );
+
+      list.setItems( [ "<a href=\"foo\" target=\"_rwt\">Test</a>" ] );
+      TestUtil.flush();
+
+      var item = list.getItems()[ 0 ];
+      var element = item.getElement().getElementsByTagName( "a" )[ 0 ];
+      assertFalse( rwt.widgets.Menu.getAllowContextMenu( item, element ) );
+      list.destroy();
+      rwt.remote.EventUtil.setSuspended( false );
     },
 
     testMenuFiresChangeHoverItemEvent : function() {
@@ -1363,11 +1802,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.MenuTest", {
 
 var createMenuWithItems = function( itemType, itemCount ) {
   var menu = new rwt.widgets.Menu();
+  var menuHandler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Menu" );
+  var menuItemHandler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.MenuItem" );
+  ObjectRegistry.add( "w3", menu, menuHandler );
   for( var i = 0; i < itemCount; i++ ) {
     var menuItem = new rwt.widgets.MenuItem( itemType );
+    ObjectRegistry.add( "w4" + i, menuItem, menuItemHandler );
     menu.addMenuItemAt( menuItem, i );
   }
   var menuItem = new rwt.widgets.MenuItem( itemType );
+  ObjectRegistry.add( "w5" + i, menuItem, menuItemHandler );
   menu.addMenuItemAt( menuItem, 0 );
   menu.addToDocument();
   menu.show();
@@ -1377,7 +1821,7 @@ var createMenuWithItems = function( itemType, itemCount ) {
 
 var createPopUpMenuByProtocol = function( id ) {
   TestUtil.createShellByProtocol( "w2" );
-  rwt.remote.MessageProcessor.processOperation( {
+  MessageProcessor.processOperation( {
     "target" : id,
     "action" : "create",
     "type" : "rwt.widgets.Menu",
@@ -1386,11 +1830,11 @@ var createPopUpMenuByProtocol = function( id ) {
       "parent" : "w2"
     }
   } );
-  return rwt.remote.ObjectRegistry.getObject( id );
+  return ObjectRegistry.getObject( id );
 };
 
 var createMenuItemByProtocol = function( id, parentId, style ) {
-  rwt.remote.MessageProcessor.processOperation( {
+  MessageProcessor.processOperation( {
     "target" : id,
     "action" : "create",
     "type" : "rwt.widgets.MenuItem",
@@ -1400,12 +1844,16 @@ var createMenuItemByProtocol = function( id, parentId, style ) {
       "index" : 0
     }
   } );
-  return rwt.remote.ObjectRegistry.getObject( id );
+  return ObjectRegistry.getObject( id );
 };
 
 var createSimpleMenu = function( type ) {
   menu = new Menu();
+  var menuHandler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Menu" );
+  ObjectRegistry.add( "w3", menu, menuHandler );
   menuItem = new MenuItem( type );
+  var menuItemHandler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.MenuItem" );
+  ObjectRegistry.add( "w4", menuItem, menuItemHandler );
   menu.addMenuItemAt( menuItem, 0 );
   menu.show();
 };
@@ -1423,20 +1871,16 @@ var createMenuBar = function( type ) {
 };
 
 var disposeMenu = function() {
-  menu.setParent( null );
-  menuItem.setParent( null );
-  menu.dispose();
-  menuItem.dispose();
+  menu.destroy();
+  menuItem.destroy();
   menu = null;
   menuItem = null;
 };
 
 var disposeMenuBar = function() {
-  menuBar.setParent( null );
-  menuBar.dispose();
+  menuBar.destroy();
   menuBar = null;
-  menuBarItem.setParent( null );
-  menuBarItem.dispose();
+  menuBarItem.destroy();
   menuBarItem = null;
   disposeMenu();
 };

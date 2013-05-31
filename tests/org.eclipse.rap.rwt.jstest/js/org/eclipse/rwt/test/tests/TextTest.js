@@ -170,7 +170,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.TextTest", {
         }
       } );
       text = ObjectRegistry.getObject( "w3" );
-      assertNull( text.getUserData( "messageLabel" ) );
+      assertEquals( "some text", text.getMessage() );
     },
 
     testDestroySingleTextByProtocol : function() {
@@ -583,18 +583,21 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.TextTest", {
         assertEquals( 0, changeLog.length );
         text._inputElement.value = "012345678";
         text.__oninput( {} );
+        TestUtil.forceTimerOnce();
         assertEquals( "012345678", text.getValue() );
         assertEquals( "012345678", text.getComputedValue() );
         assertEquals( 1, changeLog.length );
         text._inputElement.value = "01234567x8";
         text._setSelectionStart( 9 );
         text.__oninput( {} );
+        TestUtil.forceTimerOnce();
         assertEquals( "012345678", text.getValue() );
         assertEquals( "012345678", text.getComputedValue() );
         assertEquals( 1, changeLog.length );
         assertEquals( 8, text._getSelectionStart() );
         text._inputElement.value = "abcdefghiklmnopq";
         text.__oninput( {} );
+        TestUtil.forceTimerOnce();
         assertEquals( "abcde", text.getValue() );
         assertEquals( "abcde", text.getComputedValue() );
         assertEquals( 2, changeLog.length );
@@ -833,7 +836,8 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.TextTest", {
 
       text.setMessage( "konnichiwa" );
 
-      assertEquals( 1, text._getTargetNode().childNodes.length );
+      var element = text._getTargetNode().firstChild;
+      assertEquals( "konnichiwa", element.innerHTML );
     },
 
     testSetMessageBeforeCreate : function() {
@@ -1094,6 +1098,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.TextTest", {
         text.getInputElement().value = "fooba";
         TestUtil.keyUp( text, "Delete" );
         TestUtil.forceInterval( text._checkTimer );
+        TestUtil.forceTimerOnce();
 
         assertEquals( "fooba", text.getValue() );
         assertEquals( "fooba", text.getComputedValue() );
@@ -1117,6 +1122,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.TextTest", {
         TestUtil.fireFakeKeyDomEvent( text.getInputElement(), "keyup", "X", mod );
         text.getInputElement().value = "fooba";
         TestUtil.forceInterval( text._checkTimer );
+        TestUtil.forceTimerOnce();
 
         assertEquals( "fooba", text.getValue() );
         assertEquals( "fooba", text.getComputedValue() );
@@ -1136,6 +1142,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.TextTest", {
 
         text.getInputElement().value = "fooba";
         text.blur();
+        TestUtil.forceTimerOnce();
 
         assertEquals( "fooba", text.getValue() );
         assertEquals( "fooba", text.getComputedValue() );
@@ -1335,6 +1342,19 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.TextTest", {
       assertEquals( "10px", text._messageElement.style.fontSize );
     },
 
+    testVerticalAlignment : function() {
+      createText();
+      text.setHeight( 100 );
+      TestUtil.flush();
+
+      var textHeight= text.getInputElement().offsetHeight;
+      if( rwt.client.Client.isMshtml() ) {
+        textHeight -= 2;
+      }
+      var expected = Math.floor( 100 / 2 - textHeight / 2 - 1 );
+      assertEquals( expected, parseInt( text.getElement().style.paddingTop, 10 ) );
+    },
+
     /////////
     // Helper
 
@@ -1393,6 +1413,7 @@ var typeCharacter = function( character ) {
     text._oninputDom( { "propertyName" : "value" } );
   }
   TestUtil.keyUp( text, character );
+  TestUtil.forceTimerOnce();
 };
 
 var setSelection = function( selection ) {

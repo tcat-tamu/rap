@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 EclipseSource and others.
+ * Copyright (c) 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,28 +10,23 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.protocol;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.junit.Assert.*;
 
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.graphics.FontUtil;
 import org.eclipse.swt.widgets.Display;
 import org.junit.After;
 import org.junit.Before;
@@ -54,111 +49,132 @@ public class ProtocolUtil_Test {
   }
 
   @Test
-  public void testColorToArray() {
+  public void testGetJsonForColor() {
     Color red = display.getSystemColor( SWT.COLOR_RED );
 
-    int[] array = ProtocolUtil.getColorAsArray( red, false );
+    JsonValue result = ProtocolUtil.getJsonForColor( red, false );
 
-    checkColorArray( 255, 0, 0, 255, array );
+    assertEquals( JsonValue.readFrom( "[ 255, 0, 0, 255]" ), result );
   }
 
   @Test
-  public void testColorToArray_RGB() {
+  public void testGetJsonForColor_transparent() {
+    Color red = display.getSystemColor( SWT.COLOR_RED );
+
+    JsonValue result = ProtocolUtil.getJsonForColor( red, true );
+
+    assertEquals( JsonValue.readFrom( "[ 255, 0, 0, 0]" ), result );
+  }
+
+  @Test
+  public void testGetJsonForColor_null() {
+    JsonValue result = ProtocolUtil.getJsonForColor( ( Color )null, false );
+
+    assertEquals( JsonValue.NULL, result );
+  }
+
+  @Test
+  public void testGetJsonForColor_RGB() {
     RGB red = new RGB( 255, 0, 0 );
 
-    int[] array = ProtocolUtil.getColorAsArray( red, false );
+    JsonValue result = ProtocolUtil.getJsonForColor( red, false );
 
-    checkColorArray( 255, 0, 0, 255, array );
+    assertEquals( JsonValue.readFrom( "[ 255, 0, 0, 255]" ), result );
   }
 
   @Test
-  public void testColorToArray_Transparent() {
-    Color red = display.getSystemColor( SWT.COLOR_RED );
-
-    int[] array = ProtocolUtil.getColorAsArray( red, true );
-
-    checkColorArray( 255, 0, 0, 0, array );
-  }
-
-  @Test
-  public void testColorToArray_Null() {
-    assertNull( ProtocolUtil.getColorAsArray( ( Color )null, false ) );
-  }
-
-  @Test
-  public void testFontAsArray() {
+  public void testGetJsonForFont() {
     Font font = new Font( display, "Arial", 22, SWT.NONE );
 
-    Object[] array = ProtocolUtil.getFontAsArray( font );
+    JsonValue result = ProtocolUtil.getJsonForFont( font );
 
-    checkFontArray( new String[] { "Arial" }, 22, false, false, array );
+    assertEquals( JsonValue.readFrom( "[[\"Arial\"], 22, false, false ]" ), result );
   }
 
   @Test
-  public void testFontAsArray_FontData() {
-    Font font = new Font( display, "Arial", 22, SWT.NONE );
-
-    Object[] array = ProtocolUtil.getFontAsArray( FontUtil.getData( font ) );
-
-    checkFontArray( new String[] { "Arial" }, 22, false, false, array );
-  }
-
-  @Test
-  public void testFontAsArray_Bold() {
+  public void testGetJsonForFont_bold() {
     Font font = new Font( display, "Arial", 22, SWT.BOLD );
 
-    Object[] array = ProtocolUtil.getFontAsArray( font );
+    JsonValue result = ProtocolUtil.getJsonForFont( font );
 
-    checkFontArray( new String[] { "Arial" }, 22, true, false, array );
+    assertEquals( JsonValue.readFrom( "[[\"Arial\"], 22, true, false ]" ), result );
   }
 
   @Test
-  public void testFontAsArray_Italic() {
+  public void testGetJsonForFont_italic() {
     Font font = new Font( display, "Arial", 22, SWT.ITALIC );
 
-    Object[] array = ProtocolUtil.getFontAsArray( font );
+    JsonValue result = ProtocolUtil.getJsonForFont( font );
 
-    checkFontArray( new String[] { "Arial" }, 22, false, true, array );
+    assertEquals( JsonValue.readFrom( "[[\"Arial\"], 22, false, true ]" ), result );
   }
 
   @Test
-  public void testFontAsArray_Null() {
-    assertNull( ProtocolUtil.getFontAsArray( ( Font )null ) );
+  public void testGetJsonForFont_null() {
+    JsonValue result = ProtocolUtil.getJsonForFont( (Font) null );
+
+    assertEquals( JsonValue.NULL, result );
   }
 
   @Test
-  public void testImageAsArray() {
+  public void testGetJsonForFont_fontData() {
+    Font font = new Font( display, "Arial", 22, SWT.NONE );
+
+    JsonValue result = ProtocolUtil.getJsonForFont( font.getFontData()[0] );
+
+    assertEquals( JsonValue.readFrom( "[[\"Arial\"], 22, false, false ]" ), result );
+  }
+
+  @Test
+  public void testGetJsonForFont_fontData_null() {
+    JsonValue result = ProtocolUtil.getJsonForFont( (FontData) null );
+
+    assertEquals( JsonValue.NULL, result );
+  }
+
+  @Test
+  public void testGetJsonForPoint() {
+    JsonValue result = ProtocolUtil.getJsonForPoint( new Point( 23, 42 ) );
+
+    assertEquals( JsonValue.readFrom( "[ 23, 42 ]" ), result );
+  }
+
+  @Test
+  public void testGetJsonForPoint_null() {
+    JsonValue result = ProtocolUtil.getJsonForPoint( (Point) null );
+
+    assertEquals( JsonValue.NULL, result );
+  }
+
+  @Test
+  public void testGetJsonForRectangle() {
+    JsonValue result = ProtocolUtil.getJsonForRectangle( new Rectangle( 1, 2, 3, 4 ) );
+
+    assertEquals( JsonValue.readFrom( "[ 1, 2, 3, 4 ]" ), result );
+  }
+
+  @Test
+  public void testGetJsonForRectangle_null() {
+    JsonValue result = ProtocolUtil.getJsonForRectangle( (Rectangle) null );
+
+    assertEquals( JsonValue.NULL, result );
+  }
+
+  @Test
+  public void testGetJsonForImage() {
     Image image = createImage( Fixture.IMAGE_100x50 );
 
-    Object[] array = ProtocolUtil.getImageAsArray( image );
+    JsonArray result = ProtocolUtil.getJsonForImage( image ).asArray();
 
-    assertNotNull( array[ 0 ] );
-    assertEquals( Integer.valueOf( 100 ), array[ 1 ] );
-    assertEquals( Integer.valueOf( 50 ), array[ 2 ] );
+    assertEquals( 3, result.size() );
+    assertTrue( result.get( 0 ).isString() );
+    assertEquals( 100, result.get( 1 ).asInt() );
+    assertEquals( 50, result.get( 2 ).asInt() );
   }
 
   @Test
-  public void testImageAsArray_Null() {
-    assertNull( ProtocolUtil.getImageAsArray( null ) );
-  }
-
-  private void checkColorArray( int red, int green, int blue, int alpha, int[] array ) {
-    assertEquals( red, array[ 0 ] );
-    assertEquals( green, array[ 1 ] );
-    assertEquals( blue, array[ 2 ] );
-    assertEquals( alpha, array[ 3 ] );
-  }
-
-  private void checkFontArray( String[] names,
-                               int size,
-                               boolean bold,
-                               boolean italic,
-                               Object[] array )
-  {
-    Arrays.equals( names, ( String[] )array[ 0 ] );
-    assertEquals( Integer.valueOf( size ), array[ 1 ] );
-    assertEquals( Boolean.valueOf( bold ), array[ 2 ] );
-    assertEquals( Boolean.valueOf( italic ), array[ 3 ] );
+  public void testJsonForImage_null() {
+    assertEquals( JsonValue.NULL, ProtocolUtil.getJsonForImage( null ) );
   }
 
   @Test
@@ -184,7 +200,7 @@ public class ProtocolUtil_Test {
     ClientMessage message = ProtocolUtil.getClientMessage();
 
     assertNotNull( message );
-    assertTrue( message.getAllOperationsFor( "w3" ).length > 0 );
+    assertFalse( message.getAllOperationsFor( "w3" ).isEmpty() );
   }
 
   @Test
@@ -195,20 +211,6 @@ public class ProtocolUtil_Test {
     ClientMessage message2 = ProtocolUtil.getClientMessage();
 
     assertSame( message1, message2 );
-  }
-
-  @Test
-  public void testReadHeaderPropertyValue() {
-    fakeNewJsonMessage();
-
-    assertEquals( "21", ProtocolUtil.readHeadPropertyValue( "requestCounter" ) );
-  }
-
-  @Test
-  public void testReadHeaderPropertyValue_MissingProperty() {
-    fakeNewJsonMessage();
-
-    assertNull( ProtocolUtil.readHeadPropertyValue( "abc" ) );
   }
 
   @Test
@@ -249,8 +251,8 @@ public class ProtocolUtil_Test {
   @Test
   public void testReadPropertyValue_LastSetValue() {
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( "w3", "p1", "foo" );
-    Fixture.fakeSetParameter( "w3", "p1", "bar" );
+    Fixture.fakeSetProperty( "w3", "p1", "foo" );
+    Fixture.fakeSetProperty( "w3", "p1", "bar" );
 
     assertEquals( "bar", ProtocolUtil.readPropertyValueAsString( "w3", "p1" ) );
   }
@@ -374,18 +376,18 @@ public class ProtocolUtil_Test {
   public void testReadPropertyValue() {
     fakeNewJsonMessage();
 
-    Object[] expected = new Object[]{ "a", new Integer( 2 ), Boolean.TRUE };
-    Object[] actual = ( Object[] )ProtocolUtil.readPropertyValue( "w3", "p8" );
-    assertTrue( Arrays.equals( expected, actual ) );
+    JsonValue expected = JsonValue.readFrom( "[\"a\", 2, true]" );
+    JsonValue actual = ProtocolUtil.readPropertyValue( "w3", "p8" );
+    assertEquals( expected, actual );
   }
 
   @Test
-  public void testWasCallSent() {
-    fakeNewJsonMessage();
+    public void testWasCallReceived() {
+      fakeNewJsonMessage();
 
-    assertTrue( ProtocolUtil.wasCallSend( "w3", "resize" ) );
-    assertFalse( ProtocolUtil.wasCallSend( "w4", "resize" ) );
-  }
+      assertTrue( ProtocolUtil.wasCallReceived( "w3", "resize" ) );
+      assertFalse( ProtocolUtil.wasCallReceived( "w4", "resize" ) );
+    }
 
   @Test
   public void testReadCallProperty() {
@@ -408,31 +410,87 @@ public class ProtocolUtil_Test {
     assertNull( ProtocolUtil.readCallPropertyValueAsString( "w4", "resize", "left" ) );
   }
 
+  @Test
+  public void testToPoint() {
+    JsonValue value = new JsonArray().add( 23 ).add( 42 );
+
+    Point result = ProtocolUtil.toPoint( value );
+
+    assertEquals( new Point( 23, 42 ), result );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToPoint_withNull() {
+    ProtocolUtil.toPoint( null );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToPoint_withIllegalValue() {
+    ProtocolUtil.toPoint( JsonValue.valueOf( true ) );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToPoint_withWrongArraySize() {
+    ProtocolUtil.toPoint( new JsonArray().add( 1 ).add( 2 ).add( 3 ) );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToPoint_withWrongElementType() {
+    ProtocolUtil.toPoint( new JsonArray().add( 1 ).add( true ) );
+  }
+
+  @Test
+  public void testToRectangle() {
+    JsonValue value = new JsonArray().add( 1 ).add( 2 ).add( 3 ).add( 4 );
+
+    Rectangle result = ProtocolUtil.toRectangle( value );
+
+    assertEquals( new Rectangle( 1, 2, 3, 4 ), result );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToRectangle_withNull() {
+    ProtocolUtil.toRectangle( null );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToRectangle_withIllegalValue() {
+    ProtocolUtil.toRectangle( JsonValue.valueOf( true ) );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToRectangle_withWrongArraySize() {
+    ProtocolUtil.toRectangle( new JsonArray().add( 1 ).add( 2 ).add( 3 ).add( 4 ).add( 5 ) );
+  }
+
+  @Test( expected = IllegalArgumentException.class )
+  public void testToRectangle_withWrongElementType() {
+    ProtocolUtil.toRectangle( new JsonArray().add( 1 ).add( true ) );
+  }
+
   //////////////////
   // Helping methods
 
   private void fakeNewJsonMessage() {
     Fixture.fakeNewRequest();
-    Fixture.fakeHeadParameter( "requestCounter", Integer.valueOf( 21 ) );
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put( "p1", "foo" );
-    parameters.put( "p2", Integer.valueOf( 123 ) );
-    Fixture.fakeSetOperation( "w3", parameters  );
-    parameters = new HashMap<String, Object>();
-    parameters.put( "detail", "check" );
-    Fixture.fakeNotifyOperation( "w3", "widgetSelected", parameters );
-    parameters = new HashMap<String, Object>();
-    parameters.put( "p3", Boolean.TRUE );
-    parameters.put( "p4", null );
-    parameters.put( "p5", new int[] { 1, 2 } );
-    parameters.put( "p6", new int[] { 1, 2, 3, 4 } );
-    parameters.put( "p7", new String[] { "a", "b", "c" } );
-    parameters.put( "p8", new Object[]{ "a", new Integer( 2 ), Boolean.TRUE } );
-    parameters.put( "p9", new boolean[] { true, false, true } );
-    Fixture.fakeSetOperation( "w3", parameters  );
-    parameters = new HashMap<String, Object>();
-    parameters.put( "width", Integer.valueOf( 10 ) );
-    Fixture.fakeCallOperation( "w3", "resize", parameters );
+    Fixture.fakeHeadParameter( "requestCounter", 21 );
+    JsonObject setProperties1 = new JsonObject()
+      .add( "p1", "foo" )
+      .add( "p2", 123 );
+    Fixture.fakeSetOperation( "w3", setProperties1  );
+    JsonObject notifyParameters = new JsonObject().add( "detail", "check" );
+    Fixture.fakeNotifyOperation( "w3", "widgetSelected", notifyParameters );
+    JsonObject setProperites2 = new JsonObject()
+      .add( "p3", true )
+      .add( "p4", JsonValue.NULL )
+      .add( "p5", createJsonArray( 1, 2 ) )
+      .add( "p6", createJsonArray( 1, 2, 3, 4 ) )
+      .add( "p7", createJsonArray( "a", "b", "c" ) )
+      .add( "p8", new JsonArray().add( "a" ).add( 2 ).add( true ) )
+      .add( "p9", createJsonArray( true, false, true ) );
+    Fixture.fakeSetOperation( "w3", setProperites2  );
+    JsonObject callParameters = new JsonObject().add( "width", 10 );
+    Fixture.fakeCallOperation( "w3", "resize", callParameters );
   }
 
   @SuppressWarnings( "resource" )

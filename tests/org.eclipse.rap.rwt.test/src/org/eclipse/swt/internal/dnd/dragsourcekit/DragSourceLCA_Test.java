@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,14 +10,17 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.dnd.dragsourcekit;
 
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
-import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CallOperation;
@@ -26,6 +29,7 @@ import org.eclipse.rap.rwt.testfixture.Message.SetOperation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
+import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.HTMLTransfer;
 import org.eclipse.swt.dnd.TextTransfer;
@@ -37,8 +41,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,20 +70,20 @@ public class DragSourceLCA_Test {
   }
 
   @Test
-  public void testRenderCreate() throws IOException, JSONException {
+  public void testRenderCreate() throws IOException {
     DragSource source = new DragSource( control, DND.DROP_MOVE | DND.DROP_COPY );
     lca.renderInitialization( source );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( source );
     assertEquals( "rwt.widgets.DragSource", operation.getType() );
-    assertEquals( WidgetUtil.getId( control ), operation.getProperty( "control" ) );
-    String result = ( ( JSONArray )operation.getProperty( "style" ) ).join( "," );
-    assertEquals( "\"DROP_COPY\",\"DROP_MOVE\"", result );
+    assertEquals( getId( control ), operation.getProperty( "control" ).asString() );
+    JsonArray expected = new JsonArray().add( "DROP_COPY" ).add( "DROP_MOVE" );
+    assertEquals( expected, operation.getProperty( "style" ) );
   }
 
   @Test
-  public void testRenderTransfer() throws IOException, JSONException {
+  public void testRenderTransfer() throws IOException {
     DragSource source = new DragSource( control, DND.DROP_MOVE | DND.DROP_COPY );
     Fixture.markInitialized( source );
     Fixture.preserveWidgets();
@@ -94,13 +96,10 @@ public class DragSourceLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     SetOperation setOperation = message.findSetOperation( source, "transfer" );
-    String result = ( ( JSONArray )setOperation.getProperty( "transfer" ) ).join( "," );
-    String expected = "\"";
-    expected += TextTransfer.getInstance().getSupportedTypes()[ 0 ].type;
-    expected += "\",\"";
-    expected += HTMLTransfer.getInstance().getSupportedTypes()[ 0 ].type;
-    expected += "\"";
-    assertEquals( expected, result );
+    JsonArray expected = new JsonArray()
+      .add( Integer.toString( TextTransfer.getInstance().getSupportedTypes()[ 0 ].type ) )
+      .add( Integer.toString( HTMLTransfer.getInstance().getSupportedTypes()[ 0 ].type ) );
+    assertEquals( expected, setOperation.getProperty( "transfer" ) );
   }
 
   @Test
@@ -117,8 +116,8 @@ public class DragSourceLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( source, "changeDetail" );
-    assertEquals( WidgetUtil.getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( "DROP_COPY", call.getProperty( "detail" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( "DROP_COPY", call.getProperty( "detail" ).asString() );
   }
 
   @Test
@@ -135,12 +134,12 @@ public class DragSourceLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( source, "changeDetail" );
-    assertEquals( WidgetUtil.getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( "DROP_NONE", call.getProperty( "detail" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( "DROP_NONE", call.getProperty( "detail" ).asString() );
   }
 
   @Test
-  public void testRenderFeedback() throws IOException, JSONException {
+  public void testRenderFeedback() throws IOException {
     DragSource source = new DragSource( control, DND.DROP_MOVE | DND.DROP_COPY );
     Button targetControl = new Button( shell, SWT.PUSH );
     new DropTarget( targetControl, DND.DROP_MOVE | DND.DROP_COPY );
@@ -155,10 +154,10 @@ public class DragSourceLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( source, "changeFeedback" );
-    assertEquals( WidgetUtil.getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( new Integer( feedback ), call.getProperty( "flags" ) );
-    JSONArray feedbackArr = ( JSONArray )call.getProperty( "feedback" );
-    assertEquals( "\"FEEDBACK_SCROLL\",\"FEEDBACK_SELECT\"", feedbackArr.join( "," ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( feedback, call.getProperty( "flags" ).asInt() );
+    JsonArray expected = new JsonArray().add( "FEEDBACK_SCROLL" ).add( "FEEDBACK_SELECT" );
+    assertEquals( expected, call.getProperty( "feedback" ) );
   }
 
   @Test
@@ -176,8 +175,8 @@ public class DragSourceLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CallOperation call = message.findCallOperation( source, "changeDataType" );
-    assertEquals( WidgetUtil.getId( targetControl ), call.getProperty( "control" ) );
-    assertEquals( new Integer( dataType.type ), call.getProperty( "dataType" ) );
+    assertEquals( getId( targetControl ), call.getProperty( "control" ).asString() );
+    assertEquals( dataType.type, call.getProperty( "dataType" ).asInt() );
   }
 
   @Test
@@ -226,6 +225,54 @@ public class DragSourceLCA_Test {
     Message message = Fixture.getProtocolMessage();
     assertNotNull( message.findDestroyOperation( control ) );
     assertNull( message.findDestroyOperation( dragSource ) );
+  }
+
+  @Test
+  public void testRenderAddDragListener() throws Exception {
+    DragSource source = new DragSource( control, DND.DROP_MOVE | DND.DROP_COPY );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( source );
+    Fixture.preserveWidgets();
+
+    source.addDragListener( mock( DragSourceListener.class ) );
+    lca.renderChanges( source );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( JsonValue.TRUE, message.findListenProperty( source, "DragStart" ) );
+    assertEquals( JsonValue.TRUE, message.findListenProperty( source, "DragEnd" ) );
+  }
+
+  @Test
+  public void testRenderRemoveDragListener() throws Exception {
+    DragSource source = new DragSource( control, DND.DROP_MOVE | DND.DROP_COPY );
+    DragSourceListener listener = mock( DragSourceListener.class );
+    source.addDragListener( listener );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( source );
+    Fixture.preserveWidgets();
+
+    source.removeDragListener( listener );
+    lca.renderChanges( source );
+
+    Message message = Fixture.getProtocolMessage();
+    assertEquals( JsonValue.FALSE, message.findListenProperty( source, "DragStart" ) );
+    assertEquals( JsonValue.FALSE, message.findListenProperty( source, "DragEnd" ) );
+  }
+
+  @Test
+  public void testRenderDragListenerUnchanged() throws Exception {
+    DragSource source = new DragSource( control, DND.DROP_MOVE | DND.DROP_COPY );
+    Fixture.markInitialized( display );
+    Fixture.markInitialized( source );
+    Fixture.preserveWidgets();
+
+    source.addDragListener( mock( DragSourceListener.class ) );
+    Fixture.preserveWidgets();
+    lca.renderChanges( source );
+
+    Message message = Fixture.getProtocolMessage();
+    assertNull( message.findListenOperation( source, "DragStart" ) );
+    assertNull( message.findListenOperation( source, "DragEnd" ) );
   }
 
 }

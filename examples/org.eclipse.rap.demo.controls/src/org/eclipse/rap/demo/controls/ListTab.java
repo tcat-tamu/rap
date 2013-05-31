@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,6 +18,7 @@ import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.ListViewer;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.rap.rwt.RWT;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
@@ -59,13 +60,14 @@ public class ListTab extends ExampleTab {
   private List list;
   private List list2;
   private ListViewer listViewer;
+  private boolean markup;
 
   public ListTab() {
     super( "List" );
   }
 
   @Override
-  protected void createStyleControls( final Composite parent ) {
+  protected void createStyleControls( Composite parent ) {
     createStyleButton( "BORDER", SWT.BORDER );
     createStyleButton( "SINGLE", SWT.SINGLE );
     createStyleButton( "MULTI", SWT.MULTI );
@@ -73,6 +75,7 @@ public class ListTab extends ExampleTab {
     createStyleButton( "V_SCROLL", SWT.V_SCROLL );
     createVisibilityButton();
     createEnablementButton();
+    createMarkupButton();
     createFgColorButton();
     createBgColorButton();
     createBgImageButton();
@@ -86,6 +89,7 @@ public class ListTab extends ExampleTab {
     createSetTopIndexControls( group );
     createGetTopIndexControls( group );
     createShowSelectionControls( group );
+    createRemoveFirstItemButton( group );
     createSelectAllButton( group );
     createDeselectAllButton( group );
     createSelectButton( group );
@@ -119,12 +123,29 @@ public class ListTab extends ExampleTab {
 
     // List 2
     list2 = new List( parent, style );
+    list2.setData( RWT.MARKUP_ENABLED, new Boolean( markup ) );
     list2.add( "Item 0" );
     list2.add( "Item 1" );
     list2.add( "Item 2" );
+    if( markup ) {
+      list2.setData( RWT.CUSTOM_ITEM_HEIGHT, new Integer( 60 ) );
+      list2.add( "<b>Some Markup Text</b><br/><i>This is italic</i>" );
+      list2.add( "A real <a href='http://eclipse.org/rap'>link</a>" );
+      list2.add( "This one opens <a href='http://eclipse.org/rap' target='_blank'>a new tab</a>" );
+      list2.add( "This is a special <a href='value_of_href' target='_rwt'>RWT Hyperlink</a>" );
+      list2.add( "This RWT Hyperlik <a href='http://eclipse.org/rap' target='_rwt'>has an URL</a>" );
+      list2.addListener( SWT.Selection, new Listener() {
+        public void handleEvent( Event event ) {
+          if( event.detail == RWT.HYPERLINK ) {
+            log( "Clicked link \"" + event.text + "\"" );
+          }
+        }
+      } );
+    } else {
+      createPopupMenu( parent.getShell(), list2 );
+    }
     list2.setLayoutData( new GridData( GridData.FILL_BOTH ) );
     registerControl( list2 );
-    createPopupMenu( parent.getShell(), list2 );
 
     // Code
     int separatorStyle = SWT.SEPARATOR | SWT.HORIZONTAL | SWT.SHADOW_OUT;
@@ -187,8 +208,21 @@ public class ListTab extends ExampleTab {
       }
     } );
   }
+  protected Button createMarkupButton( ) {
+    final Button button = new Button( styleComp, SWT.CHECK );
+    button.setText( "Markup" );
+    button.setSelection( markup );
+    button.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent event ) {
+        markup = button.getSelection();
+        createNew();
+      }
+    } );
+    return button;
+  }
 
-  private void createAddItemsControls( final Composite parent ) {
+  private void createAddItemsControls( Composite parent ) {
     Composite composite = new Composite( parent, SWT.NONE );
     composite.setLayout( new GridLayout( 3, false ) );
     Label lblAddItem = new Label( composite, SWT.NONE );
@@ -220,7 +254,7 @@ public class ListTab extends ExampleTab {
     } );
   }
 
-  private void createSetTopIndexControls( final Composite parent ) {
+  private void createSetTopIndexControls( Composite parent ) {
     Composite composite = new Composite( parent, SWT.NONE );
     composite.setLayout( new GridLayout( 2, false ) );
     final Text txtTopIndex = new Text( composite, SWT.BORDER );
@@ -241,7 +275,7 @@ public class ListTab extends ExampleTab {
     } );
   }
 
-  private void createGetTopIndexControls( final Composite parent ) {
+  private void createGetTopIndexControls( Composite parent ) {
     Composite composite = new Composite( parent, SWT.NONE );
     composite.setLayout( new GridLayout( 2, false ) );
     final Text txtTopIndex = new Text( composite, SWT.BORDER );
@@ -258,7 +292,7 @@ public class ListTab extends ExampleTab {
     } );
   }
 
-  private void createShowSelectionControls( final Composite parent ) {
+  private void createShowSelectionControls( Composite parent ) {
     Composite composite = new Composite( parent, SWT.NONE );
     composite.setLayout( new GridLayout( 2, false ) );
     Button button = new Button( composite, SWT.PUSH );
@@ -271,7 +305,20 @@ public class ListTab extends ExampleTab {
     } );
   }
 
-  private void createSelectAllButton( final Composite parent ) {
+  private void createRemoveFirstItemButton( Composite parent ) {
+    Button button = new Button( parent , SWT.PUSH );
+    button.setText( "Remove First Item" );
+    button.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent event ) {
+        if( list2.getItemCount() > 0 ) {
+          list2.remove( 0 );
+        }
+      }
+    } );
+  }
+
+  private void createSelectAllButton( Composite parent ) {
     Button button = new Button( parent, SWT.PUSH );
     button.setText( "Select All" );
     button.addSelectionListener( new SelectionAdapter() {
@@ -282,7 +329,7 @@ public class ListTab extends ExampleTab {
     } );
   }
 
-  private void createDeselectAllButton( final Composite parent ) {
+  private void createDeselectAllButton( Composite parent ) {
     Button button = new Button( parent, SWT.PUSH );
     button.setText( "Deselect All" );
     button.addSelectionListener( new SelectionAdapter() {
@@ -293,20 +340,20 @@ public class ListTab extends ExampleTab {
     } );
   }
 
-  private void createSelectButton( final Composite parent ) {
+  private void createSelectButton( Composite parent ) {
     Button button = new Button( parent, SWT.PUSH );
-    button.setText( "Select second item" );
+    button.setText( "Select 100th item" );
     button.addSelectionListener( new SelectionAdapter() {
       @Override
       public void widgetSelected( final SelectionEvent event ) {
-        if( list2.getItemCount() > 1 ) {
-          list2.select( 1 );
+        if( list2.getItemCount() > 100 ) {
+          list2.select( 100 );
         }
       }
     } );
   }
 
-  private void createDeselectButton( final Composite parent ) {
+  private void createDeselectButton( Composite parent ) {
     Button button = new Button( parent, SWT.PUSH );
     button.setText( "Deselect second item" );
     button.addSelectionListener( new SelectionAdapter() {
@@ -319,7 +366,7 @@ public class ListTab extends ExampleTab {
     } );
   }
 
-  private void createSetSelectionButton( final Composite parent ) {
+  private void createSetSelectionButton( Composite parent ) {
     Button button = new Button( parent, SWT.PUSH );
     button.setText( "Set selection to first item" );
     button.addSelectionListener( new SelectionAdapter() {

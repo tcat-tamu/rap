@@ -11,33 +11,33 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.client;
 
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.getClientMessage;
 import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readEventPropertyValueAsString;
 import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 
-import org.eclipse.rap.rwt.RWT;
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.client.service.BrowserNavigation;
 import org.eclipse.rap.rwt.client.service.BrowserNavigationEvent;
 import org.eclipse.rap.rwt.client.service.BrowserNavigationListener;
-import org.eclipse.rap.rwt.internal.lifecycle.LifeCycleUtil;
+import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
-import org.eclipse.rap.rwt.internal.service.RequestParams;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
 import org.eclipse.rap.rwt.lifecycle.PhaseEvent;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.PhaseListener;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.service.UISessionEvent;
 import org.eclipse.rap.rwt.service.UISessionListener;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Display;
 
 
 public final class BrowserNavigationImpl
@@ -50,17 +50,17 @@ public final class BrowserNavigationImpl
   private final static String METHOD_ADD_TO_HISTORY = "addToHistory";
   private static final String EVENT_HISTORY_NAVIGATED_STATE = "state";
 
-  private final Display display;
+  private final UISession uiSession;
   private final List<HistoryEntry> entriesToAdd;
   private final Collection<BrowserNavigationListener> listeners;
   private boolean hasNavigationListener;
 
   public BrowserNavigationImpl() {
-    display = Display.getCurrent();
     entriesToAdd = new ArrayList<HistoryEntry>();
     listeners = new LinkedHashSet<BrowserNavigationListener>();
     getApplicationContext().getLifeCycleFactory().getLifeCycle().addPhaseListener( this );
-    RWT.getUISession().addUISessionListener( this );
+    uiSession = ContextProvider.getUISession();
+    uiSession.addUISessionListener( this );
   }
 
   //////////
@@ -89,8 +89,7 @@ public final class BrowserNavigationImpl
   // PhaseListener
 
   public void afterPhase( PhaseEvent event ) {
-    Display sessionDisplay = LifeCycleUtil.getSessionDisplay();
-    if( display == sessionDisplay ) {
+    if( uiSession == ContextProvider.getUISession() ) {
       if( event.getPhaseId() == PhaseId.PREPARE_UI_ROOT && isStartup() ) {
         processNavigationEvent();
       } else if( event.getPhaseId() == PhaseId.READ_DATA ) {
@@ -103,8 +102,7 @@ public final class BrowserNavigationImpl
   }
 
   public void beforePhase( PhaseEvent event ) {
-    Display sessionDisplay = LifeCycleUtil.getSessionDisplay();
-    if( display == sessionDisplay ) {
+    if( uiSession == ContextProvider.getUISession() ) {
       if( event.getPhaseId() == PhaseId.PROCESS_ACTION && !isStartup() ) {
         processNavigationEvent();
       }
@@ -126,7 +124,8 @@ public final class BrowserNavigationImpl
   // Helping methods
 
   private static boolean isStartup() {
-    return "true".equals( ProtocolUtil.readHeadPropertyValue( RequestParams.RWT_INITIALIZE ) );
+    JsonValue initializeHeader = getClientMessage().getHeader( ClientMessageConst.RWT_INITIALIZE );
+    return JsonValue.TRUE.equals( initializeHeader );
   }
 
   private void processNavigationEvent() {
@@ -169,20 +168,18 @@ public final class BrowserNavigationImpl
 
   private void renderAdd() {
     if( !entriesToAdd.isEmpty() ) {
-      Map<String, Object> properties = new HashMap<String, Object>();
-      properties.put( PROP_ENTRIES, entriesAsArray() );
+      JsonObject parameters = new JsonObject().add( PROP_ENTRIES, entriesAsArray() );
       ProtocolMessageWriter protocolWriter = ContextProvider.getProtocolWriter();
-      protocolWriter.appendCall( TYPE, METHOD_ADD_TO_HISTORY, properties );
+      protocolWriter.appendCall( TYPE, METHOD_ADD_TO_HISTORY, parameters );
       entriesToAdd.clear();
     }
   }
 
-  private Object[] entriesAsArray() {
+  private JsonArray entriesAsArray() {
     HistoryEntry[] entries = getEntries();
-    Object[][] result = new Object[ entries.length ][ 2 ];
-    for( int i = 0; i < result.length; i++ ) {
-      result[ i ][ 0 ] = entries[ i ].state;
-      result[ i ][ 1 ] = entries[ i ].title;
+    JsonArray result = new JsonArray();
+    for( int i = 0; i < entries.length; i++ ) {
+      result.add( new JsonArray().add( entries[ i ].state ).add( entries[ i ].title ) );
     }
     return result;
   }

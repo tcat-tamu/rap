@@ -13,14 +13,15 @@ package org.eclipse.rap.rwt.lifecycle;
 
 
 import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_DETAIL;
-import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_INDEX;
+import static org.eclipse.rap.rwt.internal.protocol.ClientMessageConst.EVENT_PARAM_TEXT;
+import static org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory.getClientObject;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.readEventPropertyValue;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import java.lang.reflect.Field;
 
+import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
-import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.internal.util.ActiveKeysUtil;
 import org.eclipse.rap.rwt.internal.util.NumberFormatUtil;
 import org.eclipse.swt.SWT;
@@ -260,10 +261,10 @@ public class ControlLCAUtil {
                                     hasKeyListener( control ) );
     WidgetLCAUtil.preserveListener( control,
                                     PROP_TRAVERSE_LISTENER,
-                                    control.isListening( SWT.Traverse ) );
+                                    isListening( control, SWT.Traverse ) );
     WidgetLCAUtil.preserveListener( control,
                                     PROP_MENU_DETECT_LISTENER,
-                                    control.isListening( SWT.MenuDetect ) );
+                                    isListening( control, SWT.MenuDetect ) );
     WidgetLCAUtil.preserveHelpListener( control );
     ActiveKeysUtil.preserveActiveKeys( control );
     ActiveKeysUtil.preserveCancelKeys( control );
@@ -366,11 +367,11 @@ public class ControlLCAUtil {
       // tabIndex must be a positive value
       computeTabIndices( ( Shell )control, 1 );
     }
-    Integer newValue = new Integer( getTabIndex( control ) );
+    int tabIndex = getTabIndex( control );
+    Integer newValue = new Integer( tabIndex );
     // there is no reliable default value for all controls
     if( WidgetLCAUtil.hasChanged( control, PROP_TAB_INDEX, newValue ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( control );
-      clientObject.set( "tabIndex", newValue );
+      getClientObject( control ).set( "tabIndex", tabIndex );
     }
   }
 
@@ -405,12 +406,12 @@ public class ControlLCAUtil {
    * @param control the control whose visibility to write
    */
   public static void renderVisible( Control control ) {
-    Boolean newValue = Boolean.valueOf( getVisible( control ) );
+    boolean visible = getVisible( control );
+    Boolean newValue = Boolean.valueOf( visible );
     Boolean defValue = control instanceof Shell ? Boolean.FALSE : Boolean.TRUE;
     // TODO [tb] : Can we have a shorthand for this, like in JSWriter?
     if( WidgetLCAUtil.hasChanged( control, Props.VISIBLE, newValue, defValue ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( control );
-      clientObject.set( "visibility", newValue );
+      getClientObject( control ).set( "visibility", visible );
     }
   }
 
@@ -486,8 +487,7 @@ public class ControlLCAUtil {
   static void renderCursor( Control control ) {
     Cursor newValue = control.getCursor();
     if( WidgetLCAUtil.hasChanged( control, PROP_CURSOR, newValue, null ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( control );
-      clientObject.set( PROP_CURSOR, getQxCursor( newValue ) );
+      getClientObject( control ).set( PROP_CURSOR, getQxCursor( newValue ) );
     }
   }
 
@@ -530,18 +530,17 @@ public class ControlLCAUtil {
   }
 
   static void renderListenTraverse( Control control ) {
-    boolean newValue = control.isListening( SWT.Traverse );
+    boolean newValue = isListening( control, SWT.Traverse );
     WidgetLCAUtil.renderListener( control, PROP_TRAVERSE_LISTENER, newValue, false );
   }
 
   static void renderListenMenuDetect( Control control ) {
-    boolean newValue = control.isListening( SWT.MenuDetect );
+    boolean newValue = isListening( control, SWT.MenuDetect );
     WidgetLCAUtil.renderListener( control, PROP_MENU_DETECT_LISTENER, newValue, false );
   }
 
   private static void renderListen( Control control, int eventType, String eventName ) {
-    boolean newValue = control.isListening( eventType );
-    WidgetLCAUtil.renderListener( control, eventName, newValue, false );
+    WidgetLCAUtil.renderListener( control, eventName, isListening( control, eventType ), false );
   }
 
   //////////////////////////
@@ -565,10 +564,10 @@ public class ControlLCAUtil {
       result.detail = SWT.ICON_SEARCH;
     } else if( "cancel".equals( detail ) ) {
       result.detail = SWT.ICON_CANCEL;
+    } else if( "hyperlink".equals( detail ) ) {
+      result.detail = RWT.HYPERLINK;
     }
-    String index = readEventPropertyValue( widget, eventName, EVENT_PARAM_INDEX );
-    if (index != null)
-      result.index = Integer.parseInt( index );
+    result.text = readEventPropertyValue( widget, eventName, EVENT_PARAM_TEXT );
     return result;
   }
 
@@ -919,28 +918,28 @@ public class ControlLCAUtil {
   }
 
   private static boolean hasKeyListener( Control control ) {
-    return control.isListening( SWT.KeyUp ) || control.isListening( SWT.KeyDown );
+    return isListening( control, SWT.KeyUp ) || isListening( control, SWT.KeyDown );
   }
 
   private static void preserveMouseListeners( Control control ) {
     WidgetLCAUtil.preserveListener( control,
                                     PROP_MOUSE_DOWN_LISTENER,
-                                    control.isListening( SWT.MouseDown ) );
+                                    isListening( control, SWT.MouseDown ) );
     WidgetLCAUtil.preserveListener( control,
                                     PROP_MOUSE_UP_LISTENER,
-                                    control.isListening( SWT.MouseUp ) );
+                                    isListening( control, SWT.MouseUp ) );
     WidgetLCAUtil.preserveListener( control,
                                     PROP_MOUSE_DOUBLE_CLICK_LISTENER,
-                                    control.isListening( SWT.MouseDoubleClick ) );
+                                    isListening( control, SWT.MouseDoubleClick ) );
   }
 
   private static void preserveFocusListeners( Control control ) {
     WidgetLCAUtil.preserveListener( control,
                                     PROP_FOCUS_IN_LISTENER,
-                                    control.isListening( SWT.FocusIn ) );
+                                    isListening( control, SWT.FocusIn ) );
     WidgetLCAUtil.preserveListener( control,
                                     PROP_FOCUS_OUT_LISTENER,
-                                    control.isListening( SWT.FocusOut ) );
+                                    isListening( control, SWT.FocusOut ) );
   }
 
   private static void preserveActivateListeners( Control control ) {
@@ -948,10 +947,10 @@ public class ControlLCAUtil {
     if( !( control instanceof Shell ) ) {
       WidgetLCAUtil.preserveListener( control,
                                       PROP_ACTIVATE_LISTENER,
-                                      control.isListening( SWT.Activate ) );
+                                      isListening( control, SWT.Activate ) );
       WidgetLCAUtil.preserveListener( control,
                                       PROP_DEACTIVATE_LISTENER,
-                                      control.isListening( SWT.Deactivate ) );
+                                      isListening( control, SWT.Deactivate ) );
     }
   }
 

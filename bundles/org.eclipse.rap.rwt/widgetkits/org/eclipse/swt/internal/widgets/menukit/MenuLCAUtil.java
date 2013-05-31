@@ -11,14 +11,17 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.menukit;
 
+import static org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory.getClientObject;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.wasEventSent;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
@@ -52,7 +55,7 @@ final class MenuLCAUtil {
   static void renderInitialization( Menu menu ) {
     IClientObject clientObject = ClientObjectFactory.getClientObject( menu );
     clientObject.create( TYPE );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( menu, ALLOWED_STYLES ) );
+    clientObject.set( "style", createJsonArray( getStyles( menu, ALLOWED_STYLES ) ) );
   }
 
   static void renderChanges( Menu menu ) {
@@ -77,12 +80,9 @@ final class MenuLCAUtil {
    * preliminary menu is displayed).
    */
   static void renderUnhideItems( Menu menu ) {
-    if( WidgetLCAUtil.wasEventSent( menu, ClientMessageConst.EVENT_SHOW ) ) {
-      Boolean reveal = Boolean.valueOf( menu.getItemCount() > 0 );
-      IClientObject clientObject = ClientObjectFactory.getClientObject( menu );
-      Map<String, Object> args = new HashMap<String, Object>();
-      args.put( "reveal", reveal );
-      clientObject.call( METHOD_UNHIDE_ITEMS, args );
+    if( wasEventSent( menu, ClientMessageConst.EVENT_SHOW ) ) {
+      boolean reveal = menu.getItemCount() > 0;
+      getClientObject( menu ).call( METHOD_UNHIDE_ITEMS, new JsonObject().add( "reveal", reveal ) );
     }
   }
 
@@ -92,11 +92,11 @@ final class MenuLCAUtil {
   private static boolean hasShowListener( Menu menu ) {
     boolean result = false;
     if( ( menu.getStyle() & SWT.BAR ) == 0 ) {
-      result = menu.isListening( SWT.Show );
+      result = isListening( menu, SWT.Show );
       if( !result ) {
         MenuItem[] items = menu.getItems();
         for( int i = 0; !result && i < items.length && !result; i++ ) {
-          result = items[ i ].isListening( SWT.Arm );
+          result = isListening( items[ i ], SWT.Arm );
         }
       }
     }
@@ -106,7 +106,7 @@ final class MenuLCAUtil {
   private static boolean hasHideListener( Menu menu ) {
     boolean result = false;
     if( ( menu.getStyle() & SWT.BAR ) == 0 ) {
-      result = menu.isListening( SWT.Hide );
+      result = isListening( menu, SWT.Hide );
     }
     return result;
   }

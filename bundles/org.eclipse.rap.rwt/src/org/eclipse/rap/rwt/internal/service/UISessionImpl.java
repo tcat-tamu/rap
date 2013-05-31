@@ -27,7 +27,7 @@ import javax.servlet.http.HttpSessionBindingListener;
 import org.eclipse.rap.rwt.client.Client;
 import org.eclipse.rap.rwt.client.service.ClientInfo;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
+import org.eclipse.rap.rwt.internal.client.ClientMessages;
 import org.eclipse.rap.rwt.internal.client.ClientSelector;
 import org.eclipse.rap.rwt.internal.lifecycle.ContextUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.ISessionShutdownAdapter;
@@ -45,7 +45,7 @@ public final class UISessionImpl
   implements UISession, HttpSessionBindingListener, SerializableCompatibility
 {
 
-  private static final String ATTR_SESSION_STORE = UISessionImpl.class.getName();
+  private static final String ATTR_UI_SESSION = UISessionImpl.class.getName() + "#uisession:";
   private static final String ATTR_LOCALE = UISessionImpl.class.getName() + "#locale";
 
   private final SerializableLock requestLock;
@@ -53,22 +53,49 @@ public final class UISessionImpl
   private final Map<String, Object> attributes;
   private final Set<UISessionListener> listeners;
   private final String id;
+  private final String connectionId;
   private Connection connection;
-  private transient HttpSession httpSession;
   private boolean bound;
   private boolean inDestroy;
+  private transient HttpSession httpSession;
   private transient ISessionShutdownAdapter shutdownAdapter;
+  private transient ApplicationContextImpl applicationContext;
 
-  public UISessionImpl( HttpSession httpSession ) {
-    ParamCheck.notNull( httpSession, "httpSession" );
+  public UISessionImpl( ApplicationContextImpl applicationContext, HttpSession httpSession ) {
+    this( applicationContext, httpSession, null );
+  }
+
+  public UISessionImpl( ApplicationContextImpl applicationContext,
+                        HttpSession httpSession,
+                        String connectionId )
+  {
+    this.applicationContext = applicationContext;
+    this.httpSession = httpSession;
+    this.connectionId = connectionId;
     requestLock = new SerializableLock();
     lock = new SerializableLock();
     attributes = new HashMap<String, Object>();
     listeners = new HashSet<UISessionListener>();
-    id = httpSession.getId() + ":1";
+    id = Integer.toHexString( hashCode() );
     bound = true;
-    this.httpSession = httpSession;
     connection = new ConnectionImpl();
+  }
+
+  public static UISessionImpl getInstanceFromSession( HttpSession httpSession, String connectionId )
+  {
+    return ( UISessionImpl )httpSession.getAttribute( getUISessionAttributeName( connectionId ) );
+  }
+
+  public void attachToHttpSession() {
+    httpSession.setAttribute( getUISessionAttributeName( connectionId ), this );
+  }
+
+  public void setApplicationContext( ApplicationContextImpl applicationContext ) {
+    this.applicationContext = applicationContext;
+  }
+
+  public ApplicationContextImpl getApplicationContext() {
+    return applicationContext;
   }
 
   public void setShutdownAdapter( ISessionShutdownAdapter adapter ) {
@@ -85,6 +112,12 @@ public final class UISessionImpl
 
   public ISessionShutdownAdapter getShutdownAdapter() {
     return shutdownAdapter;
+  }
+
+  public void shutdown() {
+    // Removing the object from the httpSession will trigger the valueUnbound method,
+    // which actually kills the session
+    getHttpSession().removeAttribute( getUISessionAttributeName( connectionId ) );
   }
 
   public Object getAttribute( String name ) {
@@ -135,7 +168,7 @@ public final class UISessionImpl
     }
   }
 
-  public void attachHttpSession( HttpSession httpSession ) {
+  public void setHttpSession( HttpSession httpSession ) {
     ParamCheck.notNull( httpSession, "httpSession" );
     synchronized( lock ) {
       this.httpSession = httpSession;
@@ -149,7 +182,6 @@ public final class UISessionImpl
   }
 
   public Client getClient() {
-    ApplicationContextImpl applicationContext = ApplicationContextUtil.get( this );
     ClientSelector clientSelector = applicationContext.getClientSelector();
     return clientSelector.getSelectedClient( this );
   }
@@ -173,7 +205,15 @@ public final class UISessionImpl
   }
 
   public void setLocale( Locale locale ) {
+    Locale oldLocale = getLocale();
     setAttribute( ATTR_LOCALE, locale );
+    Locale newLocale = getLocale();
+    if( !newLocale.equals( oldLocale ) ) {
+      ClientMessages messages = getClient().getService( ClientMessages.class );
+      if( messages != null ) {
+        messages.update( newLocale );
+      }
+    }
   }
 
   public void exec( Runnable runnable ) {
@@ -240,12 +280,8 @@ public final class UISessionImpl
     }
   }
 
-  public static UISessionImpl getInstanceFromSession( HttpSession httpSession ) {
-    return ( UISessionImpl )httpSession.getAttribute( ATTR_SESSION_STORE );
-  }
-
-  public static void attachInstanceToSession( HttpSession httpSession, UISession uiSession ) {
-    httpSession.setAttribute( ATTR_SESSION_STORE, uiSession );
+  public String getConnectionId() {
+    return connectionId;
   }
 
   /*
@@ -257,6 +293,10 @@ public final class UISessionImpl
 
   Object getRequestLock() {
     return requestLock;
+  }
+
+  private static String getUISessionAttributeName( String connectionId ) {
+    return ATTR_UI_SESSION + ( connectionId == null ? "" : connectionId );
   }
 
   private void removeAttributeInternal( String name ) {

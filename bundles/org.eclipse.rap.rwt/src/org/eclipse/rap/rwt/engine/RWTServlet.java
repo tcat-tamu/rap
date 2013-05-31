@@ -12,19 +12,23 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.engine;
 
-import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
-
 import java.io.IOException;
 import java.util.Enumeration;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.internal.service.ServiceContext;
 import org.eclipse.rap.rwt.internal.service.ServiceStore;
+import org.eclipse.rap.rwt.internal.service.UISessionBuilder;
+import org.eclipse.rap.rwt.internal.service.UISessionImpl;
+import org.eclipse.rap.rwt.internal.service.UrlParameters;
 import org.eclipse.rap.rwt.service.ServiceHandler;
 
 
@@ -68,9 +72,17 @@ import org.eclipse.rap.rwt.service.ServiceHandler;
  */
 public class RWTServlet extends HttpServlet {
 
+  private ApplicationContextImpl applicationContext;
+
   @Override
   public String getServletInfo() {
     return "RWT Servlet";
+  }
+
+  @Override
+  public void init() throws ServletException {
+    ServletContext servletContext = getServletContext();
+    applicationContext = ApplicationContextImpl.getFrom( servletContext );
   }
 
   @Override
@@ -87,7 +99,7 @@ public class RWTServlet extends HttpServlet {
     handleRequest( request, response );
   }
 
-  private static void handleRequest( HttpServletRequest request, HttpServletResponse response )
+  private void handleRequest( HttpServletRequest request, HttpServletResponse response )
     throws IOException, ServletException
   {
     if( request.getPathInfo() == null ) {
@@ -97,36 +109,43 @@ public class RWTServlet extends HttpServlet {
     }
   }
 
-  private static void handleValidRequest( HttpServletRequest request, HttpServletResponse response )
+  private void handleValidRequest( HttpServletRequest request, HttpServletResponse response )
     throws IOException, ServletException
   {
-    ServiceContext context = createServiceContext( request, response );
-    ContextProvider.setContext( context );
+    ServiceContext serviceContext = createServiceContext( request, response );
+    ContextProvider.setContext( serviceContext );
     try {
-      createUISession();
+      ensureUISession( serviceContext );
       getServiceHandler().service( request, response );
     } finally {
       ContextProvider.disposeContext();
     }
   }
 
-  private static ServiceContext createServiceContext( HttpServletRequest request,
-                                                      HttpServletResponse response )
+  private ServiceContext createServiceContext( HttpServletRequest request,
+                                               HttpServletResponse response )
   {
-    ServiceContext context = new ServiceContext( request, response );
+    ServiceContext context = new ServiceContext( request, response, applicationContext );
     context.setServiceStore( new ServiceStore() );
     return context;
   }
 
-  private static void createUISession() {
-    // Ensure that there is exactly one UISession per session created
+  static void ensureUISession( ServiceContext serviceContext ) {
+    // Ensure that there is exactly one UISession per connection created
     synchronized( RWTServlet.class ) {
-      ContextProvider.getUISession();
+      HttpServletRequest request = serviceContext.getRequest();
+      HttpSession httpSession = request.getSession( true );
+      String connectionId = request.getParameter( UrlParameters.PARAM_CONNECTION_ID );
+      UISessionImpl uiSession = UISessionImpl.getInstanceFromSession( httpSession, connectionId );
+      if( uiSession == null ) {
+        uiSession = new UISessionBuilder( serviceContext ).buildUISession();
+      }
+      serviceContext.setUISession( uiSession );
     }
   }
 
-  private static ServiceHandler getServiceHandler() {
-    return getApplicationContext().getServiceManager().getHandler();
+  private ServiceHandler getServiceHandler() {
+    return applicationContext.getServiceManager().getHandler();
   }
 
   static void handleInvalidRequest( HttpServletRequest request, HttpServletResponse response )

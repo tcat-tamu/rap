@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2002, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -20,10 +20,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.rap.rwt.graphics.Graphics;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -129,11 +126,11 @@ public class SashLCA_Test {
     assertEquals( rectangle, adapter.getPreserved( Props.BOUNDS ) );
     Fixture.clearPreserved();
     //foreground background font
-    Color background = Graphics.getColor( 122, 33, 203 );
+    Color background = new Color( display, 122, 33, 203 );
     sash.setBackground( background );
-    Color foreground = Graphics.getColor( 211, 178, 211 );
+    Color foreground = new Color( display, 211, 178, 211 );
     sash.setForeground( foreground );
-    Font font = Graphics.getFont( "font", 12, SWT.BOLD );
+    Font font = new Font( display, "font", 12, SWT.BOLD );
     sash.setFont( font );
     Fixture.preserveWidgets();
     adapter = WidgetUtil.getAdapter( sash );
@@ -158,13 +155,13 @@ public class SashLCA_Test {
     SelectionListener listener = mock( SelectionListener.class );
     sash.addSelectionListener( listener );
 
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( ClientMessageConst.EVENT_PARAM_DETAIL, "drag" );
-    properties.put( ClientMessageConst.EVENT_PARAM_X, Integer.valueOf( 1 ) );
-    properties.put( ClientMessageConst.EVENT_PARAM_Y, Integer.valueOf( 2 ) );
-    properties.put( ClientMessageConst.EVENT_PARAM_WIDTH, Integer.valueOf( 3 ) );
-    properties.put( ClientMessageConst.EVENT_PARAM_HEIGHT, Integer.valueOf( 4 ) );
-    properties.put( "altKey", "true" );
+    JsonObject properties = new JsonObject()
+      .add( ClientMessageConst.EVENT_PARAM_DETAIL, "drag" )
+      .add( ClientMessageConst.EVENT_PARAM_X, 1 )
+      .add( ClientMessageConst.EVENT_PARAM_Y, 2 )
+      .add( ClientMessageConst.EVENT_PARAM_WIDTH, 3 )
+      .add( ClientMessageConst.EVENT_PARAM_HEIGHT, 4 )
+      .add( "altKey", "true" );
     Fixture.fakeNotifyOperation( getId( sash ),
                                  ClientMessageConst.EVENT_SELECTION,
                                  properties );
@@ -213,4 +210,5 @@ public class SashLCA_Test {
     Object[] styles = operation.getStyles();
     assertTrue( Arrays.asList( styles ).contains( "HORIZONTAL" ) );
   }
+
 }

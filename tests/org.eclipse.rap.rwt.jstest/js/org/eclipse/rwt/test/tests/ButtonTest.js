@@ -140,11 +140,50 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ButtonTest", {
         "properties" : {
           "style" : [ "PUSH" ],
           "parent" : "w2",
-          "text" : "text\n && \"text"
+          "text" : "text\n & \"text"
         }
       } );
       var widget = ObjectManager.getObject( "w3" );
       assertEquals( "text\n &amp; &quot;text", widget.getCellContent( 2 ) );
+      shell.destroy();
+      widget.destroy();
+    },
+
+    testSetMnemonicIndexByProtocol : function() {
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      Processor.processOperation( {
+        "target" : "w3",
+        "action" : "create",
+        "type" : "rwt.widgets.Button",
+        "properties" : {
+          "style" : [ "PUSH" ],
+          "parent" : "w2",
+          "text" : "asdfjkloeqwerty",
+          "mnemonicIndex" : 6
+        }
+      } );
+      var widget = ObjectManager.getObject( "w3" );
+      assertEquals( 6, widget.getMnemonicIndex() );
+      shell.destroy();
+      widget.destroy();
+    },
+
+    testSetTextResetsMnemonicIndex : function() {
+      var shell = TestUtil.createShellByProtocol( "w2" );
+      Processor.processOperation( {
+        "target" : "w3",
+        "action" : "create",
+        "type" : "rwt.widgets.Button",
+        "properties" : {
+          "style" : [ "PUSH" ],
+          "parent" : "w2",
+          "text" : "asdfjkloeqwerty",
+          "mnemonicIndex" : 6
+        }
+      } );
+      TestUtil.protocolSet( "w3", { "text" : "blue" } );
+      var widget = ObjectManager.getObject( "w3" );
+      assertNull( widget.getMnemonicIndex() );
       shell.destroy();
       widget.destroy();
     },
@@ -162,7 +201,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ButtonTest", {
         }
       } );
       var widget = ObjectManager.getObject( "w3" );
-      assertEquals( "text<br/> &amp; &quot;text", widget.getCellContent( 2 ) );
+      assertEquals( "text<br/> &amp;&amp; &quot;text", widget.getCellContent( 2 ) );
       shell.destroy();
       widget.destroy();
     },
@@ -397,16 +436,17 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ButtonTest", {
       TestUtil.press( button, "Space" );
       assertEquals( 1, TestUtil.getRequestsSend() );
       assertFalse( TestUtil.getMessageObject().findSetProperty( "w11", "selection" ) );
+      button.destroy();
     },
 
-    testExecuteRadioButton : function() {
+    testExecuteRadioButton_ByMouse : function() {
       var button = new rwt.widgets.Button( "radio" );
       button.addState( "rwt_RADIO" );
       var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Button" );
       rwt.remote.ObjectRegistry.add( "w11", button, handler );
       button.addToDocument();
       TestUtil.flush();
-      TestUtil.click( button );
+      button.setSelection( true );
       var button2 = new rwt.widgets.Button( "radio" );
       button.setHasSelectionListener( true );
       button2.addState( "rwt_RADIO" );
@@ -415,19 +455,70 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ButtonTest", {
       button2.addToDocument();
       TestUtil.flush();
       button2.setHasSelectionListener( true );
+      TestUtil.clearRequestLog();
+
       TestUtil.click( button2 );
+
       assertFalse( button.hasState( "selected" ) );
       assertTrue( button2.hasState( "selected" ) );
-      assertEquals( 1, TestUtil.getRequestsSend() );
-      assertFalse( TestUtil.getMessageObject().findSetProperty( "w11", "selection" ) );
-      assertTrue( TestUtil.getMessageObject().findSetProperty( "w2", "selection" ) );
+      assertEquals( 2, TestUtil.getRequestsSend() );
+      assertFalse( TestUtil.getMessageObject( 0 ).findSetProperty( "w11", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject( 0 ).findNotifyOperation( "w11", "Selection" ) );
+      assertTrue( TestUtil.getMessageObject( 1 ).findSetProperty( "w2", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject( 1 ).findNotifyOperation( "w2", "Selection" ) );
+      button.destroy();
+      button2.destroy();
+    },
+
+    testExecuteRadioButton_ByKeyboard : function() {
+      var button = new rwt.widgets.Button( "radio" );
+      button.addState( "rwt_RADIO" );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Button" );
+      rwt.remote.ObjectRegistry.add( "w11", button, handler );
+      button.addToDocument();
+      TestUtil.flush();
+      button.setSelection( true );
+      var button2 = new rwt.widgets.Button( "radio" );
+      button.setHasSelectionListener( true );
+      button2.addState( "rwt_RADIO" );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Button" );
+      rwt.remote.ObjectRegistry.add( "w2", button2, handler );
+      button2.addToDocument();
+      TestUtil.flush();
+      button2.setHasSelectionListener( true );
       TestUtil.clearRequestLog();
-      TestUtil.press( button2, "Up" );
+
+      TestUtil.press( button, "Down" );
+
+      assertFalse( button.hasState( "selected" ) );
+      assertTrue( button2.hasState( "selected" ) );
+      assertEquals( 2, TestUtil.getRequestsSend() );
+      assertFalse( TestUtil.getMessageObject( 0 ).findSetProperty( "w11", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject( 0 ).findNotifyOperation( "w11", "Selection" ) );
+      assertTrue( TestUtil.getMessageObject( 1 ).findSetProperty( "w2", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject( 1 ).findNotifyOperation( "w2", "Selection" ) );
+      button.destroy();
+      button2.destroy();
+    },
+
+    testExecuteSelectedRadioButton : function() {
+      var button = new rwt.widgets.Button( "radio" );
+      button.addState( "rwt_RADIO" );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Button" );
+      rwt.remote.ObjectRegistry.add( "w11", button, handler );
+      button.addToDocument();
+      TestUtil.flush();
+      button.setSelection( true );
+      button.setHasSelectionListener( true );
+      TestUtil.clearRequestLog();
+
+      TestUtil.click( button );
+
       assertTrue( button.hasState( "selected" ) );
-      assertFalse( button2.hasState( "selected" ) );
       assertEquals( 1, TestUtil.getRequestsSend() );
-      assertTrue( TestUtil.getMessageObject().findSetProperty( "w11", "selection" ) );
-      assertFalse( TestUtil.getMessageObject().findSetProperty( "w2", "selection" ) );
+      assertNull( TestUtil.getMessageObject().findSetOperation( "w11", "selection" ) );
+      assertNotNull( TestUtil.getMessageObject().findNotifyOperation( "w11", "Selection" ) );
+      button.destroy();
     },
 
     testExecuteRadioButton_NoRadioGroup : function() {
@@ -464,6 +555,62 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ButtonTest", {
       assertFalse( button2.hasState( "selected" ) );
       assertEquals( 1, TestUtil.getRequestsSend() );
       assertFalse( TestUtil.getMessageObject().findSetProperty( "w2", "selection" ) );
+      button1.destroy();
+      button2.destroy();
+    },
+
+    testSelectNextRadioButtonByKeyboard : function() {
+      var radios = [];
+      for( var i = 0; i < 3; i++ ) {
+        radios[ i ] = new rwt.widgets.Button( "radio" );
+        radios[ i ].addState( "rwt_RADIO" );
+        radios[ i ].addToDocument();
+        var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Button" );
+        rwt.remote.ObjectRegistry.add( "w1" + i, radios[ i ], handler );
+      }
+      TestUtil.flush();
+      radios[ 0 ].setSelection( true );
+      radios[ 0 ].setFocused( true );
+      radios[ 1 ].setEnabled( false );
+
+      TestUtil.pressOnce( radios[ 0 ].getElement(), "Right", 0 );
+
+      assertFalse( radios[ 0 ]._selected );
+      assertFalse( radios[ 0 ].getFocused() );
+      assertFalse( radios[ 1 ]._selected );
+      assertFalse( radios[ 1 ].getFocused() );
+      assertTrue( radios[ 2 ]._selected );
+      assertTrue( radios[ 2 ].getFocused() );
+      for( var i = 0; i < 3; i++ ) {
+        radios[ i ].destroy();
+      }
+    },
+
+    testSelectPreviousRadioButtonByKeyboard : function() {
+      var radios = [];
+      for( var i = 0; i < 3; i++ ) {
+        radios[ i ] = new rwt.widgets.Button( "radio" );
+        radios[ i ].addState( "rwt_RADIO" );
+        radios[ i ].addToDocument();
+        var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Button" );
+        rwt.remote.ObjectRegistry.add( "w1" + i, radios[ i ], handler );
+      }
+      TestUtil.flush();
+      radios[ 2 ].setSelection( true );
+      radios[ 2 ].setFocused( true );
+      radios[ 1 ].setEnabled( false );
+
+      TestUtil.pressOnce( radios[ 2 ].getElement(), "Left", 0 );
+
+      assertFalse( radios[ 2 ]._selected );
+      assertFalse( radios[ 2 ].getFocused() );
+      assertFalse( radios[ 1 ]._selected );
+      assertFalse( radios[ 1 ].getFocused() );
+      assertTrue( radios[ 0 ]._selected );
+      assertTrue( radios[ 0 ].getFocused() );
+      for( var i = 0; i < 3; i++ ) {
+        radios[ i ].destroy();
+      }
     },
 
     testExecutePushButton : function() {
@@ -513,6 +660,118 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.ButtonTest", {
       button.setWrap( true );
       TestUtil.flush();
       assertEquals( 2, button._flexibleCell );
+      button.destroy();
+    },
+
+    testRenderMnemonic_NotInitially : function() {
+      var button = new rwt.widgets.Button( "push" );
+      button.addState( "rwt_PUSH" );
+      button.addToDocument();
+      button.setText( "foo" );
+
+      button.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      assertEquals( "foo", button.getCellContent( 2 ) );
+      button.destroy();
+    },
+
+    testRenderMnemonic_FirstChar : function() {
+      var button = new rwt.widgets.Button( "push" );
+      button.addState( "rwt_PUSH" );
+      button.addToDocument();
+      button.setText( "foo" );
+      button.setMnemonicIndex( 0 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      TestUtil.flush();
+
+      assertEquals( "<span style=\"text-decoration:underline\">f</span>oo", button.getCellContent( 2 ) );
+      button.destroy();
+    },
+
+    testRenderMnemonic_OnActivate : function() {
+      var button = new rwt.widgets.Button( "push" );
+      button.addState( "rwt_PUSH" );
+      button.addToDocument();
+      button.setText( "foo" );
+      button.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      TestUtil.flush();
+
+      assertEquals( "f<span style=\"text-decoration:underline\">o</span>o", button.getCellContent( 2 ) );
+      button.destroy();
+    },
+
+    testDoNotRenderMnemonic_OnDeactivate : function() {
+      var button = new rwt.widgets.Button( "push" );
+      button.addState( "rwt_PUSH" );
+      button.addToDocument();
+      button.setText( "foo" );
+      button.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().deactivate();
+      TestUtil.flush();
+
+      assertEquals( "foo", button.getCellContent( 2 ) );
+      button.destroy();
+    },
+
+    testTriggerMnemonic_WrongCharacterDoesNothing : function() {
+      var button = new rwt.widgets.Button( "push" );
+      button.addState( "rwt_PUSH" );
+      button.addToDocument();
+      button.setText( "foo" );
+      button.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 78 );
+      TestUtil.flush();
+
+      assertFalse( button.getFocused() );
+      button.destroy();
+    },
+
+    testTriggerMnemonic_FocusesButton : function() {
+      var button = new rwt.widgets.Button( "push" );
+      button.addState( "rwt_PUSH" );
+      button.addToDocument();
+      button.setText( "foo" );
+      button.setMnemonicIndex( 1 );
+      TestUtil.flush();
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+
+      assertTrue( button.getFocused() );
+      button.destroy();
+    },
+
+    testTriggerMnemonic_SendsSelection : function() {
+      var button = new rwt.widgets.Button( "push" );
+      var handler = rwt.remote.HandlerRegistry.getHandler( "rwt.widgets.Button" );
+      rwt.remote.ObjectRegistry.add( "w11", button, handler );
+      button.addState( "rwt_PUSH" );
+      button.addToDocument();
+      button.setText( "foo" );
+      button.setMnemonicIndex( 1 );
+      button.setHasSelectionListener( true );
+      TestUtil.flush();
+      var success = false;
+
+      rwt.widgets.util.MnemonicHandler.getInstance().activate();
+      success = rwt.widgets.util.MnemonicHandler.getInstance().trigger( 79 );
+      TestUtil.flush();
+
+      assertTrue( success );
+      assertNotNull( TestUtil.getMessageObject().findNotifyOperation( "w11", "Selection" ) );
       button.destroy();
     }
 

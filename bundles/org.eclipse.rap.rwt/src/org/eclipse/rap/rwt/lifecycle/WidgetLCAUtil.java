@@ -11,17 +11,27 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.lifecycle;
 
+import static org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory.getClientObject;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonValue;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.getJsonForColor;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.getJsonForFont;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.getJsonForImage;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.getJsonForPoint;
+import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.getJsonForRectangle;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.client.WidgetDataWhiteList;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
-import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
-import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
 import org.eclipse.rap.rwt.internal.protocol.StylesUtil;
 import org.eclipse.rap.rwt.internal.util.EncodingUtil;
@@ -302,7 +312,12 @@ public final class WidgetLCAUtil {
     adapter.preserve( PROP_VARIANT, variant );
   }
 
-  static void preserveData( Widget widget ) {
+  /**
+   * Preserves custom data for the given widget.
+   *
+   * @since 2.1
+   */
+  public static void preserveData( Widget widget ) {
     preserveProperty( widget, PROP_DATA, getDataAsArray( widget ) );
   }
 
@@ -313,7 +328,7 @@ public final class WidgetLCAUtil {
    * @param widget the widget to preserve
    */
   public static void preserveHelpListener( Widget widget ) {
-    preserveListener( widget, PROP_HELP_LISTENER, widget.isListening( SWT.Help ) );
+    preserveListener( widget, PROP_HELP_LISTENER, isListening( widget, SWT.Help ) );
   }
 
   /**
@@ -359,20 +374,23 @@ public final class WidgetLCAUtil {
       if( newValue != null ) {
         value = "variant_" + newValue;
       }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( "customVariant", value );
+      getClientObject( widget ).set( "customVariant", value );
     }
   }
 
-  static void renderData( Widget widget ) {
+  /**
+   * Renders custom data changes for the given widget.
+   *
+   * @since 2.1
+   */
+  public static void renderData( Widget widget ) {
     Object[] newValue = getDataAsArray( widget );
     if( WidgetLCAUtil.hasChanged( widget, PROP_DATA, newValue, new Object[ 0 ] ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      Map<Object, Object> data = new HashMap<Object, Object>();
+      JsonObject data = new JsonObject();
       for( int i = 0; i < newValue.length; i++ ) {
-        data.put( newValue[ i ], newValue[ ++i ] );
+        data.add( (String)newValue[ i ], createJsonValue( newValue[ ++i ] ) );
       }
-      clientObject.set( PROP_DATA, data );
+      getClientObject( widget ).set( PROP_DATA, data );
     }
   }
 
@@ -401,7 +419,7 @@ public final class WidgetLCAUtil {
    * @param widget
    */
   public static void renderListenHelp( Widget widget ) {
-    renderListener( widget, PROP_HELP_LISTENER, widget.isListening( SWT.Help ), false );
+    renderListener( widget, PROP_HELP_LISTENER, isListening( widget, SWT.Help ), false );
   }
 
   /**
@@ -447,8 +465,7 @@ public final class WidgetLCAUtil {
    */
   public static void renderFont( Widget widget, Font font ) {
     if( WidgetLCAUtil.hasChanged( widget, PROP_FONT, font, null ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( PROP_FONT, ProtocolUtil.getFontAsArray( font ) );
+      getClientObject( widget ).set( PROP_FONT, getJsonForFont( font ) );
     }
   }
 
@@ -466,8 +483,7 @@ public final class WidgetLCAUtil {
    */
   public static void renderForeground( Widget widget, Color newColor ) {
     if( WidgetLCAUtil.hasChanged( widget, PROP_FOREGROUND, newColor, null ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( PROP_FOREGROUND, ProtocolUtil.getColorAsArray( newColor, false ) );
+      getClientObject( widget ).set( PROP_FOREGROUND, getJsonForColor( newColor, false ) );
     }
   }
 
@@ -508,12 +524,11 @@ public final class WidgetLCAUtil {
                                                             Boolean.FALSE );
     boolean colorChanged = WidgetLCAUtil.hasChanged( widget, PROP_BACKGROUND, background, null );
     if( transparencyChanged || colorChanged ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      int[] color = null;
+      JsonValue color = JsonValue.NULL;
       if( transparency || background != null ) {
-        color = ProtocolUtil.getColorAsArray( background, transparency );
+        color = getJsonForColor( background, transparency );
       }
-      clientObject.set( PROP_BACKGROUND, color );
+      getClientObject( widget ).set( PROP_BACKGROUND, color );
     }
   }
 
@@ -531,26 +546,21 @@ public final class WidgetLCAUtil {
       Object adapter = widget.getAdapter( IWidgetGraphicsAdapter.class );
       IWidgetGraphicsAdapter graphicsAdapter = ( IWidgetGraphicsAdapter )adapter;
       Color[] bgGradientColors = graphicsAdapter.getBackgroundGradientColors();
-      Object[] args = null;
+      JsonValue args = JsonValue.NULL;
       if( bgGradientColors!= null ) {
-        Object[] colors = new Object[ bgGradientColors.length ];
+        JsonArray colors = new JsonArray();
+        for( int i = 0; i < bgGradientColors.length; i++ ) {
+          colors.add( getJsonForColor( bgGradientColors[ i ], false ) );
+        }
         int[] bgGradientPercents = graphicsAdapter.getBackgroundGradientPercents();
-        Integer[] percents = new Integer[ bgGradientPercents.length ];
-        for( int i = 0; i < colors.length; i++ ) {
-          colors[ i ] = ProtocolUtil.getColorAsArray( bgGradientColors[ i ], false );
-        }
-        for( int i = 0; i < bgGradientPercents.length; i++ ) {
-          percents[ i ] =  new Integer( bgGradientPercents[ i ] );
-        }
+        JsonValue percents = createJsonArray( bgGradientPercents );
         boolean bgGradientVertical = graphicsAdapter.isBackgroundGradientVertical();
-        args = new Object[] {
-          colors,
-          percents,
-          new Boolean( bgGradientVertical )
-        };
+        args = new JsonArray()
+          .add( colors )
+          .add( percents )
+          .add( bgGradientVertical );
       }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( "backgroundGradient", args );
+      getClientObject( widget ).set( "backgroundGradient", args );
     }
   }
 
@@ -586,22 +596,20 @@ public final class WidgetLCAUtil {
     if( hasRoundedBorderChanged( widget ) ) {
       Object adapter = widget.getAdapter( IWidgetGraphicsAdapter.class );
       IWidgetGraphicsAdapter graphicAdapter = ( IWidgetGraphicsAdapter )adapter;
-      Object[] args = null;
+      JsonValue args = JsonValue.NULL;
       int width = graphicAdapter.getRoundedBorderWidth();
       Color color = graphicAdapter.getRoundedBorderColor();
       if( width > 0 && color != null ) {
         Rectangle radius = graphicAdapter.getRoundedBorderRadius();
-        args = new Object[] {
-          new Integer( width ),
-          ProtocolUtil.getColorAsArray( color, false ),
-          new Integer( radius.x ),
-          new Integer( radius.y ),
-          new Integer( radius.width ),
-          new Integer( radius.height )
-        };
+        args = new JsonArray()
+          .add( width )
+          .add( getJsonForColor( color, false ) )
+          .add( radius.x )
+          .add( radius.y )
+          .add( radius.width )
+          .add( radius.height );
       }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( "roundedBorder", args );
+      getClientObject( widget ).set( "roundedBorder", args );
     }
   }
 
@@ -745,8 +753,7 @@ public final class WidgetLCAUtil {
                                      Object defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, newValue );
+      getClientObject( widget ).set( property, createJsonValue( newValue ) );
     }
   }
 
@@ -806,8 +813,7 @@ public final class WidgetLCAUtil {
                                      Image defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, ProtocolUtil.getImageAsArray( newValue ) );
+      getClientObject( widget ).set( property, getJsonForImage( newValue ) );
     }
   }
 
@@ -827,12 +833,11 @@ public final class WidgetLCAUtil {
                                      Image[] defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      Object[] images = new Object[ newValue.length ];
-      for( int i = 0; i < images.length; i++ ) {
-        images[ i ] = ProtocolUtil.getImageAsArray( newValue[ i ] );
+      JsonArray images = new JsonArray();
+      for( int i = 0; i < newValue.length; i++ ) {
+        images.add( getJsonForImage( newValue[ i ] ) );
       }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, images );
+      getClientObject( widget ).set( property, images );
     }
   }
 
@@ -852,8 +857,7 @@ public final class WidgetLCAUtil {
                                      Color defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, ProtocolUtil.getColorAsArray( newValue, false ) );
+      getClientObject( widget ).set( property, getJsonForColor( newValue, false ) );
     }
   }
 
@@ -873,16 +877,11 @@ public final class WidgetLCAUtil {
                                      Color[] defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      Object[] colors = new Object[ newValue.length ];
-      for( int i = 0; i < colors.length; i++ ) {
-        int[] colorProperties = null;
-        if( newValue[ i ] != null ) {
-          colorProperties = ProtocolUtil.getColorAsArray( newValue[ i ], false );
-        }
-        colors[ i ] = colorProperties;
+      JsonArray colors = new JsonArray();
+      for( int i = 0; i < newValue.length; i++ ) {
+        colors.add( getJsonForColor( newValue[ i ], false ) );
       }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, colors );
+      getClientObject( widget ).set( property, colors );
     }
   }
 
@@ -902,12 +901,11 @@ public final class WidgetLCAUtil {
                                      Font[] defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      Object[] fonts = new Object[ newValue.length ];
-      for( int i = 0; i < fonts.length; i++ ) {
-        fonts[ i ] = ProtocolUtil.getFontAsArray( newValue[ i ] );
+      JsonArray fonts = new JsonArray();
+      for( int i = 0; i < newValue.length; i++ ) {
+        fonts.add( getJsonForFont( newValue[ i ] ) );
       }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, fonts );
+      getClientObject( widget ).set( property, fonts );
     }
   }
 
@@ -927,12 +925,7 @@ public final class WidgetLCAUtil {
                                      Point defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      int[] args = null;
-      if( newValue != null ) {
-        args = new int[] { newValue.x, newValue.y };
-      }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, args );
+      getClientObject( widget ).set( property, getJsonForPoint( newValue ) );
     }
   }
 
@@ -952,12 +945,7 @@ public final class WidgetLCAUtil {
                                      Rectangle defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      int[] args = null;
-      if( newValue != null ) {
-        args = new int[] { newValue.x, newValue.y, newValue.width, newValue.height };
-      }
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, args );
+      getClientObject( widget ).set( property, getJsonForRectangle( newValue ) );
     }
   }
 
@@ -977,9 +965,8 @@ public final class WidgetLCAUtil {
                                      Widget defaultValue )
   {
     if( WidgetLCAUtil.hasChanged( widget, property, newValue, defaultValue ) ) {
-      String widgetId = newValue == null ? null : WidgetUtil.getId( newValue );
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.set( property, widgetId );
+      String widgetId = newValue == null ? null : getId( newValue );
+      getClientObject( widget ).set( property, widgetId );
     }
   }
 
@@ -1002,8 +989,7 @@ public final class WidgetLCAUtil {
     Boolean newValueObject = Boolean.valueOf( newValue );
     Boolean defaultValueObject = Boolean.valueOf( defaultValue );
     if( WidgetLCAUtil.hasChanged( widget, property, newValueObject, defaultValueObject ) ) {
-      IClientObject clientObject = ClientObjectFactory.getClientObject( widget );
-      clientObject.listen( listener, newValue );
+      getClientObject( widget ).listen( listener, newValue );
     }
   }
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
+ * Copyright (c) 2004, 2013 1&1 Internet AG, Germany, http://www.1und1.de,
  *                          and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -8,7 +8,7 @@
  *
  *  Contributors:
  *    1&1 Internet AG and others - original API and implementation
- *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
+ *    EclipseSource - adaptation for the Eclipse Remote Application Platform
  ******************************************************************************/
 
 rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
@@ -16,6 +16,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
 
   construct : function( clientArea ) {
     this.base( arguments );
+    this._ignoreScrollTo = [ -1, -1 ];
     this._clientArea = clientArea;
     this._horzScrollBar = new rwt.widgets.base.ScrollBar( true );
     this._vertScrollBar = new rwt.widgets.base.ScrollBar( false );
@@ -185,42 +186,45 @@ rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
       rwt.html.Scroll.disableScrolling( this._clientArea.getElement() );
     },
 
-    _onClientLayout : rwt.util.Variant.select( "qx.client", {
-      "default" : function() {
-        var barWidth = rwt.widgets.base.Scrollable.getNativeScrollBarWidth();
-        var node = this._clientArea._getTargetNode();
-        var el = this._clientArea.getElement();
-        var overflow = this._clientArea.getOverflow();
-        var width = parseInt( el.style.width, 10 );
-        var height = parseInt( el.style.height, 10 );
-        if( overflow === "scroll" || overflow === "scrollY" ) {
-          width += barWidth;
-        }
-        if( overflow === "scroll" || overflow === "scrollX" ) {
-          height += barWidth;
-        }
-        node.style.width = width + "px";
-        node.style.height = height + "px";
-      },
-      "newmshtml" : function() {
-        // NOTE [tb] : there is a bug in IE where the scrollbar is substracted from the inner size
-        //             of an element, not added. Therefore add the barWidth twice.
-        var barWidth = rwt.widgets.base.Scrollable.getNativeScrollBarWidth();
-        var node = this._clientArea._getTargetNode();
-        var el = this._clientArea.getElement();
-        var overflow = this._clientArea.getOverflow();
-        var width = parseInt( el.style.width, 10 );
-        var height = parseInt( el.style.height, 10 );
-        if( overflow === "scroll" || overflow === "scrollY" ) {
-          width += ( 2 * barWidth );
-        }
-        if( overflow === "scroll" || overflow === "scrollX" ) {
-          height += ( 2 * barWidth );
-        }
-        node.style.width = width + "px";
-        node.style.height = height + "px";
+    _onClientLayout : ( function() {
+      if( rwt.client.Client.isNewMshtml() && rwt.client.Client.getMajor() === 9 ) {
+        return function() {
+          // NOTE [tb] : there is a bug in IE9 where the scrollbar is substracted from the inner
+          //             size of an element, not added. Therefore add the barWidth twice.
+          var barWidth = rwt.widgets.base.Scrollable.getNativeScrollBarWidth();
+          var node = this._clientArea._getTargetNode();
+          var el = this._clientArea.getElement();
+          var overflow = this._clientArea.getOverflow();
+          var width = parseInt( el.style.width, 10 );
+          var height = parseInt( el.style.height, 10 );
+          if( overflow === "scroll" || overflow === "scrollY" ) {
+            width += ( 2 * barWidth );
+          }
+          if( overflow === "scroll" || overflow === "scrollX" ) {
+            height += ( 2 * barWidth );
+          }
+          node.style.width = width + "px";
+          node.style.height = height + "px";
+        };
+      } else {
+        return function() {
+          var barWidth = rwt.widgets.base.Scrollable.getNativeScrollBarWidth();
+          var node = this._clientArea._getTargetNode();
+          var el = this._clientArea.getElement();
+          var overflow = this._clientArea.getOverflow();
+          var width = parseInt( el.style.width, 10 );
+          var height = parseInt( el.style.height, 10 );
+          if( overflow === "scroll" || overflow === "scrollY" ) {
+            width += barWidth;
+          }
+          if( overflow === "scroll" || overflow === "scrollX" ) {
+            height += barWidth;
+          }
+          node.style.width = width + "px";
+          node.style.height = height + "px";
+        };
       }
-    } ),
+    }() ),
 
     ////////////
     // Scrolling
@@ -250,7 +254,10 @@ rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
     },
 
     _onscroll : function( evt ) {
-      if( !this._internalChangeFlag ) {
+      var positionChanged =    this._ignoreScrollTo[ 0 ] !== this._clientArea.getScrollLeft()
+                            || this._ignoreScrollTo[ 1 ] !== this._clientArea.getScrollTop();
+      if( !this._internalChangeFlag && positionChanged ) {
+        this._ignoreScrollTo = [ -1, -1 ];
         rwt.event.EventHandlerUtil.stopDomEvent( evt );
         var blockH = this._blockScrolling || !this._horzScrollBar.getDisplay();
         var blockV = this._blockScrolling || !this._vertScrollBar.getDisplay();
@@ -267,7 +274,9 @@ rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
         if( this._clientArea.getScrollLeft() !== scrollX ) {
           this._clientArea.setScrollLeft( scrollX );
         }
-        if( this._clientArea.getScrollLeft() !== scrollX ) {
+        var newScrollLeft = this._clientArea.getScrollLeft();
+        this._ignoreScrollTo[ 0 ] = newScrollLeft;
+        if( newScrollLeft !== scrollX ) {
           this.addToQueue( "hSync" );
         }
       }
@@ -275,8 +284,11 @@ rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
         var scrollY = this._vertScrollBar.getValue();
         if( this._clientArea.getScrollTop() !== scrollY ) {
           this._clientArea.setScrollTop( scrollY );
+        } else {
         }
-        if( this._clientArea.getScrollTop() !== scrollY ) {
+        var newScrollTop = this._clientArea.getScrollTop();
+        this._ignoreScrollTo[ 1 ] = newScrollTop;
+        if( newScrollTop !== scrollY ) {
           this.addToQueue( "vSync" );
         }
       }

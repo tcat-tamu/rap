@@ -56,6 +56,18 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       assertEquals( "&lt;b&gt;Test&lt;/b&gt;", row._getTargetNode().childNodes[ 1 ].innerHTML );
     },
 
+    testRenderItemWithMultipleSpacesWhileNotVisible_Bug395822 : function() {
+      var item = this._createItem( tree );
+      item.setTexts( [ "Test   Test" ] );
+      row.setDisplay( false );
+
+      row.renderItem( item, tree._config, false, null );
+      row.setDisplay( true );
+
+      var actual = row._getTargetNode().childNodes[ 1 ].innerHTML;
+      assertEquals( "Test&nbsp;&nbsp; Test", actual );
+    },
+
     testRenderItemWithMarkupEnabled_Bug374263 : function() {
       this._createTree( false, "markupEnabled" );
       var item = this._createItem( tree );
@@ -224,9 +236,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var node = row._getTargetNode();
       assertEquals( 2, node.childNodes.length );
       var bounds = TestUtil.getElementBounds( node.childNodes[ 1 ] );
-      assertEquals( 0, bounds.top );
+      assertEquals( 6, bounds.top );
       assertEquals( 21, bounds.left );
-      assertEquals( 15, bounds.height );
+      assertEquals( 9, bounds.height );
       assertEquals( 45, bounds.width );
     },
 
@@ -240,9 +252,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var node = row._getTargetNode();
       assertEquals( 1, node.childNodes.length );
       var bounds = TestUtil.getElementBounds( node.childNodes[ 0 ] );
-      assertEquals( 0, bounds.top );
+      assertEquals( 6, bounds.top );
       assertEquals( 5, bounds.left );
-      assertEquals( 15, bounds.height );
+      assertEquals( 9, bounds.height );
       assertEquals( 45, bounds.width );
     },
 
@@ -257,8 +269,8 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var node = row._getTargetNode();
       assertEquals( 1, node.childNodes.length );
       var bounds = TestUtil.getElementBounds( node.childNodes[ 0 ] );
-      assertEquals( 0, bounds.top );
-      assertEquals( 40, bounds.height );
+      assertEquals( 6, bounds.top );
+      assertEquals( 34, bounds.height );
     },
 
     testRenderLabelBoundsAfterCustomHeightItemContentOnly : function() {
@@ -275,8 +287,8 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var node = row._getTargetNode();
       assertEquals( 1, node.childNodes.length );
       var bounds = TestUtil.getElementBounds( node.childNodes[ 0 ] );
-      assertEquals( 0, bounds.top );
-      assertEquals( 15, bounds.height );
+      assertEquals( 6, bounds.top );
+      assertEquals( 9, bounds.height );
     },
 
     testChangeItemLabelMetricsWithEmptyItemThenScroll : function() {
@@ -298,9 +310,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var node = row._getTargetNode();
       assertEquals( 1, node.childNodes.length );
       var bounds = TestUtil.getElementBounds( node.childNodes[ 0 ] );
-      assertEquals( 0, bounds.top );
+      assertEquals( 6, bounds.top );
       assertEquals( 10, bounds.left );
-      assertEquals( 15, bounds.height );
+      assertEquals( 9, bounds.height );
       assertEquals( 45, bounds.width );
     },
 
@@ -322,9 +334,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var node = row._getTargetNode();
       assertEquals( 1, node.childNodes.length );
       var bounds = TestUtil.getElementBounds( node.childNodes[ 0 ] );
-      assertEquals( 0, bounds.top );
+      assertEquals( 6, bounds.top );
       assertEquals( 10, bounds.left );
-      assertEquals( 15, bounds.height );
+      assertEquals( 9, bounds.height );
       assertEquals( 41, bounds.width );
     },
 
@@ -497,14 +509,10 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row", {
         style : function( states ) {
           var result = {};
-          result.itemBackground = "blue";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
-          result.itemForeground = "white";
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
+          result.background = "blue";
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
+          result.foreground = "white";
           result.textDecoration = "line-through";
           return result;
         }
@@ -754,7 +762,6 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var font = TestUtil.getElementFont( node );
       assertTrue( font.indexOf( "monospace" ) != -1 );
       assertTrue( font.indexOf( "12px" ) != -1 );
-      assertEquals( node.style.height, node.style.lineHeight );
     },
 
     testRenderCellFont : function() {
@@ -1042,9 +1049,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var node = row._getTargetNode();
       assertEquals( 2, node.childNodes.length );
       var style = node.childNodes[ 1 ].style;
-      assertEquals( 0, parseInt( style.top, 10 ) );
+      assertEquals( 6, parseInt( style.top, 10 ) );
       assertEquals( 5 + 2 * 16, parseInt( style.left, 10 ) );
-      assertEquals( 15, parseInt( style.height, 10 ) );
+      assertEquals( 9, parseInt( style.height, 10 ) );
       assertEquals( 33, parseInt( style.width, 10 ) );
     },
 
@@ -1390,7 +1397,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       var item = this._createItem( tree );
       item.setCellChecked( [ true ] );
       this._setCheckBox( "mycheckbox.gif" );
-      var log = []
+      var log = [];
 
       row.renderItem( item, tree._config, false, null );
       row.addEventListener( "mousedown", function( event ) {
@@ -1605,13 +1612,13 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       tree.setColumnCount( 2 );
       var item = this._createItem( tree );
       item.setTexts( [ "T1", "T2" ] );
-      this._setItemBackground( "green" );
+      this._setOverlayBackground( "green" );
 
       row.renderItem( item, tree._config, true, null );
 
-      assertEquals( "green", row.getBackgroundColor() );
+      assertNull( row.getBackgroundColor() );
       assertEquals( 4, row._getTargetNode().childNodes.length );
-      var selNode = row._getTargetNode().childNodes[ 2 ];
+      var selNode = row._overlayElement;
       assertEquals( "", selNode.innerHTML );
       var width = parseInt( selNode.style.width, 10 );
       assertEquals( "green", selNode.style.backgroundColor );
@@ -1626,13 +1633,11 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       tree.setColumnCount( 2 );
       var item = this._createItem( tree );
       item.setTexts( [ "Teeeeeeeeeeeeessssst1", "T2" ] );
-      this._setItemBackground( "green" );
+      this._setOverlayBackground( "green" );
 
       row.renderItem( item, tree._config, true, null );
 
-      assertEquals( "green", row.getBackgroundColor() );
-      assertEquals( 4, row._getTargetNode().childNodes.length );
-      var selNode = row._getTargetNode().childNodes[ 2 ];
+      var selNode = row._overlayElement;
       assertEquals( "", selNode.innerHTML );
       var width = parseInt( selNode.style.width, 10 );
       assertEquals( "green", selNode.style.backgroundColor );
@@ -1648,11 +1653,11 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       row._isInGlobalDisplayQueue = true; // prevent add to display queue
       var item = this._createItem( tree );
       item.setTexts( [ "T1", "T2" ] );
-      this._setItemBackground( "green" );
+      this._setOverlayBackground( "green" );
+
       row.renderItem( item, tree._config, true, null );
-      assertEquals( "green", row.getBackgroundColor() );
-      assertEquals( 4, row._getTargetNode().childNodes.length );
-      var selNode = row._getTargetNode().childNodes[ 2 ];
+
+      var selNode = row._overlayElement;
       var width = parseInt( selNode.style.width, 10 );
       assertEquals( "green", selNode.style.backgroundColor );
       // Since we dont know the scrollwidth of the node, this is a bit fuzzy:
@@ -1665,16 +1670,12 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
         style : function( states ) {
           var result = {};
           if( states.selected ) {
-            result.itemBackground = "blue";
+            result.background = "blue";
           } else {
-            result.itemBackground = "#888888";
+            result.background = "#888888";
           }
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -1694,18 +1695,14 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
         style : function( states ) {
           var result = {};
           if( states.selected ) {
-            result.itemBackground = "blue";
-            result.itemForeground = "white";
+            result.background = "blue";
+            result.foreground = "white";
           } else {
-            result.itemBackground = "#888888";
-            result.itemForeground = "black";
+            result.background = "#888888";
+            result.foreground = "black";
           }
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -1729,18 +1726,14 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
         style : function( states ) {
           var result = {};
           if( states.over ) {
-            result.itemBackground = "blue";
-            result.itemForeground = "white";
+            result.background = "blue";
+            result.foreground = "white";
           } else {
-            result.itemBackground = "#888888";
-            result.itemForeground = "black";
+            result.background = "#888888";
+            result.foreground = "black";
           }
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -1761,25 +1754,34 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       assertEquals( "yellow", children[ 2 ].style.color );
     },
 
-    testFullSelectionOverlayOverwritesTheming : function() {
+    testFullSelectionOverlayWithSolidColorIsIgnoredByItemBackground : function() {
       this._createTree( false, false, "fullSelection" );
       TestUtil.fakeAppearance( "tree-row", {
         style : function( states ) {
           var result = {};
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null; // TODO TEST
-          result.itemBackgroundImage = null;  // TODO TEST
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           if( states.selected ) {
-            result.itemBackground = "yellow";
-            result.itemForeground = "yellow";
-            result.overlayBackground = "blue";
-            result.overlayForeground = "white";
+            result.background = "yellow";
+            result.foreground = "yellow";
           } else {
-            result.itemBackground = "#888888";
-            result.itemForeground = "black";
+            result.background = "#888888";
+            result.foreground = "black";
+          }
+          return result;
+        }
+      } );
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          var result = {};
+          result.backgroundImage = null;
+          result.backgroundGradient = null;
+          if( states.selected ) {
+            result.background = "blue";
+            result.foreground = "white";
+          } else {
+            result.background = "undefined";
+            result.foreground = "undefined";
           }
           return result;
         }
@@ -1797,9 +1799,182 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
 
       row.renderItem( item, tree._config, true, null );
 
-      assertEquals( "blue", row.getBackgroundColor() );
-      assertEquals( "transparent", children[ 1 ].style.backgroundColor );
+      children = row._getTargetNode().childNodes; // IE (quirksmode) needs to get it again
+      assertEquals( "yellow", row.getBackgroundColor() );
+      assertEquals( "red", children[ 1 ].style.backgroundColor );
       assertEquals( "white", children[ 2 ].style.color );
+    },
+
+    testOverlayWithCssGradient : function() {
+      if( rwt.client.Client.supportsCss3() ) {
+        this._setOverlayGradient( this._gradient );
+        row.setAppearance( "tree-row" );
+        var item = this._createItem( tree );
+        item.setTexts( [ "Test1" ] );
+
+        row.renderItem( item, tree._config, false, null );
+
+        var gradient = TestUtil.getCssGradient( row._overlayElement );
+        var expected1 = "gradient(-90deg, red 0%, yellow 100%)";
+        var expected2 = "gradient(linear, 0% 0%, 0% 100%, from(red), to(yellow))";
+        var expected3 = "gradient(180deg, red 0%, yellow 100%)";
+        assertTrue( gradient === expected1 || gradient === expected2 || gradient === expected3 );
+      }
+    },
+
+    testOverlayWithGfxGradientCreatesCanvas : function() {
+      if( !rwt.client.Client.supportsCss3() ) {
+        this._setOverlayGradient( this._gradient );
+        row.setAppearance( "tree-row" );
+        var item = this._createItem( tree );
+        item.setTexts( [ "Test1" ] );
+
+        row.renderItem( item, tree._config, false, null );
+
+        assertIdentical( row._overlayElement, row._graphicsOverlay.canvas.node );
+      }
+    },
+
+    testOverlayWithGfxGradientCreatesShape : function() {
+      if( !rwt.client.Client.supportsCss3() ) {
+        this._setOverlayGradient( this._gradient );
+        row.setAppearance( "tree-row" );
+        var item = this._createItem( tree );
+        item.setTexts( [ "Test1" ] );
+
+        row.renderItem( item, tree._config, false, null );
+
+        var shape = row._graphicsOverlay.shape;
+        assertTrue( shape.type === "svgRoundRect" || shape.node.tagName === "shape" );
+      }
+    },
+
+    testFullSelectionOverlayWithGradientIgnoredByItemBackground : function() {
+      this._createTree( false, false, "fullSelection" );
+      TestUtil.fakeAppearance( "tree-row", {
+        style : function( states ) {
+          var result = {};
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
+          if( states.selected ) {
+            result.background = "yellow";
+            result.foreground = "yellow";
+          } else {
+            result.background = "#888888";
+            result.foreground = "black";
+          }
+          return result;
+        }
+      } );
+      var gradient = this._gradient;
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          var result = {};
+          result.backgroundImage = null;
+          result.backgroundGradient = null;
+          if( states.selected ) {
+            result.backgroundGradient = gradient;
+            result.background = "blue";
+            result.foreground = "white";
+          } else {
+            result.background = "undefined";
+            result.foreground = "undefined";
+          }
+          return result;
+        }
+      } );
+      row.setAppearance( "tree-row" );
+      var item = this._createItem( tree );
+      item.setTexts( [ "Test1" ] );
+      item.setCellBackgrounds( [ "red" ] );
+      item.setCellForegrounds( [ "yellow" ] );
+      row.renderItem( item, tree._config, false, null );
+      var children = row._getTargetNode().childNodes;
+      assertEquals( "#888888", row.getBackgroundColor() );
+      assertEquals( "red", children[ 1 ].style.backgroundColor );
+      assertEquals( "yellow", children[ 2 ].style.color );
+
+      row.renderItem( item, tree._config, true, null );
+
+      children = row._getTargetNode().childNodes; // IE (quirksmode) needs to get it again
+      assertNull( row.getBackgroundGradient() );
+      assertEquals( "yellow", row.getBackgroundColor() );
+      assertEquals( "red", children[ 1 ].style.backgroundColor );
+      assertEquals( "white", children[ 2 ].style.color );
+      assertNotNull( row._overlayElement );
+    },
+
+    testFullSelectionOverlayCreatesElement : function() {
+      this._createTree( false, false, "fullSelection" );
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          return {
+            "background" : "#ff0000",
+            "foreground" : "undefined",
+            "backgroundImage" : null,
+            "backgroundGradient" : null
+          };
+        }
+      } );
+      row.setAppearance( "tree-row" );
+      var item = this._createItem( tree );
+      item.setTexts( [ "Test1" ] );
+
+      row.renderItem( item, tree._config, true, null );
+
+      var element = this._getOverlayElement( row );
+      assertIdentical( row._getTargetNode(), element.parentNode );
+    },
+
+    testFullSelectionOverlayWithAlpha : function() {
+      this._createTree( false, false, "fullSelection" );
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          return {
+            "background" : "#ff0000",
+            "backgroundAlpha" : 0.4,
+            "foreground" : "undefined",
+            "backgroundImage" : null,
+            "backgroundGradient" : null
+          };
+        }
+      } );
+      row.setAppearance( "tree-row" );
+      var item = this._createItem( tree );
+      item.setTexts( [ "Test1" ] );
+
+      row.renderItem( item, tree._config, true, null );
+
+      var element = this._getOverlayElement( row );
+      assertTrue( TestUtil.hasElementOpacity( element ) );
+      if( rwt.client.Client.isWebkit() ) {
+        assertEquals( 0.4, element.style.opacity );
+      }
+    },
+
+    testFullSelectionOverlayLayout : function() {
+      this._createTree( false, false, "fullSelection" );
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          return {
+            "background" : "#ff0000",
+            "foreground" : "undefined",
+            "backgroundImage" : null,
+            "backgroundGradient" : null
+          };
+        }
+      } );
+      row.setAppearance( "tree-row" );
+      var item = this._createItem( tree );
+      item.setTexts( [ "Test1" ] );
+
+      row.renderItem( item, tree._config, true, null );
+
+      var bounds = TestUtil.getElementBounds( this._getOverlayElement( row ) );
+      assertEquals( 0, bounds.left );
+      assertEquals( 0, bounds.top );
+      assertEquals( row.getHeight(), bounds.height );
+      assertEquals( row.getWidth(), bounds.width );
     },
 
     testRenderThemingItemForeground : function() {
@@ -1820,20 +1995,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row", {
         style : function( states ) {
           var result = {
-            "itemBackground" : null,
+            "background" : null,
             "checkBox" : null
           };
           if( states.selected ) {
-            result.itemForeground = "white";
+            result.foreground = "white";
           } else {
-            result.itemForeground = "black";
+            result.foreground = "black";
           }
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -1845,7 +2016,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       assertEquals( 3, nodes.length );
       assertEquals( "black", nodes[ 1 ].style.color );
       assertEquals( "black", nodes[ 2 ].style.color );
+
       row.renderItem( item, tree._config, true, null );
+
       assertEquals( "white", nodes[ 1 ].style.color );
       assertEquals( "black", nodes[ 2 ].style.color );
     },
@@ -1856,20 +2029,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row", {
         style : function( states ) {
           var result = {
-            "itemBackground" : null,
+            "background" : null,
             "checkBox" : null
           };
           if( states.selected ) {
-            result.itemForeground = "white";
+            result.foreground = "white";
           } else {
-            result.itemForeground = "black";
+            result.foreground = "black";
           }
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -1892,20 +2061,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row", {
         style : function( states ) {
           var result = {
-            "itemBackground" : null,
+            "background" : null,
             "checkBox" : null
           };
           if( states.selected ) {
-            result.itemForeground = "white";
+            result.foreground = "white";
           } else {
-            result.itemForeground = "black";
+            result.foreground = "black";
           }
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -1933,16 +2098,12 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
             "checkBox" : null
           };
           if( states.selected ) {
-            result.itemForeground = "white";
+            result.foreground = "white";
           } else {
-            result.itemForeground = "black";
+            result.foreground = "black";
           }
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -2065,17 +2226,27 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row", {
         style : function( states ) {
           var result = {};
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
+          result.foreground = "undefined";
           if( states.selected ) {
-            result.overlayBackground = "blue";
+            result.background = "undefined";
           } else {
-            result.itemBackground = "#888888";
+            result.background = "#888888";
           }
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
+          return result;
+        }
+      } );
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          var result = {};
+          result.background = "undefined";
+          result.backgroundImage = null;
+          result.backgroundGradient = null;
+          result.foreground = "undefined";
+          if( states.selected ) {
+            result.background = "blue";
+          }
           return result;
         }
       } );
@@ -2083,31 +2254,28 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       item.setTexts( [ "Test1" ] );
       var selectionPadding = 4;
       tree.setItemMetrics( 0, 0, 100, 0, 0 ,0, 100 );
+
       row.renderItem( item, tree._config, true, null );
-      var rowNode = row._getTargetNode();
-      var color = rowNode.childNodes[ 2 ].style.backgroundColor;
+
+      var overlay = this._getOverlayElement( row );
+      var color = overlay.style.backgroundColor;
       assertEquals( "blue", color );
       var textWidth = row._getVisualTextWidth( item, 0, tree._config );
-      //parseInt( rowNode.childNodes[ 1 ].style.width );
-      var selectionWidth = parseInt( rowNode.childNodes[ 2 ].style.width, 10 );
+      var selectionWidth = parseInt( overlay.style.width, 10 );
       assertEquals( textWidth + selectionPadding, selectionWidth );
     },
 
     testSelectionBackgroundUsesItemColor : function() {
-      TestUtil.fakeAppearance( "tree-row", {
+      TestUtil.fakeAppearance( "tree-row-overlay", {
         style : function( states ) {
           var result = {};
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
           if( states.selected ) {
-            result.itemBackground = "red";
+            result.background = "red";
           } else {
-            result.itemBackground = "undefined";
+            result.background = "undefined";
           }
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -2117,9 +2285,81 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
 
       row.renderItem( item, tree._config, true, null );
 
-      var rowNode = row._getTargetNode();
-      var color = rowNode.childNodes[ 2 ].style.backgroundColor;
+      var color = this._getOverlayElement( row ).style.backgroundColor;
       assertEquals( "red", color );
+    },
+
+    testSelectionBackgroundHidesOverlayAfterDeselection : function() {
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          var result = {};
+          if( states.selected ) {
+            result.background = "red";
+          } else {
+            result.background = "undefined";
+          }
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
+          return result;
+        }
+      } );
+      var item = new rwt.widgets.GridItem( tree.getRootItem() );
+      item.setTexts( [ "Test1" ] );
+      tree.setItemMetrics( 0, 0, 100, 0, 0 ,0, 100 );
+
+      row.renderItem( item, tree._config, true, null );
+      row.renderItem( item, tree._config, false, null );
+
+      assertEquals( "none", this._getOverlayElement( row ).style.display );
+    },
+
+    testSelectionBackgroundHidesOverlayOnEmptyRow : function() {
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          var result = {};
+          if( states.selected ) {
+            result.background = "red";
+          } else {
+            result.background = "undefined";
+          }
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
+          return result;
+        }
+      } );
+      var item = new rwt.widgets.GridItem( tree.getRootItem() );
+      item.setTexts( [ "Test1" ] );
+      tree.setItemMetrics( 0, 0, 100, 0, 0 ,0, 100 );
+
+      row.renderItem( item, tree._config, true, null );
+      row.renderItem( null, tree._config, false, null );
+
+      assertEquals( "none", this._getOverlayElement( row ).style.display );
+    },
+
+    testSelectionBackgroundShowsOverlayOnSecondSelection : function() {
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          var result = {};
+          if( states.selected ) {
+            result.background = "red";
+          } else {
+            result.background = "undefined";
+          }
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
+          return result;
+        }
+      } );
+      var item = new rwt.widgets.GridItem( tree.getRootItem() );
+      item.setTexts( [ "Test1" ] );
+      tree.setItemMetrics( 0, 0, 100, 0, 0 ,0, 100 );
+
+      row.renderItem( item, tree._config, true, null );
+      row.renderItem( item, tree._config, false, null );
+      row.renderItem( item, tree._config, true, null );
+
+      assertEquals( "", this._getOverlayElement( row ).style.display );
     },
 
     testSelectionBackgroundRendering_Bug373900 : rwt.util.Variant.select( "qx.client", {
@@ -2128,16 +2368,12 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
           style : function( states ) {
             var result = {};
             if( states.selected ) {
-              result.itemBackground = "blue";
+              result.background = "blue";
             } else {
-              result.itemBackground = "#888888";
+              result.background = "#888888";
             }
-            result.overlayBackground = "undefined";
-            result.overlayBackgroundImage = null;
-            result.overlayBackgroundGradient = null;
-            result.overlayForeground = "undefined";
-            result.itemBackgroundGradient = null;
-            result.itemBackgroundImage = null;
+            result.backgroundGradient = null;
+            result.backgroundImage = null;
             return result;
           }
         } );
@@ -2153,20 +2389,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
     } ),
 
     testSelectionBackgroundLayoutCutOff : function() {
-      TestUtil.fakeAppearance( "tree-row", {
+      TestUtil.fakeAppearance( "tree-row-overlay", {
         style : function( states ) {
           var result = {};
           if( states.selected ) {
-            result.itemBackground = "blue";
+            result.background = "blue";
           } else {
-            result.itemBackground = "#888888";
+            result.background = "#888888";
           }
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -2174,38 +2406,67 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       item.setTexts( [ "Test1" ] );
       var selectionPadding = 3; // only the left side
       tree.setItemMetrics( 0, 0, 100, 0, 0 ,0, 25 );
+
       row.renderItem( item, tree._config, true, null );
+
       var rowNode = row._getTargetNode();
       var textWidth = parseInt( rowNode.childNodes[ 1 ].style.width, 10 );
-      var selectionWidth = parseInt( rowNode.childNodes[ 2 ].style.width, 10 );
+      var selectionWidth = parseInt( this._getOverlayElement( row ).style.width, 10 );
       assertEquals( textWidth + selectionPadding, selectionWidth );
     },
 
     testSelectionBackgroundLayoutInvisible : function() {
-      TestUtil.fakeAppearance( "tree-row", {
+      TestUtil.fakeAppearance( "tree-row-overlay", {
         style : function( states ) {
           var result = {};
           if( states.selected ) {
-            result.itemBackground = "blue";
+            result.background = "blue";
           } else {
-            result.itemBackground = "#888888";
+            result.background = "#888888";
           }
-          result.overlayBackground = "undefined";
-          result.overlayBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayForeground = "undefined";
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
       var item = new rwt.widgets.GridItem( tree.getRootItem() );
       item.setTexts( [ "Test1" ] );
       tree.setItemMetrics( 0, 0, 100, 0, 0 ,0, 0 );
+
       row.renderItem( item, tree._config, true, null );
+
       var rowNode = row._getTargetNode();
-      var selectionWidth = parseInt( rowNode.childNodes[ 2 ].style.width, 10 );
+      var selectionWidth = parseInt( this._getOverlayElement( row ).style.width, 10 );
       assertEquals( 0, selectionWidth );
+    },
+
+    testSelectionBackgroundHover : function() {
+      TestUtil.fakeAppearance( "tree-row-overlay", {
+        style : function( states ) {
+          var result = {};
+          result.background = "undefined";
+          result.backgroundImage = null;
+          result.backgroundGradient = null;
+          result.foreground = "undefined";
+          if( states.selected ) {
+            result.background = "blue";
+          } else if( states.over) {
+            result.background = "green";
+          }
+          return result;
+        }
+      } );
+      var item = new rwt.widgets.GridItem( tree.getRootItem() );
+      item.setTexts( [ "Test1" ] );
+      var selectionPadding = 4;
+      tree.setItemMetrics( 0, 0, 100, 0, 0 ,0, 100 );
+
+      row.renderItem( item, tree._config, false, null );
+      row.renderItem( item, tree._config, false, [ "treeColumn" ] );
+
+      var overlay = this._getOverlayElement( row );
+      var color = overlay.style.backgroundColor;
+      assertEquals( "green", color );
     },
 
     testTreeRowFiresItemRenderedEvent : function() {
@@ -2237,6 +2498,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
          result.setAppearance( "tree-row" );
        }
        row = result;
+       row.setWidth( 400 );
        this._addToDom( row );
      },
 
@@ -2246,21 +2508,25 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
     },
 
     _createTree : function( isTable, option, option2 ) {
-      if( tree != null ) {
-      }
       var base = isTable ? "table" : "tree";
       TestUtil.fakeAppearance( base + "-row",  {
         style : function( states ) {
           return {
-            "itemBackground" : "undefined",
-            "itemBackgroundGradient" : "undefined",
-            "itemBackgroundImage" : "undefined",
-            "itemForeground" : "undefined",
-            "checkBox" : null,
-            "overlayBackground" : "undefined",
-            "overlayBackgroundImage" : null,
-            "overlayBackgroundGradient" : null,
-            "overlayForeground" : "undefined"
+            "background" : "undefined",
+            "backgroundGradient" : "undefined",
+            "backgroundImage" : "undefined",
+            "foreground" : "undefined",
+            "checkBox" : null
+          };
+        }
+      } );
+      TestUtil.fakeAppearance( base + "-row-overlay ",  {
+        style : function( states ) {
+          return {
+            "background" : "undefined",
+            "backgroundImage" : null,
+            "backgroundGradient" : null,
+            "foreground" : "undefined"
           };
         }
       } );
@@ -2348,15 +2614,39 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row",  {
         style : function( states ) {
           return {
-            "itemBackground" : value,
-            "itemForeground" : "undefined",
-            "itemBackgroundGradient" : null,
-            "itemBackgroundImage" : null,
-            "checkBox" : null,
-            "overlayBackground" : value,
-            "overlayBackgroundImage" : null,
-            "overlayBackgroundGradient" : null,
-            "overlayForeground" : "undefined"
+            "background" : value,
+            "foreground" : "undefined",
+            "backgroundGradient" : null,
+            "backgroundImage" : null,
+            "checkBox" : null
+          };
+        }
+      } );
+    },
+
+    _setOverlayBackground : function( value ) {
+      TestUtil.fakeAppearance( "tree-row-overlay",  {
+        style : function( states ) {
+          return {
+            "background" : value,
+            "foreground" : "undefined",
+            "backgroundGradient" : null,
+            "backgroundImage" : null,
+            "checkBox" : null
+          };
+        }
+      } );
+    },
+
+    _setOverlayGradient : function( value ) {
+      TestUtil.fakeAppearance( "tree-row-overlay",  {
+        style : function( states ) {
+          return {
+            "background" : "undefined",
+            "foreground" : "undefined",
+            "backgroundGradient" : value,
+            "backgroundImage" : null,
+            "checkBox" : null
           };
         }
       } );
@@ -2366,15 +2656,21 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row",  {
         style : function( states ) {
           return {
-            "itemBackgroundGradient" : value,
-            "itemBackground" : "transparent",
-            "itemBackgroundImage" : null,
-            "itemForeground" : "undefined",
-            "checkBox" : null,
-            "overlayBackground" : "undefined",
-            "overlayBackgroundImage" : null,
-            "overlayBackgroundGradient" : value,
-            "overlayForeground" : "undefined"
+            "backgroundGradient" : value,
+            "background" : "transparent",
+            "backgroundImage" : null,
+            "foreground" : "undefined",
+            "checkBox" : null
+          };
+        }
+      } );
+      TestUtil.fakeAppearance( "tree-row-overlay",  {
+        style : function( states ) {
+          return {
+            "backgroundGradient" : value,
+            "background" : "transparent",
+            "backgroundImage" : null,
+            "foreground" : "undefined"
           };
         }
       } );
@@ -2384,15 +2680,21 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row",  {
         style : function( states ) {
           return {
-            "itemBackgroundImage" : value,
-            "itemBackgroundGradient" : null,
-            "itemBackground" : "transparent",
-            "itemForeground" : "undefined",
-            "checkBox" : null,
-            "overlayBackground" : "undefined",
-            "overlayBackgroundImage" : value,
-            "overlayBackgroundGradient" : null,
-            "overlayForeground" : "undefined"
+            "backgroundImage" : value,
+            "backgroundGradient" : null,
+            "background" : "transparent",
+            "foreground" : "undefined",
+            "checkBox" : null
+          };
+        }
+      } );
+      TestUtil.fakeAppearance( "tree-row-overlay",  {
+        style : function( states ) {
+          return {
+            "backgroundImage" : value,
+            "backgroundGradient" : null,
+            "background" : "transparent",
+            "foreground" : "undefined"
           };
         }
       } );
@@ -2402,18 +2704,18 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridRowTest", {
       TestUtil.fakeAppearance( "tree-row",  {
         style : function( states ) {
           return {
-            "itemBackground" : "undefined",
-            "itemBackgroundGradient" : "undefined",
-            "itemBackgroundImage" : null,
-            "itemForeground" : value,
-            "checkBox" : null,
-            "overlayBackground" : "undefined",
-            "overlayBackgroundImage" : null,
-            "overlayBackgroundGradient" : null,
-            "overlayForeground" : "undefined"
+            "background" : "undefined",
+            "backgroundGradient" : "undefined",
+            "backgroundImage" : null,
+            "foreground" : value,
+            "checkBox" : null
           };
         }
       } );
+    },
+
+    _getOverlayElement : function( row ) {
+      return row._overlayElement;
     },
 
     setUp : function() {

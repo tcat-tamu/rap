@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2008, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -126,6 +126,10 @@ public final class PropertyResolver {
       result = readFont( unit );
     } else if( isImageProperty( name ) ) {
       result = readBackgroundImage( unit, loader );
+    } else if( isBackgroundRepeatProperty( name ) ) {
+      result = readBackgroundRepeat( unit );
+    } else if( isBackgroundPositionProperty( name ) ) {
+      result = readBackgroundPosition( unit );
     } else if( isTextDecorationProperty( name ) ) {
       result = readTextDecoration( unit );
     } else if( isCursorProperty( name ) ) {
@@ -146,49 +150,17 @@ public final class PropertyResolver {
     return "color".equals( property ) || property.endsWith( "-color" );
   }
 
-  static QxColor readColor(  LexicalUnit unit ) {
+  static QxColor readColor( LexicalUnit unit ) {
     QxColor result = null;
     short type = unit.getLexicalUnitType();
     if( type == LexicalUnit.SAC_RGBCOLOR ) {
-      // The parser ensures that we have exactly three parameters for this type
-      LexicalUnit redParam = unit.getParameters();
-      LexicalUnit greenParam
-        = redParam.getNextLexicalUnit().getNextLexicalUnit();
-      LexicalUnit blueParam
-        = greenParam.getNextLexicalUnit().getNextLexicalUnit();
-      short valueType = redParam.getLexicalUnitType();
-      if( greenParam.getLexicalUnitType() == valueType
-          || blueParam.getLexicalUnitType() == valueType )
-      {
-        if( valueType == LexicalUnit.SAC_INTEGER ) {
-          int red = normalizeRGBValue( redParam.getIntegerValue() );
-          int green = normalizeRGBValue( greenParam.getIntegerValue() );
-          int blue = normalizeRGBValue( blueParam.getIntegerValue() );
-          result = QxColor.create( red, green, blue );
-        } else if( valueType == LexicalUnit.SAC_PERCENTAGE ) {
-          float redPercent = normalizePercentValue( redParam.getFloatValue() );
-          float greenPercent
-            = normalizePercentValue( greenParam.getFloatValue() );
-          float bluePercent
-            = normalizePercentValue( blueParam.getFloatValue() );
-          int red = ( int )( 255 * redPercent / 100 );
-          int green = ( int )( 255 * greenPercent / 100 );
-          int blue = ( int )( 255 * bluePercent / 100 );
-          result = QxColor.create( red, green, blue );
-        }
-      }
-    } else if( type == LexicalUnit.SAC_FUNCTION && "rgb".equals( unit.getFunctionName() ) )
-    {
+      result = readColorRgb( unit );
+    } else if( type == LexicalUnit.SAC_FUNCTION && "rgba".equals( unit.getFunctionName() )  ) {
+      result = readColorRgba( unit );
+    } else  if( type == LexicalUnit.SAC_FUNCTION && "rgb".equals( unit.getFunctionName() ) ) {
       throw new IllegalArgumentException( "Failed to parse rgb() function" );
     } else if( type == LexicalUnit.SAC_IDENT ) {
-      String string = unit.getStringValue();
-      String lowerCaseString = string.toLowerCase( Locale.ENGLISH );
-      if( TRANSPARENT.equals( string ) ) {
-        result = QxColor.TRANSPARENT;
-      } else if( NAMED_COLORS.containsKey( lowerCaseString ) ) {
-        NamedColor color = NAMED_COLORS.get( lowerCaseString );
-        result = QxColor.create( color.red, color.green, color.blue );
-      }
+      result = readColorNamed( unit );
     } else if( type == LexicalUnit.SAC_INHERIT ) {
       result = QxColor.TRANSPARENT;
     }
@@ -198,52 +170,90 @@ public final class PropertyResolver {
     return result;
   }
 
-  static QxColor readColorWithAlpha( LexicalUnit unit ) {
+  private static QxColor readColorNamed( LexicalUnit unit ) {
+    QxColor result = null;
+    String string = unit.getStringValue();
+    String lowerCaseString = string.toLowerCase( Locale.ENGLISH );
+    if( TRANSPARENT.equals( string ) ) {
+      result = QxColor.TRANSPARENT;
+    } else if( NAMED_COLORS.containsKey( lowerCaseString ) ) {
+      NamedColor color = NAMED_COLORS.get( lowerCaseString );
+      result = QxColor.create( color.red, color.green, color.blue );
+    }
+    return result;
+  }
+
+  private static QxColor readColorRgb( LexicalUnit unit ) {
+    QxColor result = null;
+    // The parser ensures that we have exactly three parameters for this type
+    LexicalUnit redParam = unit.getParameters();
+    LexicalUnit greenParam = redParam.getNextLexicalUnit().getNextLexicalUnit();
+    LexicalUnit blueParam = greenParam.getNextLexicalUnit().getNextLexicalUnit();
+    short valueType = redParam.getLexicalUnitType();
+    if(    greenParam.getLexicalUnitType() == valueType
+        || blueParam.getLexicalUnitType() == valueType )
+    {
+      if( valueType == LexicalUnit.SAC_INTEGER ) {
+        int red = normalizeRGBValue( redParam.getIntegerValue() );
+        int green = normalizeRGBValue( greenParam.getIntegerValue() );
+        int blue = normalizeRGBValue( blueParam.getIntegerValue() );
+        result = QxColor.create( red, green, blue );
+      } else if( valueType == LexicalUnit.SAC_PERCENTAGE ) {
+        float redPercent = normalizePercentValue( redParam.getFloatValue() );
+        float greenPercent = normalizePercentValue( greenParam.getFloatValue() );
+        float bluePercent = normalizePercentValue( blueParam.getFloatValue() );
+        int red = ( int )( 255 * redPercent / 100 );
+        int green = ( int )( 255 * greenPercent / 100 );
+        int blue = ( int )( 255 * bluePercent / 100 );
+        result = QxColor.create( red, green, blue );
+      }
+    }
+    return result;
+  }
+
+  static QxColor readColorRgba( LexicalUnit unit ) {
     QxColor result = null;
     int[] values = new int[ 3 ];
     float alpha = 1f;
     short type = unit.getLexicalUnitType();
-    if( type == LexicalUnit.SAC_FUNCTION && "rgba".equals( unit.getFunctionName() )  ) {
-      LexicalUnit nextUnit = unit.getParameters();
-      boolean ok = nextUnit != null;
-      boolean mixedTypes = false;
-      short previousType = -1;
-      int pos = 0;
-      while( ok ) {
-        type = nextUnit.getLexicalUnitType();
-        if( pos == 0 || pos == 2 || pos == 4 ) {
-          // color number
-          if( type == LexicalUnit.SAC_INTEGER ) {
-            values[ pos / 2 ] = normalizeRGBValue( nextUnit.getIntegerValue() );
-          } else if( type == LexicalUnit.SAC_PERCENTAGE ) {
-            float percentValue
-              = normalizePercentValue( nextUnit.getFloatValue() );
-            values[ pos / 2 ] = ( int )( 255 * percentValue / 100 );
-          } else {
-            ok = false;
-          }
-          mixedTypes = previousType != -1 && previousType != type;
-          previousType = type;
-        } else if( pos == 1 || pos == 3 || pos == 5 ) {
-          // comma
-          if( type != LexicalUnit.SAC_OPERATOR_COMMA ) {
-            ok = false;
-          }
-        } else if( pos == 6 ) {
-          // alpha number
-          if( type == LexicalUnit.SAC_REAL ) {
-            alpha = normalizeAlphaValue( nextUnit.getFloatValue() );
-          } else {
-            ok = false;
-          }
+    LexicalUnit nextUnit = unit.getParameters();
+    boolean ok = nextUnit != null;
+    boolean mixedTypes = false;
+    short previousType = -1;
+    int pos = 0;
+    while( ok ) {
+      type = nextUnit.getLexicalUnitType();
+      if( pos == 0 || pos == 2 || pos == 4 ) {
+        // color number
+        if( type == LexicalUnit.SAC_INTEGER ) {
+          values[ pos / 2 ] = normalizeRGBValue( nextUnit.getIntegerValue() );
+        } else if( type == LexicalUnit.SAC_PERCENTAGE ) {
+          float percentValue = normalizePercentValue( nextUnit.getFloatValue() );
+          values[ pos / 2 ] = ( int )( 255 * percentValue / 100 );
+        } else {
+          ok = false;
         }
-        pos++;
-        nextUnit = nextUnit.getNextLexicalUnit();
-        ok &= nextUnit != null && pos < 7 && !mixedTypes;
+        mixedTypes = previousType != -1 && previousType != type;
+        previousType = type;
+      } else if( pos == 1 || pos == 3 || pos == 5 ) {
+        // comma
+        if( type != LexicalUnit.SAC_OPERATOR_COMMA ) {
+          ok = false;
+        }
+      } else if( pos == 6 ) {
+        // alpha number
+        if( type == LexicalUnit.SAC_REAL ) {
+          alpha = normalizeAlphaValue( nextUnit.getFloatValue() );
+        } else {
+          ok = false;
+        }
       }
-      if( pos == 7 ) {
-        result = QxColor.create( values[ 0 ], values[ 1 ], values[ 2 ], alpha );
-      }
+      pos++;
+      nextUnit = nextUnit.getNextLexicalUnit();
+      ok &= nextUnit != null && pos < 7 && !mixedTypes;
+    }
+    if( pos == 7 ) {
+      result = QxColor.create( values[ 0 ], values[ 1 ], values[ 2 ], alpha );
     }
     if( result == null ) {
       throw new IllegalArgumentException( "Failed to parse rgba color" );
@@ -643,8 +653,7 @@ public final class PropertyResolver {
         } else if( "color-stop".equals( function ) ) {
           LexicalUnit percentUnit = nextUnit.getParameters();
           percent = readGradientPercent( percentUnit );
-          LexicalUnit colorUnit
-            = percentUnit.getNextLexicalUnit().getNextLexicalUnit();
+          LexicalUnit colorUnit = percentUnit.getNextLexicalUnit().getNextLexicalUnit();
           color = readGradientColor( colorUnit );
         } else {
           String msg = "Invalid value for background-image gradient: " + function;
@@ -671,6 +680,73 @@ public final class PropertyResolver {
       result = new Float( normalizePercentValue( unit.getFloatValue() ) );
     } else if( type == LexicalUnit.SAC_REAL ) {
       result = new Float( normalizePercentValue( unit.getFloatValue() * 100 ) );
+    }
+    return result;
+  }
+
+  static boolean isBackgroundRepeatProperty( String property ) {
+    return "background-repeat".equals( property );
+  }
+
+  static QxIdentifier readBackgroundRepeat( LexicalUnit unit ) {
+    QxIdentifier result = null;
+    short type = unit.getLexicalUnitType();
+    if( type == LexicalUnit.SAC_IDENT ) {
+      String value = unit.getStringValue();
+      if(    "repeat".equals( value )
+          || "repeat-x".equals( value )
+          || "repeat-y".equals( value )
+          || "no-repeat".equals( value ) )
+      {
+        result = new QxIdentifier( value );
+      } else {
+         String msg = "Invalid value for background-repeat: " + value;
+         throw new IllegalArgumentException( msg );
+      }
+    }
+    if( result == null ) {
+      throw new IllegalArgumentException( "Failed to parse background-repeat " + toString( unit ) );
+    }
+    return result;
+  }
+
+  static boolean isBackgroundPositionProperty( String property ) {
+    return "background-position".equals( property );
+  }
+
+  static QxIdentifier readBackgroundPosition( LexicalUnit unit ) {
+    QxIdentifier result = null;
+    short type = unit.getLexicalUnitType();
+    if( type == LexicalUnit.SAC_IDENT ) {
+      StringBuilder buffer = new StringBuilder();
+      buffer.append( unit.getStringValue() );
+      LexicalUnit nextUnit = unit.getNextLexicalUnit();
+      if( nextUnit != null && nextUnit.getStringValue() != null ) {
+        buffer.append( " " );
+        buffer.append( nextUnit.getStringValue() );
+      } else {
+        buffer.append( " center" );
+      }
+      String value = buffer.toString();
+      if(    "left top".equals( value )
+          || "left center".equals( value )
+          || "left bottom".equals( value )
+          || "right top".equals( value )
+          || "right center".equals( value )
+          || "right bottom".equals( value )
+          || "center top".equals( value )
+          || "center center".equals( value )
+          || "center bottom".equals( value ) )
+      {
+        result = new QxIdentifier( value );
+      } else {
+        String msg = "Invalid value for background-position: " + value;
+        throw new IllegalArgumentException( msg );
+      }
+    }
+    if( result == null ) {
+      String msg = "Failed to parse background-position " + toString( unit );
+      throw new IllegalArgumentException( msg );
     }
     return result;
   }
@@ -715,8 +791,7 @@ public final class PropertyResolver {
       result = QxCursor.valueOf( value );
     }
     if( result == null ) {
-      throw new IllegalArgumentException( "Failed to parse cursor "
-                                          + toString( unit ) );
+      throw new IllegalArgumentException( "Failed to parse cursor " + toString( unit ) );
     }
     return result;
   }
@@ -770,8 +845,7 @@ public final class PropertyResolver {
       if( type == LexicalUnit.SAC_IDENT ) {
         name = nextUnit.getStringValue();
       } else {
-        String msg = "Invalid value for animation name: "
-                      + toString( nextUnit );
+        String msg = "Invalid value for animation name: " + toString( nextUnit );
         throw new IllegalArgumentException( msg );
       }
       nextUnit = nextUnit.getNextLexicalUnit();
@@ -785,8 +859,7 @@ public final class PropertyResolver {
       } else if( type == LexicalUnit.SAC_MILLISECOND ) {
         duration = Math.round( nextUnit.getFloatValue() );
       } else {
-        String msg
-          = "Invalid value for animation duration: " + toString( nextUnit );
+        String msg = "Invalid value for animation duration: " + toString( nextUnit );
         throw new IllegalArgumentException( msg );
       }
       nextUnit = nextUnit.getNextLexicalUnit();
@@ -798,8 +871,7 @@ public final class PropertyResolver {
       if( type == LexicalUnit.SAC_IDENT ) {
         timingFunction = nextUnit.getStringValue();
       } else {
-        String msg = "Invalid value for animation timing function: "
-                     + toString( nextUnit );
+        String msg = "Invalid value for animation timing function: " + toString( nextUnit );
         throw new IllegalArgumentException( msg );
       }
       result.addAnimation( name, duration, timingFunction );
@@ -862,10 +934,8 @@ public final class PropertyResolver {
       }
       if( nextUnit != null ) {
         type = nextUnit.getLexicalUnitType();
-        if(    type == LexicalUnit.SAC_FUNCTION
-            && "rgba".equals( nextUnit.getFunctionName() )  )
-        {
-          color = readColorWithAlpha( nextUnit );
+        if( type == LexicalUnit.SAC_FUNCTION && "rgba".equals( nextUnit.getFunctionName() ) ) {
+          color = readColorRgba( nextUnit );
         } else {
           color = readColor( nextUnit );
         }
@@ -966,9 +1036,7 @@ public final class PropertyResolver {
 
   static boolean checkComma( LexicalUnit unit ) {
     boolean result = false;
-    if(    unit != null
-        && unit.getLexicalUnitType() == LexicalUnit.SAC_OPERATOR_COMMA )
-    {
+    if( unit != null && unit.getLexicalUnitType() == LexicalUnit.SAC_OPERATOR_COMMA ) {
       result = true;
     }
     return result;
@@ -997,9 +1065,7 @@ public final class PropertyResolver {
                || type == LexicalUnit.SAC_SECOND
                || type == LexicalUnit.SAC_DIMENSION )
     {
-      buffer.append( "DIM "
-                     + value.getFloatValue()
-                     + value.getDimensionUnitText() );
+      buffer.append( "DIM " + value.getFloatValue() + value.getDimensionUnitText() );
     } else if( type == LexicalUnit.SAC_RGBCOLOR ) {
       LexicalUnit parameters = value.getParameters();
       buffer.append( "rgb(" + toString( parameters ) + ")" );

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.rap.json.JsonArray;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
@@ -88,6 +89,7 @@ public final class ActiveKeysUtil {
 
   final static String PROP_ACTIVE_KEYS = "activeKeys";
   final static String PROP_CANCEL_KEYS = "cancelKeys";
+  final static String PROP_MNEMONIC_ACTIVATOR = "mnemonicActivator";
 
 
   private ActiveKeysUtil() {
@@ -112,6 +114,11 @@ public final class ActiveKeysUtil {
   public static void preserveCancelKeys( Control control ) {
     WidgetAdapter adapter = WidgetUtil.getAdapter( control );
     adapter.preserve( PROP_CANCEL_KEYS, getCancelKeys( control ) );
+  }
+
+  public static void preserveMnemonicActivator( Display display ) {
+    WidgetAdapter adapter = DisplayUtil.getAdapter( display );
+    adapter.preserve( PROP_MNEMONIC_ACTIVATOR, getMnemonicActivator( display ) );
   }
 
   public static void renderActiveKeys( Display display ) {
@@ -162,6 +169,18 @@ public final class ActiveKeysUtil {
       if( hasChanged ) {
         IClientObject clientObject = ClientObjectFactory.getClientObject( control );
         clientObject.set( "cancelKeys", translateKeySequences( newValue ) );
+      }
+    }
+  }
+
+  public static void renderMnemonicActivator( Display display ) {
+    if( !display.isDisposed() ) {
+      WidgetAdapter adapter = DisplayUtil.getAdapter( display );
+      String newValue = getMnemonicActivator( display );
+      String oldValue = ( String )adapter.getPreserved( PROP_MNEMONIC_ACTIVATOR );
+      if( !equals( oldValue, newValue ) ) {
+        IClientObject clientObject = ClientObjectFactory.getClientObject( display );
+        clientObject.set( "mnemonicActivator", getModifierKeys( newValue ) );
       }
     }
   }
@@ -229,12 +248,28 @@ public final class ActiveKeysUtil {
     return result;
   }
 
-  private static String[] translateKeySequences( String[] activeKeys ) {
-    String[] result = new String[ 0 ];
+  private static String getMnemonicActivator( Display display ) {
+    String result = null;
+    Object data = display.getData( RWT.MNEMONIC_ACTIVATOR );
+    if( data != null ) {
+      if( data instanceof String ) {
+        result = ( String )data;
+        if( !result.endsWith( "+" ) ) {
+          result += "+";
+        }
+      } else {
+        String mesg = "Illegal value for RWT.MNEMONIC_ACTIVATOR in display data, must be a string";
+        throw new IllegalArgumentException( mesg );
+      }
+    }
+    return result;
+  }
+
+  private static JsonArray translateKeySequences( String[] activeKeys ) {
+    JsonArray result = new JsonArray();
     if( activeKeys != null ) {
-      result = new String[ activeKeys.length ];
       for( int i = 0; i < activeKeys.length; i++ ) {
-        result[ i ] = translateKeySequence( activeKeys[ i ] );
+        result.add( translateKeySequence( activeKeys[ i ] ) );
       }
     }
     return result;
@@ -294,6 +329,18 @@ public final class ActiveKeysUtil {
       }
     } else {
       throw new IllegalArgumentException( "Unrecognized key: " + key );
+    }
+    return result;
+  }
+
+  private static boolean equals( Object object1, Object object2 ) {
+    boolean result;
+    if( object1 == object2 ) {
+      result = true;
+    } else if( object1 == null ) {
+      result = false;
+    } else {
+      result = object1.equals( object2 );
     }
     return result;
   }

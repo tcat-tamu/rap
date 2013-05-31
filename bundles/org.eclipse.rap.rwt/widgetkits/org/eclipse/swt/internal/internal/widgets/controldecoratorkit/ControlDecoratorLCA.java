@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 EclipseSource and others.
+ * Copyright (c) 2009, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,10 +10,14 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.internal.widgets.controldecoratorkit;
 
+import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
+import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.preserveProperty;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderListener;
 import static org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil.renderProperty;
+import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.swt.internal.events.EventLCAUtil.isListening;
 
 import java.io.IOException;
 
@@ -22,7 +26,6 @@ import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.ControlLCAUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetLCAUtil;
-import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.widgets.ControlDecorator;
 import org.eclipse.swt.widgets.Widget;
@@ -50,10 +53,10 @@ public class ControlDecoratorLCA extends AbstractWidgetLCA {
     preserveProperty( decorator, PROP_IMAGE, decorator.getImage() );
     preserveProperty( decorator, PROP_VISIBLE, decorator.isVisible() );
     preserveProperty( decorator, PROP_SHOW_HOVER, decorator.getShowHover() );
-    preserveListener( decorator, PROP_SELECTION_LISTENER, decorator.isListening( SWT.Selection ) );
+    preserveListener( decorator, PROP_SELECTION_LISTENER, isListening( decorator, SWT.Selection ) );
     preserveListener( decorator,
                       PROP_DEFAULT_SELECTION_LISTENER,
-                      decorator.isListening( SWT.DefaultSelection ) );
+                      isListening( decorator, SWT.DefaultSelection ) );
   }
 
   public void readData( Widget widget ) {
@@ -66,8 +69,8 @@ public class ControlDecoratorLCA extends AbstractWidgetLCA {
     ControlDecorator decorator = ( ControlDecorator )widget;
     IClientObject clientObject = ClientObjectFactory.getClientObject( decorator );
     clientObject.create( TYPE );
-    clientObject.set( "parent", WidgetUtil.getId( decorator.getParent() ) );
-    clientObject.set( "style", WidgetLCAUtil.getStyles( decorator, ALLOWED_STYLES ) );
+    clientObject.set( "parent", getId( decorator.getParent() ) );
+    clientObject.set( "style", createJsonArray( getStyles( decorator, ALLOWED_STYLES ) ) );
   }
 
   @Override
@@ -80,12 +83,17 @@ public class ControlDecoratorLCA extends AbstractWidgetLCA {
     renderProperty( decorator, PROP_SHOW_HOVER, decorator.getShowHover(), true );
     renderListener( decorator,
                     PROP_SELECTION_LISTENER,
-                    decorator.isListening( SWT.Selection ),
+                    isListening( decorator, SWT.Selection ),
                     false );
     renderListener( decorator,
                     PROP_DEFAULT_SELECTION_LISTENER,
-                    decorator.isListening( SWT.DefaultSelection ),
+                    isListening( decorator, SWT.DefaultSelection ),
                     false );
+  }
+
+  @Override
+  public void renderDispose( Widget widget ) throws IOException {
+    ClientObjectFactory.getClientObject( widget ).destroy();
   }
 
 }

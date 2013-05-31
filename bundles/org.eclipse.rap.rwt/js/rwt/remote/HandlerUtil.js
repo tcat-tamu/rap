@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,8 @@
 namespace( "rwt.remote" );
 
 rwt.remote.HandlerUtil = {
+
+  SERVER_DATA : "org.eclipse.swt.widgets.Widget#data",
 
   _controlDestructor : function( widget ) {
     rwt.remote.HandlerUtil._widgetDestructor( widget );
@@ -46,10 +48,15 @@ rwt.remote.HandlerUtil = {
     "font",
     "menu",
     "activeKeys",
-    "cancelKeys"
+    "cancelKeys",
+    "data"
   ],
 
   _controlPropertyHandler : {
+    "data" : function( target, value ) {
+      var map = rwt.remote.HandlerUtil.getServerData( target );
+      rwt.util.Objects.mergeWith( map, value );
+    },
     "children" : function( widget, value ) {
       if( value !== null ) {
         var childrenCount = value.length;
@@ -61,6 +68,7 @@ rwt.remote.HandlerUtil = {
           rwt.remote.HandlerUtil.callWithTarget( value[ i ], applyZIndex );
         }
       }
+      widget.setUserData( "rwt_Children", value );
     },
     "foreground" : function( widget, value ) {
       if( value === null ) {
@@ -415,6 +423,7 @@ rwt.remote.HandlerUtil = {
     return result;
   },
 
+  // TODO : Can we use "children" property in most cases instead??
   addDestroyableChild : function( parent, child ) {
     var list = parent.getUserData( "destroyableChildren" );
     if( list == null ) {
@@ -439,6 +448,15 @@ rwt.remote.HandlerUtil = {
     var result = [];
     for( var key in list ) {
       result.push( list[ key ] );
+    }
+    return result;
+  },
+
+  getServerData : function( target ) {
+    var result = target.getUserData( rwt.remote.HandlerUtil.SERVER_DATA );
+    if( result == null ) {
+      result = {};
+      target.setUserData( rwt.remote.HandlerUtil.SERVER_DATA, result );
     }
     return result;
   }

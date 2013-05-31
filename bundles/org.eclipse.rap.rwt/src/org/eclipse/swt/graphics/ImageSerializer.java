@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,12 +19,11 @@ import java.io.ObjectInputValidation;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import org.eclipse.rap.rwt.internal.application.ApplicationContextUtil;
 import org.eclipse.rap.rwt.internal.engine.PostDeserialization;
 import org.eclipse.rap.rwt.internal.resources.ResourceUtil;
 import org.eclipse.rap.rwt.internal.util.StreamUtil;
-import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.rap.rwt.service.ResourceManager;
+import org.eclipse.rap.rwt.service.UISession;
 import org.eclipse.swt.internal.widgets.IDisplayAdapter;
 import org.eclipse.swt.widgets.Display;
 
@@ -93,6 +92,6 @@ class ImageSerializer {
   }
 
   private ResourceManager getResourceManager() {
-    return ApplicationContextUtil.get( getUISession() ).getResourceManager();
+    return getUISession().getApplicationContext().getResourceManager();
   }
 }

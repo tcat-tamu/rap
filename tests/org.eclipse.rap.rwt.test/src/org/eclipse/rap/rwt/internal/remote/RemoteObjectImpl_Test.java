@@ -10,20 +10,24 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.remote;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyMap;
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getProtocolWriter;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
-import java.util.Map;
-
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
-import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.rap.rwt.remote.OperationHandler;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
@@ -63,12 +67,11 @@ public class RemoteObjectImpl_Test {
 
   @Test
   public void testDoesNotRenderOperationsImmediately() {
-    remoteObject.call( "method", mockProperties() );
+    remoteObject.call( "method", new JsonObject() );
 
     assertEquals( 0, getMessage().getOperationCount() );
   }
 
-  @SuppressWarnings( "unchecked" )
   @Test
   public void testOperationsAreRenderedDeferred() {
     remoteObject.call( "method", null );
@@ -76,7 +79,7 @@ public class RemoteObjectImpl_Test {
     remoteObject.render( writer );
 
     verify( writer ).appendCreate( anyString(), anyString() );
-    verify( writer ).appendCall( anyString(), anyString(), anyMap() );
+    verify( writer ).appendCall( anyString(), anyString(), any( JsonObject.class ) );
   }
 
   @Test
@@ -96,7 +99,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testSetIntIsRendered() {
+  public void testSet_int_isRendered() {
     remoteObject.set( "property", 23 );
 
     remoteObject.render( writer );
@@ -105,7 +108,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksNameForSetInt() {
+  public void testSet_int_checksName() {
     try {
       remoteObject.set( null, 23 );
       fail();
@@ -114,7 +117,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksStateForSetInt() {
+  public void testSet_int_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
     remoteObjectSpy.set( "property", 23 );
@@ -123,7 +126,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testSetDoubleIsRendered() {
+  public void testSet_double_isRendered() {
     remoteObject.set( "property", 47.11 );
 
     remoteObject.render( writer );
@@ -132,7 +135,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksNameForSetDouble() {
+  public void testSet_double_checksName() {
     try {
       remoteObject.set( null, 47.11 );
       fail();
@@ -141,7 +144,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksStateForSetDouble() {
+  public void testSet_double_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
     remoteObjectSpy.set( "property", 47.11 );
@@ -150,7 +153,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testSetBooleanIsRendered() {
+  public void testSet_boolean_isRendered() {
     remoteObject.set( "property", true );
 
     remoteObject.render( writer );
@@ -159,7 +162,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksNameForSetBoolean() {
+  public void testSet_boolean_checksName() {
     try {
       remoteObject.set( null, true );
       fail();
@@ -168,7 +171,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksStateForSetBoolean() {
+  public void testSet_boolean_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
     remoteObjectSpy.set( "property", true );
@@ -177,7 +180,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testSetStringIsRendered() {
+  public void testSet_string_isRendered() {
     remoteObject.set( "property", "foo" );
 
     remoteObject.render( writer );
@@ -186,7 +189,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksNameForSetString() {
+  public void testSet_string_checksName() {
     try {
       remoteObject.set( null, "foo" );
       fail();
@@ -195,7 +198,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksStateForSetString() {
+  public void testSet_string_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
     remoteObjectSpy.set( "property", "foo" );
@@ -204,35 +207,35 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testSetObjectIsRendered() {
-    Object object = new Object();
-    remoteObject.set( "property", object );
+  public void testSet_jsonValue_isRendered() {
+    JsonValue value = JsonValue.valueOf( 23 );
+    remoteObject.set( "property", value );
 
     remoteObject.render( writer );
 
-    verify( writer ).appendSet( eq( objectId ), eq( "property" ), same( object ) );
+    verify( writer ).appendSet( eq( objectId ), eq( "property" ), eq( value ) );
   }
 
   @Test
-  public void testChecksNameForSetObject() {
+  public void testSet_jsonValue_checksName() {
     try {
-      remoteObject.set( null, new Object() );
+      remoteObject.set( null, JsonValue.TRUE );
       fail();
     } catch( NullPointerException exception ) {
     }
   }
 
   @Test
-  public void testChecksStateForSetObject() {
+  public void testSet_jsonValue_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
-    remoteObjectSpy.set( "property", new Object() );
+    remoteObjectSpy.set( "property", JsonValue.TRUE );
 
     verify( remoteObjectSpy ).checkState();
   }
 
   @Test
-  public void testListenIsRendered() {
+  public void testListen_isRendered() {
     remoteObject.listen( "event", true );
 
     remoteObject.render( writer );
@@ -241,7 +244,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksNameForListen() {
+  public void testListen_checksName() {
     try {
       remoteObject.listen( null, true );
       fail();
@@ -250,7 +253,7 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testChecksStateForListen() {
+  public void testListen_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
     remoteObjectSpy.listen( "event", true );
@@ -259,44 +262,46 @@ public class RemoteObjectImpl_Test {
   }
 
   @Test
-  public void testCallIsRendered() {
-    Map<String, Object> properties = mockProperties();
-    remoteObject.call( "method", properties );
+  public void testCall_isRendered() {
+    JsonObject parameters = mock( JsonObject.class );
+    remoteObject.call( "method", parameters );
 
     remoteObject.render( writer );
 
-    verify( writer ).appendCall( eq( objectId ), eq( "method" ), same( properties ) );
+    verify( writer ).appendCall( eq( objectId ), eq( "method" ), eq( parameters ) );
   }
 
   @Test
-  public void testChecksNameForCall() {
+  public void testCall_checksName() {
     try {
-      remoteObject.call( null, mockProperties() );
+      remoteObject.call( null, mock( JsonObject.class ) );
       fail();
     } catch( NullPointerException exception ) {
     }
   }
 
   @Test
-  public void testChecksStateForCall() {
+  public void testCall_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
-    remoteObjectSpy.call( "method", mockProperties() );
+    remoteObjectSpy.call( "method", mock( JsonObject.class ) );
 
     verify( remoteObjectSpy ).checkState();
   }
 
   @Test
-  public void testDestroyIsRendered() {
-    remoteObject.destroy();
+  public void testDestroy_isRendered() {
+    remoteObject.render( writer );
+    reset( writer );
 
+    remoteObject.destroy();
     remoteObject.render( writer );
 
     verify( writer ).appendDestroy( eq( objectId ) );
   }
 
   @Test
-  public void testChecksStateForDestroy() {
+  public void testDestroy_checksState() {
     RemoteObjectImpl remoteObjectSpy = spy( remoteObject );
 
     remoteObjectSpy.destroy();
@@ -330,7 +335,7 @@ public class RemoteObjectImpl_Test {
   public void testPreventsCallWhenDestroyed() {
     remoteObject.destroy();
     try {
-      remoteObject.call( "method", mockProperties() );
+      remoteObject.call( "method", mock( JsonObject.class ) );
       fail();
     } catch( IllegalStateException exception ) {
       assertEquals( "Remote object is destroyed", exception.getMessage() );
@@ -342,7 +347,7 @@ public class RemoteObjectImpl_Test {
     try {
       runInBackgroundThread( new Runnable() {
         public void run() {
-          remoteObject.call( "method", mockProperties() );
+          remoteObject.call( "method", mock( JsonObject.class ) );
         }
       } );
       fail();
@@ -361,6 +366,15 @@ public class RemoteObjectImpl_Test {
     assertEquals( handler, result );
   }
 
+  @Test
+  public void testRender_omitsImmediatelyDestroyedObjects() {
+    remoteObject.destroy();
+
+    remoteObject.render( writer );
+
+    verifyZeroInteractions( writer );
+  }
+
   private static void runInBackgroundThread( Runnable runnable ) {
     try {
       Fixture.runInThread( runnable );
@@ -371,13 +385,8 @@ public class RemoteObjectImpl_Test {
     }
   }
 
-  @SuppressWarnings( "unchecked" )
-  private static Map<String, Object> mockProperties() {
-    return mock( Map.class );
-  }
-
   private static Message getMessage() {
-    return new Message( ContextProvider.getProtocolWriter().createMessage() );
+    return new Message( getProtocolWriter().createMessage() );
   }
 
 }

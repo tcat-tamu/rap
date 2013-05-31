@@ -12,19 +12,21 @@
 package org.eclipse.rap.rwt.internal.textsize;
 
 import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicationContext;
+import static org.eclipse.rap.rwt.internal.service.ContextProvider.getProtocolWriter;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.SingletonUtil;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessage.CallOperation;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolUtil;
-import org.eclipse.rap.rwt.internal.service.ContextProvider;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.SerializableCompatibility;
@@ -53,11 +55,10 @@ class MeasurementOperator implements SerializableCompatibility {
   }
 
   void appendStartupTextSizeProbe( ProtocolMessageWriter writer ) {
-    Object startupProbeObject = getStartupProbeObject();
+    JsonValue startupProbeObject = getStartupProbeObject();
     if( startupProbeObject != null ) {
-      Map<String, Object> properties = new HashMap<String, Object>();
-      properties.put( PROPERTY_ITEMS, startupProbeObject );
-      writer.appendCall( TYPE, METHOD_MEASURE_ITEMS, properties );
+      JsonObject parameters = new JsonObject().add( PROPERTY_ITEMS, startupProbeObject );
+      writer.appendCall( TYPE, METHOD_MEASURE_ITEMS, parameters );
     }
   }
 
@@ -108,13 +109,13 @@ class MeasurementOperator implements SerializableCompatibility {
   //////////////////
   // helping methods
 
-  private static Object getStartupProbeObject() {
-    Object[] result = null;
+  private static JsonArray getStartupProbeObject() {
+    JsonArray result = null;
     Probe[] probeList = getApplicationContext().getProbeStore().getProbes();
     if( probeList.length > 0 ) {
-      result = new Object[ probeList.length ];
+      result = new JsonArray();
       for( int i = 0; i < probeList.length; i++ ) {
-        result[ i ] = MeasurementUtil.createProbeParamObject( probeList[ i ] );
+        result.add( MeasurementUtil.createProbeParamObject( probeList[ i ] ) );
       }
     }
     return result;
@@ -122,7 +123,7 @@ class MeasurementOperator implements SerializableCompatibility {
 
   private void readMeasuredFontProbeSizes() {
     Iterator probeList = probes.iterator();
-    CallOperation[] operations = getCallOperationsFor( METHOD_STORE_MEASUREMENTS );
+    List<CallOperation> operations = getCallOperationsFor( METHOD_STORE_MEASUREMENTS );
     while( probeList.hasNext() ) {
       Probe probe = ( Probe )probeList.next();
       Point size = readMeasuredSize( operations, MeasurementUtil.getId( probe ) );
@@ -145,7 +146,7 @@ class MeasurementOperator implements SerializableCompatibility {
   private boolean readMeasuredTextSizes() {
     int originalItemsSize = items.size();
     Iterator itemList = items.iterator();
-    CallOperation[] operations = getCallOperationsFor( METHOD_STORE_MEASUREMENTS );
+    List<CallOperation> operations = getCallOperationsFor( METHOD_STORE_MEASUREMENTS );
     while( itemList.hasNext() ) {
       MeasurementItem item = ( MeasurementItem )itemList.next();
       Point size = readMeasuredSize( operations, MeasurementUtil.getId( item ) );
@@ -157,16 +158,16 @@ class MeasurementOperator implements SerializableCompatibility {
     return itemsHasBeenMeasured( originalItemsSize );
   }
 
-  private static CallOperation[] getCallOperationsFor( String methodName ) {
+  private static List<CallOperation> getCallOperationsFor( String methodName ) {
     return ProtocolUtil.getClientMessage().getAllCallOperationsFor( TYPE, methodName );
   }
 
-  private static Point readMeasuredSize( CallOperation[] operations, String id ) {
+  private static Point readMeasuredSize( List<CallOperation> operations, String id ) {
     Point result = null;
-    for( int i = 0; i < operations.length; i++ ) {
-      Map resultsMap = ( Map )operations[ i ].getProperty( PROPERTY_RESULTS );
-      if( resultsMap != null ) {
-        Object value = resultsMap.get( id );
+    for( CallOperation operation : operations ) {
+      JsonObject results = operation.getProperty( PROPERTY_RESULTS ).asObject();
+      if( results != null ) {
+        JsonValue value = results.get( id );
         if( value != null ) {
           result = ProtocolUtil.toPoint( value );
         }
@@ -191,21 +192,19 @@ class MeasurementOperator implements SerializableCompatibility {
     Probe[] probes = getProbes();
     MeasurementItem[] items = getItems();
     if( probes.length > 0 || items.length > 0 ) {
-      Object[] itemsObject = new Object[ probes.length + items.length ];
+      JsonArray itemsObject = new JsonArray();
       for( int i = 0; i < probes.length; i++ ) {
-        itemsObject[ i ] = MeasurementUtil.createProbeParamObject( probes[ i ] );
+        itemsObject.add( MeasurementUtil.createProbeParamObject( probes[ i ] ) );
       }
       for( int i = 0; i < items.length; i++ ) {
-        itemsObject[ probes.length + i ] = MeasurementUtil.createItemParamObject( items[ i ] );
+        itemsObject.add( MeasurementUtil.createItemParamObject( items[ i ] ) );
       }
       callClientMethod( METHOD_MEASURE_ITEMS, PROPERTY_ITEMS, itemsObject );
     }
   }
 
-  private static void callClientMethod( String method, String property, Object value ) {
-    ProtocolMessageWriter protocolWriter = ContextProvider.getProtocolWriter();
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put( property, value );
-    protocolWriter.appendCall( TYPE, method, properties );
+  private static void callClientMethod( String method, String property, JsonValue value ) {
+    getProtocolWriter().appendCall( TYPE, method, new JsonObject().add( property, value ) );
   }
+
 }

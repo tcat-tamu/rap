@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package org.eclipse.rap.rwt.internal.widgets.fileuploadkit;
 
 import static org.eclipse.rap.rwt.lifecycle.WidgetUtil.getId;
+import static org.eclipse.rap.rwt.testfixture.internal.TestUtil.createImage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -21,9 +22,9 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.internal.widgets.IFileUploadAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -44,15 +45,11 @@ import org.eclipse.swt.internal.widgets.Props;
 import org.eclipse.swt.internal.widgets.controlkit.ControlLCATestUtil;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 
-@SuppressWarnings("deprecation")
 public class FileUploadLCA_Test {
 
   private Display display;
@@ -101,7 +98,7 @@ public class FileUploadLCA_Test {
   @Test
   public void testReadFileName() {
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( fileUpload ), "fileName", "foo" );
+    Fixture.fakeSetProperty( getId( fileUpload ), "fileName", "foo" );
     Fixture.executeLifeCycleFromServerThread( );
 
     assertEquals( "foo", fileUpload.getFileName() );
@@ -115,7 +112,7 @@ public class FileUploadLCA_Test {
   @Test
   public void testReadEmptyFileName() {
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( fileUpload ), "fileName", "" );
+    Fixture.fakeSetProperty( getId( fileUpload ), "fileName", "" );
     Fixture.executeLifeCycleFromServerThread( );
 
     assertEquals( null, fileUpload.getFileName() );
@@ -127,7 +124,7 @@ public class FileUploadLCA_Test {
     fileUpload.addSelectionListener( listener );
 
     Fixture.fakeNewRequest();
-    Fixture.fakeSetParameter( getId( fileUpload ), "fileName", "foo" );
+    Fixture.fakeSetProperty( getId( fileUpload ), "fileName", "foo" );
     Fixture.executeLifeCycleFromServerThread( );
 
     assertEquals( "foo", fileUpload.getFileName() );
@@ -176,7 +173,7 @@ public class FileUploadLCA_Test {
     lca.renderChanges( fileUpload );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "test", message.findSetProperty( fileUpload, "text" ) );
+    assertEquals( "test", message.findSetProperty( fileUpload, "text" ).asString() );
   }
 
   @Test
@@ -201,24 +198,23 @@ public class FileUploadLCA_Test {
   }
 
   @Test
-  public void testRenderImage() throws IOException, JSONException {
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+  public void testRenderImage() throws IOException {
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
 
     fileUpload.setImage( image );
     lca.renderChanges( fileUpload );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( image );
-    String expected = "[\"" + imageLocation + "\", 100, 50 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( fileUpload, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 100 ).add( 50 );
+    assertEquals( expected, message.findSetProperty( fileUpload, "image" ) );
   }
 
   @Test
   public void testRenderImageUnchanged() throws IOException {
     Fixture.markInitialized( display );
     Fixture.markInitialized( fileUpload );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
 
     fileUpload.setImage( image );
     Fixture.preserveWidgets();
@@ -232,7 +228,7 @@ public class FileUploadLCA_Test {
   public void testRenderImageReset() throws IOException {
     Fixture.markInitialized( display );
     Fixture.markInitialized( fileUpload );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = createImage( display, Fixture.IMAGE_100x50 );
     fileUpload.setImage( image );
 
     Fixture.preserveWidgets();
@@ -240,7 +236,7 @@ public class FileUploadLCA_Test {
     lca.renderChanges( fileUpload );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( fileUpload, "image" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( fileUpload, "image" ) );
   }
 
   @Test
@@ -253,7 +249,7 @@ public class FileUploadLCA_Test {
 
     Message message = Fixture.getProtocolMessage();
     CallOperation operation = message.findCallOperation( fileUpload, "submit" );
-    assertEquals( "bar", operation.getProperty( "url" ) );
+    assertEquals( "bar", operation.getProperty( "url" ).asString() );
   }
 
   @Test
@@ -280,7 +276,7 @@ public class FileUploadLCA_Test {
     lca.renderChanges( fileUpload );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "variant_blue", message.findSetProperty( fileUpload, "customVariant" ) );
+    assertEquals( "variant_blue", message.findSetProperty( fileUpload, "customVariant" ).asString() );
   }
 
   @Test

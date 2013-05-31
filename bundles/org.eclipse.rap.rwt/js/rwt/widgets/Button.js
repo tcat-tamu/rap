@@ -34,6 +34,12 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     this.initTabIndex();
     this.addEventListener( "focus", this._onFocus );
     this.addEventListener( "blur", this._onBlur );
+    this._rawText = null;
+    this._mnemonicIndex = null;
+  },
+
+  destruct : function() {
+    this.setMnemonicIndex( null );
   },
 
   properties : {
@@ -46,6 +52,26 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
   },
 
   members : {
+
+    setText : function( value ) {
+      this._rawText = value;
+      this._mnemonicIndex = null;
+      this._applyText( false );
+    },
+
+    setMnemonicIndex : function( value ) {
+      this._mnemonicIndex = value;
+      var mnemonicHandler = rwt.widgets.util.MnemonicHandler.getInstance();
+      if( ( typeof value === "number" ) && ( value >= 0 ) ) {
+        mnemonicHandler.add( this, this._onMnemonic );
+      } else {
+        mnemonicHandler.remove( this );
+      }
+    },
+
+    getMnemonicIndex : function() {
+      return this._mnemonicIndex;
+    },
 
     setAlignment : function( value ) {
       if( this.hasState( "rwt_ARROW" ) ) {
@@ -60,6 +86,39 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     setWrap : function( value ) {
       if( value ) {
         this.setFlexibleCell( 2 );
+      }
+    },
+
+    _onMnemonic : function( event ) {
+      switch( event.type ) {
+        case "show":
+          this._applyText( true );
+        break;
+        case "hide":
+          this._applyText( false );
+        break;
+        case "trigger":
+          var charCode = this._rawText.toUpperCase().charCodeAt( this._mnemonicIndex );
+          if( event.charCode === charCode ) {
+            this.setFocused( true );
+            this.execute();
+            event.success = true;
+          }
+        break;
+      }
+    },
+
+    _applyText : function( mnemonic ) {
+      var EncodingUtil = rwt.util.Encoding;
+      if( this._rawText ) {
+        var mnemonicIndex = mnemonic ? this._mnemonicIndex : undefined;
+        var text = EncodingUtil.escapeText( this._rawText, mnemonicIndex );
+        if( this.hasState( "rwt_WRAP" ) ) {
+          text = EncodingUtil.replaceNewLines( text, "<br/>" );
+        }
+        this.setCellContent( 2, text );
+      } else {
+        this.setCellContent( 2, null );
       }
     },
 

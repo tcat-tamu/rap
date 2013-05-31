@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2007, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -44,8 +44,8 @@ var appearances = {
       var borderWidths = [ 0, 0, 0, 0 ];
       var borderStyles = [ "solid", "solid", "solid", "solid" ];
       if( !states.dummy ) {
-        var verticalState = { "vertical" : true };
-        var tvGrid = new rwt.theme.ThemeValues( verticalState );
+        var gridLineStates = { "vertical" : true, "header" : true };
+        var tvGrid = new rwt.theme.ThemeValues( gridLineStates );
         var gridColor = tvGrid.getCssColor( "Table-GridLine", "color" );
         gridColor = gridColor == "undefined" ? "transparent" : gridColor;
         borderColors[ 1 ] = gridColor;
@@ -54,7 +54,7 @@ var appearances = {
           borderColors[ 3 ] = gridColor;
           borderWidths[ 3 ] = 1;
         }
-      } 
+      }
       var borderBottom = tv.getCssBorder( "TableColumn", "border-bottom" );
       borderWidths[ 2 ] = borderBottom.getWidthBottom();
       borderStyles[ 2 ] = borderBottom.getStyleBottom();
@@ -88,16 +88,25 @@ var appearances = {
     style : function( states ) {
       var tv = new rwt.theme.ThemeValues( states );
       var result = {};
-      result.itemBackground = tv.getCssColor( "TableItem", "background-color" );
-      result.itemBackgroundImage = tv.getCssImage( "TableItem", "background-image" );
-      result.itemBackgroundGradient = tv.getCssGradient( "TableItem", "background-image" );
-      result.itemForeground = tv.getCssColor( "TableItem", "color" );
-      result.overlayBackground = tv.getCssColor( "Table-RowOverlay", "background-color" );
-      result.overlayBackgroundImage = tv.getCssImage( "Table-RowOverlay", "background-image" );
-      result.overlayBackgroundGradient = tv.getCssGradient( "Table-RowOverlay", "background-image" );
-      result.overlayForeground = tv.getCssColor( "Table-RowOverlay", "color" );
+      result.background = tv.getCssColor( "TableItem", "background-color" );
+      result.backgroundImage = tv.getCssImage( "TableItem", "background-image" );
+      result.backgroundGradient = tv.getCssGradient( "TableItem", "background-image" );
+      result.foreground = tv.getCssColor( "TableItem", "color" );
       result.textDecoration = tv.getCssIdentifier( "TableItem", "text-decoration" );
       result.textShadow = tv.getCssShadow( "TableItem", "text-shadow" );
+      return result;
+    }
+  },
+
+  "table-row-overlay" : {
+    style : function( states ) {
+      var tv = new rwt.theme.ThemeValues( states );
+      var result = {};
+      result.background = tv.getCssColor( "Table-RowOverlay", "background-color" );
+      result.backgroundAlpha = tv.getCssAlpha( "Table-RowOverlay", "background-color" );
+      result.backgroundImage = tv.getCssImage( "Table-RowOverlay", "background-image" );
+      result.backgroundGradient = tv.getCssGradient( "Table-RowOverlay", "background-image" );
+      result.foreground = tv.getCssColor( "Table-RowOverlay", "color" );
       return result;
     }
   },
@@ -120,6 +129,16 @@ var appearances = {
       var result = {};
       result.border = new rwt.html.Border( [ 0, 0, 0, 1 ], "solid", gridColor );
       return result;
+    }
+  },
+
+  "table-cell" : {
+    style : function( states ) {
+       var tv = new rwt.theme.ThemeValues( states );
+       var result = {};
+       result.spacing = tv.getCssDimension( "Table-Cell", "spacing" );
+       result.padding = tv.getCssBoxDimensions( "Table-Cell", "padding" );
+       return result;
     }
   }
 

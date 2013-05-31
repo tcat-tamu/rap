@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2010, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -127,26 +127,42 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
 
     _registerListeners : function() {
       var target = document.body;
-      target.ontouchstart = this.__onTouchEvent;
-      target.ontouchmove = this.__onTouchEvent;
-      target.ontouchend = this.__onTouchEvent;
-      target.ontouchcancel = this.__onTouchEvent;
-      target.ongesturestart = this.__onGestureEvent;
-      target.ongesturechange = this.__onGestureEvent;
-      target.ongestureend = this.__onGestureEvent;
-      target.onorientationchange = this.__onOrientationEvent;
+      if( rwt.client.Client.isGecko() ) {
+        target.addEventListener( "touchstart", this.__onTouchEvent, false );
+        target.addEventListener( "touchmove", this.__onTouchEvent, false );
+        target.addEventListener( "touchend", this.__onTouchEvent, false );
+        target.addEventListener( "touchcancel", this.__onTouchEvent, false );
+        target.addEventListener( "deviceorientation", this.__onOrientationEvent, false );
+      } else {
+        target.ontouchstart = this.__onTouchEvent;
+        target.ontouchmove = this.__onTouchEvent;
+        target.ontouchend = this.__onTouchEvent;
+        target.ontouchcancel = this.__onTouchEvent;
+        target.ongesturestart = this.__onGestureEvent;
+        target.ongesturechange = this.__onGestureEvent;
+        target.ongestureend = this.__onGestureEvent;
+        target.onorientationchange = this.__onOrientationEvent;
+      }
     },
 
     _removeListeners : function() {
       var target = document.body;
-      target.ontouchstart = null;
-      target.ontouchmove = null;
-      target.ontouchend = null;
-      target.ontouchcancel = null;
-      target.ongesturestart = null;
-      target.ongesturechange = null;
-      target.ongestureend = null;
-      target.onorientationchange = null;
+      if( rwt.client.Client.isGecko() ) {
+        target.removeEventListener( "touchstart", this.__onTouchEvent, false );
+        target.removeEventListener( "touchmove", this.__onTouchEvent, false );
+        target.removeEventListener( "touchend", this.__onTouchEvent, false );
+        target.removeEventListener( "touchcancel", this.__onTouchEvent, false );
+        target.removeEventListener( "deviceorientation", this.__onOrientationEvent, false );
+      } else {
+        target.ontouchstart = null;
+        target.ontouchmove = null;
+        target.ontouchend = null;
+        target.ontouchcancel = null;
+        target.ongesturestart = null;
+        target.ongesturechange = null;
+        target.ongestureend = null;
+        target.onorientationchange = null;
+      }
     },
 
     _registerFilter : function() {
@@ -236,7 +252,9 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
         domEvent.preventDefault();
       }
       this._moveMouseTo( target, domEvent );
-      this._fireMouseEvent( "mousedown", target, domEvent, pos );
+      if( this._touchSession.type.click ) {
+        this._fireMouseEvent( "mousedown", target, domEvent, pos );
+      }
       if( this._touchSession.type.virtualScroll ) {
         this._initVirtualScroll( widgetTarget );
       }
@@ -246,11 +264,11 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
       if( this._touchSession !== null ) {
         var touch = this._getTouch( domEvent );
         var pos = [ touch.clientX, touch.clientY ];
-        if( !this._touchSession.type.scroll ) {
-          domEvent.preventDefault();
-        }
         if( this._touchSession.type.virtualScroll ) {
           this._handleVirtualScroll( pos );
+        }
+        if( !this._touchSession.type.scroll ) {
+          domEvent.preventDefault();
         }
         if ( this._touchSession.type.drag ) {
           domEvent.preventDefault();
@@ -274,13 +292,17 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
       var pos = [ touch.clientX, touch.clientY ];
       var target = domEvent.target;
       if( this._touchSession !== null ) {
-        if( this._touchSession.type.click ) {
+        var type = this._touchSession.type;
+        if( type.delayedClick ) {
+          this._fireMouseEvent( "mousedown", target, domEvent, pos );
+        }
+        if( type.click || type.delayedClick ) {
           this._fireMouseEvent( "mouseup", target, domEvent, pos );
         }
         if( this._touchSession.type.virtualScroll ) {
           this._finishVirtualScroll();
         }
-        if( this._touchSession.type.click && this._touchSession.initialTarget === target ) {
+        if( ( type.click || type.delayedClick ) && this._touchSession.initialTarget === target ) {
           this._fireMouseEvent( "click", target, domEvent, pos );
           this._touchSession = null;
           if( this._isDoubleClick( domEvent ) ) {
@@ -297,7 +319,11 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
 
     _getSessionType : function( widgetTarget ) {
       var result = {};
-      result.click = true;
+      if( this._isSelectableWidget( widgetTarget ) || this._isFocusable( widgetTarget ) ) {
+        result.delayedClick = true;
+      } else {
+        result.click = true;
+      }
       if( this._isDraggableWidget( widgetTarget ) ) {
         result.drag = true;
       } else if( this._isGridRow( widgetTarget ) ) {
@@ -375,6 +401,16 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
 
     _isGridRow : function( widgetTarget ) {
       return widgetTarget instanceof rwt.widgets.base.GridRow;
+    },
+
+    _isSelectableWidget : function( widgetTarget ) {
+      var result = false;
+      if(    widgetTarget instanceof rwt.widgets.ListItem
+          || widgetTarget instanceof rwt.widgets.base.GridRow )
+      {
+        result = true;
+      }
+      return result;
     },
 
     _findScrollable : function( widget ) {
@@ -463,6 +499,7 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
       if( this._touchSession !== null ) {
         this._fireMouseEvent( "mouseup", dummy, domEvent, [ 0, 0 ] );
         delete this._touchSession.type.click;
+        delete this._touchSession.type.delayedClick;
       }
     },
 
@@ -494,7 +531,7 @@ rwt.qx.Class.define( "rwt.runtime.MobileWebkitSupport", {
                             true, //cancelable
                             window, //view
                             0, // detail
-                            coordiantes[ 0 ], // screenX
+                            coordiantes[ 0 ], //screenX
                             coordiantes[ 1 ], //screenY
                             coordiantes[ 0 ], //clientX
                             coordiantes[ 1 ], //clientY

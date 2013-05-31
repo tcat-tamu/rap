@@ -31,6 +31,7 @@ rwt.qx.Class.define( "rwt.remote.Server", {
     this._writer = null;
     this._event = null;
     this._requestCounter = null;
+    this._connectionId = this._generateConnectionId();
     //[ariddle] - added to support metrics gathering
     this._generateMetrics = false;
     this._parseDuration = -1;
@@ -46,7 +47,7 @@ rwt.qx.Class.define( "rwt.remote.Server", {
       this._delayTimer.stop();
       this.send();
     }, this );
-    this._waitHintTimer = new Timer( 500 );
+    this._waitHintTimer = new Timer( 1000 );
     this._waitHintTimer.addEventListener( "interval", this._showWaitHint, this );
     this._retryHandler = null;
     this._sendListeners = [];
@@ -126,14 +127,13 @@ rwt.qx.Class.define( "rwt.remote.Server", {
         //console.trace();
       }
     },
+    
+    getConnectionId : function() {
+      return this._connectionId;
+    },
 
-    /**
-     * Adds the given eventType to this request. The sourceId denotes the id of
-     * the widget that caused the event.
-     */
-    addEvent : function( eventType, sourceId ) {
-      this._flushEvent();
-      this._event = [ sourceId, eventType, {} ];
+    _generateConnectionId : function() {
+      return Math.floor( Math.random() * 0xffffffff ).toString( 16 );
     },
 
     _flushEvent : function() {
@@ -183,12 +183,12 @@ rwt.qx.Class.define( "rwt.remote.Server", {
         //  this._parameters[ "processDuration" ] = this._processDuration;
         //}
         this._requestCounter = -1;
+        this._startWaitHintTimer();
         var request = this._createRequest();
         request.setAsynchronous( async );
         request.setData( this.getMessageWriter().createMessage() );
         this._writer.dispose();
         this._writer = null;
-        this._waitHintTimer.start();
         request.send();
         this._removeSendListeners();
       }
@@ -210,6 +210,16 @@ rwt.qx.Class.define( "rwt.remote.Server", {
       this.addEventListener( "send", func, context );
     },
 
+    getWaitHintTimer : function() {
+      return this._waitHintTimer;
+    },
+
+    _startWaitHintTimer : function() {
+      if( !this.getMessageWriter().getHead( "rwt_initialize" ) ) {
+        this._waitHintTimer.start();
+      }
+    },
+
     _removeSendListeners : function() {
       for( var i = 0; i < this._sendListeners.length; i++ ) {
         var item = this._sendListeners[ i ];
@@ -222,7 +232,9 @@ rwt.qx.Class.define( "rwt.remote.Server", {
     // Internals
 
     _createRequest : function() {
-      var result = new rwt.remote.Request( this._url, "POST", "application/json" );
+      var parameters = "cid=" + this._connectionId;
+      var url = this._url + ( this._url.indexOf( "?" ) >= 0 ? "&" : "?" ) + parameters;
+      var result = new rwt.remote.Request( url, "POST", "application/json" );
       result.setSuccessHandler( this._handleSuccess, this );
       result.setErrorHandler( this._handleError, this );
       return result;
@@ -232,6 +244,7 @@ rwt.qx.Class.define( "rwt.remote.Server", {
     // Handle request events
 
     _handleError : function( event ) {
+      this._hideWaitHint();
       if( this._isConnectionError( event.status ) ) {
         this._handleConnectionError( event );
       } else {
@@ -239,16 +252,14 @@ rwt.qx.Class.define( "rwt.remote.Server", {
         if( text && text.length > 0 ) {
           if( this._isJsonResponse( event ) ) {
             var messageObject = JSON.parse( text );
-            ErrorHandler.showErrorBox( messageObject.head.message, true );
+            ErrorHandler.showErrorBox( messageObject.head.error, true );
           } else {
             ErrorHandler.showErrorPage( text );
           }
         } else {
-          var msg = "<p>Request failed.</p><pre>HTTP Status Code: " + event.status + "</pre>";
-          ErrorHandler.showErrorPage( msg );
+          ErrorHandler.showErrorBox( "request failed" );
         }
       }
-      this._hideWaitHint();
     },
 
     _handleSuccess : function( event ) {
@@ -286,11 +297,8 @@ rwt.qx.Class.define( "rwt.remote.Server", {
     // Handling connection problems
 
     _handleConnectionError : function( event ) {
-      var msg
-        = "<p>The server seems to be temporarily unavailable</p>"
-        + "<p><a href=\"javascript:rwt.remote.Server.getInstance()._retry();\">Retry</a></p>";
       ClientDocument.getInstance().setGlobalCursor( null );
-      rwt.runtime.ErrorHandler.showErrorBox( msg, false );
+      rwt.runtime.ErrorHandler.showErrorBox( "connection error", false );
       this._retryHandler = function() {
         var request = this._createRequest();
         var failedRequest = event.target;
@@ -302,7 +310,7 @@ rwt.qx.Class.define( "rwt.remote.Server", {
 
     _retry : function() {
       try {
-        rwt.runtime.ErrorHandler.hideErrorBox();
+        ErrorHandler.hideErrorBox();
         this._showWaitHint();
         this._retryHandler();
       } catch( ex ) {
@@ -349,10 +357,12 @@ rwt.qx.Class.define( "rwt.remote.Server", {
     _showWaitHint : function() {
       this._waitHintTimer.stop();
       ClientDocument.getInstance().setGlobalCursor( "progress" );
+      ErrorHandler.showWaitHint();
     },
 
     _hideWaitHint : function() {
       this._waitHintTimer.stop();
+      ErrorHandler.hideErrorBox();
       ClientDocument.getInstance().setGlobalCursor( null );
     }
 

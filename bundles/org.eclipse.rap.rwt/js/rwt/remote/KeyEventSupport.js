@@ -53,18 +53,26 @@ rwt.qx.Class.define( "rwt.remote.KeyEventSupport", {
         this._currentKeyCode = keyCode;
       }
       var control = this._getTargetControl();
-      if( this._shouldCancel( this._currentKeyCode, charCode, domEvent, control ) ) {
+      var mHandler = rwt.widgets.util.MnemonicHandler.getInstance();
+      var mnemonic = mHandler.handleKeyEvent( eventType, keyCode, charCode, domEvent );
+      if( mnemonic || this._shouldCancel( this._currentKeyCode, charCode, domEvent, control ) ) {
         rwt.event.EventHandlerUtil.stopDomEvent( domEvent );
         domEvent._noProcess = true;
+        domEvent._mnemonic = mnemonic;
+      }
+      if( mnemonic ) {
+        this._ignoreNextKeypress = true;
       }
     },
 
     _onKeyEvent : function( eventType, keyCode, charCode, domEvent ) {
       var control = this._getTargetControl();
-      if( this._shouldSend( eventType, this._currentKeyCode, charCode, domEvent, control ) ) {
+      if(    !domEvent._mnemonic
+          && this._shouldSend( eventType, this._currentKeyCode, charCode, domEvent, control ) )
+      {
         this._sendKeyEvent( control, this._currentKeyCode, charCode, domEvent );
       }
-      if( eventType === "keypress" || eventType === "keyup" ) {
+      if( !domEvent._mnemonic && ( eventType === "keypress" || eventType === "keyup" ) ) {
         this._ignoreNextKeypress = false;
       }
       return !domEvent._noProcess;
@@ -171,7 +179,7 @@ rwt.qx.Class.define( "rwt.remote.KeyEventSupport", {
         "keyCode" : keyCode,
         "charCode" : finalCharCode
       };
-      rwt.remote.EventUtil.addModifierToProperties( properties );
+      rwt.remote.EventUtil.addModifierToProperties( properties, domEvent );
       if( this._shouldSendTraverse( keyCode, charCode, domEvent, widget ) ) {
         remoteObject.notify( "Traverse", properties, true );
       }

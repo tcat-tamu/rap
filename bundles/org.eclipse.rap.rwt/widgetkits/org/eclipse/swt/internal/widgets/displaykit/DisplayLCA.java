@@ -11,6 +11,7 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.displaykit;
 
+import static org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil.getAdapter;
 import static org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil.getId;
 import static org.eclipse.rap.rwt.internal.protocol.ProtocolUtil.readPropertyValueAsString;
 
@@ -19,10 +20,10 @@ import java.io.IOException;
 import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
 import org.eclipse.rap.rwt.internal.lifecycle.DisplayLifeCycleAdapter;
-import org.eclipse.rap.rwt.internal.lifecycle.DisplayUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.DisposedWidgets;
 import org.eclipse.rap.rwt.internal.lifecycle.RequestCounter;
 import org.eclipse.rap.rwt.internal.lifecycle.UITestUtil;
+import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.internal.protocol.ClientObjectFactory;
 import org.eclipse.rap.rwt.internal.protocol.IClientObject;
 import org.eclipse.rap.rwt.internal.protocol.ProtocolMessageWriter;
@@ -34,6 +35,7 @@ import org.eclipse.rap.rwt.lifecycle.AbstractWidgetLCA;
 import org.eclipse.rap.rwt.lifecycle.WidgetAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetLifeCycleAdapter;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DragSource;
 import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.graphics.Point;
@@ -47,6 +49,7 @@ import org.eclipse.swt.internal.widgets.WidgetTreeVisitor.AllWidgetTreeVisitor;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 
@@ -59,6 +62,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
   static final String PROP_FOCUS_CONTROL = "focusControl";
   static final String PROP_EXIT_CONFIRMATION = "exitConfirmation";
   private static final String METHOD_BEEP = "beep";
+  private static final String PROP_RESIZE_LISTENER = "listener_Resize";
 
   ////////////////////////////////////////////////////////
   // interface implementation of DisplayLifeCycleAdapter
@@ -94,11 +98,13 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
   }
 
   public void preserveValues( Display display ) {
-    WidgetAdapter adapter = DisplayUtil.getAdapter( display );
+    WidgetAdapter adapter = getAdapter( display );
     adapter.preserve( PROP_FOCUS_CONTROL, display.getFocusControl() );
     adapter.preserve( PROP_EXIT_CONFIRMATION, getExitConfirmation() );
+    adapter.preserve( PROP_RESIZE_LISTENER, Boolean.valueOf( hasResizeListener( display ) ) );
     ActiveKeysUtil.preserveActiveKeys( display );
     ActiveKeysUtil.preserveCancelKeys( display );
+    ActiveKeysUtil.preserveMnemonicActivator( display );
     if( adapter.isInitialized() ) {
       Shell[] shells = getShells( display );
       for( int i = 0; i < shells.length; i++ ) {
@@ -124,10 +130,12 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
     renderShells( display );
     renderFocus( display );
     renderBeep( display );
+    renderResizeListener( display );
     renderUICallBack( display );
     markInitialized( display );
     ActiveKeysUtil.renderActiveKeys( display );
     ActiveKeysUtil.renderCancelKeys( display );
+    ActiveKeysUtil.renderMnemonicActivator( display );
     RemoteObjectLifeCycleAdapter.render();
   }
 
@@ -143,7 +151,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
   }
   
   public void clearPreserved( Display display ) {
-    WidgetAdapterImpl widgetAdapter = ( WidgetAdapterImpl )DisplayUtil.getAdapter( display );
+    WidgetAdapterImpl widgetAdapter = ( WidgetAdapterImpl )getAdapter( display );
     widgetAdapter.clearPreserved();
     Composite[] shells = getShells( display );
     for( int i = 0; i < shells.length; i++ ) {
@@ -175,7 +183,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
 
   private static void renderExitConfirmation( Display display ) {
     String exitConfirmation = getExitConfirmation();
-    WidgetAdapter adapter = DisplayUtil.getAdapter( display );
+    WidgetAdapter adapter = getAdapter( display );
     Object oldExitConfirmation = adapter.getPreserved( PROP_EXIT_CONFIRMATION );
     boolean hasChanged = exitConfirmation == null
                        ? oldExitConfirmation != null
@@ -227,7 +235,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
   private static void renderFocus( Display display ) {
     if( !display.isDisposed() ) {
       IDisplayAdapter displayAdapter = getDisplayAdapter( display );
-      WidgetAdapter widgetAdapter = DisplayUtil.getAdapter( display );
+      WidgetAdapter widgetAdapter = getAdapter( display );
       Object oldValue = widgetAdapter.getPreserved( PROP_FOCUS_CONTROL );
       if(    !widgetAdapter.isInitialized()
           || oldValue != display.getFocusControl()
@@ -252,14 +260,26 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
     }
   }
 
+  private static void renderResizeListener( Display display ) {
+    WidgetAdapter adapter = getAdapter( display );
+    Boolean oldValue = ( Boolean )adapter.getPreserved( PROP_RESIZE_LISTENER );
+    if( oldValue == null ) {
+      oldValue = Boolean.FALSE;
+    }
+    Boolean newValue = Boolean.valueOf( hasResizeListener( display ) );
+    if( !oldValue.equals( newValue ) ) {
+      IClientObject clientObject = ClientObjectFactory.getClientObject( display );
+      clientObject.listen( ClientMessageConst.EVENT_RESIZE, newValue.booleanValue() );
+    }
+  }
+
   private static void renderUICallBack( Display display ) {
     new ServerPushRenderer().render();
   }
 
   private static void renderEnableUiTests( Display display ) {
     if( UITestUtil.isEnabled() ) {
-      WidgetAdapterImpl adapter = ( WidgetAdapterImpl )DisplayUtil.getAdapter( display );
-      if( !adapter.isInitialized() ) {
+      if( !getAdapter( display ).isInitialized() ) {
         IClientObject clientObject = ClientObjectFactory.getClientObject( display );
         clientObject.set( "enableUiTests", true );
       }
@@ -267,7 +287,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
   }
 
   private static void markInitialized( Display display ) {
-    WidgetAdapterImpl adapter = ( WidgetAdapterImpl )DisplayUtil.getAdapter( display );
+    WidgetAdapterImpl adapter = ( WidgetAdapterImpl )getAdapter( display );
     adapter.setInitialized( true );
   }
   
@@ -335,6 +355,7 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
       bounds = new Rectangle( 0, 0, oldBounds.width, oldBounds.height );
     }
     getDisplayAdapter( display ).setBounds( bounds );
+    processResizeEvent( display );
   }
 
   private static void readCursorLocation( Display display ) {
@@ -371,6 +392,41 @@ public class DisplayLCA implements DisplayLifeCycleAdapter {
 
   private static String readPropertyValue( Display display, String propertyName ) {
     return readPropertyValueAsString( getId( display ), propertyName );
+  }
+
+  private static void processResizeEvent( Display display ) {
+    if( ProtocolUtil.wasEventSent( getId( display ), ClientMessageConst.EVENT_RESIZE ) ) {
+      getDisplayAdapter( display ).notifyListeners( SWT.Resize, createResizeEvent( display ) );
+    }
+  }
+
+  private static Event createResizeEvent( Display display ) {
+    Event result = new Event();
+    result.display = display;
+    result.type = SWT.Resize;
+    result.time = EventUtil.getLastEventTime();
+    Rectangle bounds = display.getBounds();
+    result.x = bounds.x;
+    result.y = bounds.y;
+    result.width = bounds.width;
+    result.height = bounds.height;
+    return result;
+  }
+
+  private static boolean hasResizeListener( Display display ) {
+    IDisplayAdapter displayAdapter = getDisplayAdapter( display );
+    return hasMaximizedShell( display ) ? true : displayAdapter.isListening( SWT.Resize );
+  }
+
+  private static boolean hasMaximizedShell( Display display ) {
+    boolean result = false;
+    Shell[] shells = getShells( display );
+    for( Shell shell : shells ) {
+      if( shell.getFullScreen() || shell.getMaximized() ) {
+        result = true;
+      }
+    }
+    return result;
   }
 
   private static IDisplayAdapter getDisplayAdapter( Display display ) {

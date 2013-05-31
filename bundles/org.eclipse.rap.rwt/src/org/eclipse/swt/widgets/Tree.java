@@ -235,8 +235,7 @@ public class Tree extends Composite {
         items[ i ].clearPreferredWidthBuffers( true );
       }
     }
-    layoutCache.invalidateHeaderHeight();
-    layoutCache.invalidateItemHeight();
+    clearCachedHeights();
     updateScrollBars();
   }
 
@@ -2088,11 +2087,17 @@ public class Tree extends Composite {
   @Override
   void notifyResize( Point oldSize ) {
     if( !oldSize.equals( getSize() ) && !TextSizeUtil.isTemporaryResize() ) {
+      clearCachedHeights();
       updateAllItems();
       updateScrollBars();
       adjustTopItemIndex();
     }
     super.notifyResize( oldSize );
+  }
+
+  void clearCachedHeights() {
+    layoutCache.invalidateHeaderHeight();
+    layoutCache.invalidateItemHeight();
   }
 
   private void adjustTopItemIndex() {
@@ -2103,8 +2108,8 @@ public class Tree extends Composite {
     }
   }
 
-  private int getVisibleRowCount( boolean includePartlyVisible ) {
-    int clientHeight = getBounds().height - getHeaderHeight() - getHScrollBarHeight();
+  final int getVisibleRowCount( boolean includePartlyVisible ) {
+    int clientHeight = getClientArea().height - getHeaderHeight();
     int result = 0;
     if( clientHeight >= 0 ) {
       int itemHeight = getItemHeight();

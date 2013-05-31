@@ -20,10 +20,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.LinkedList;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -33,7 +38,6 @@ import org.eclipse.rap.rwt.application.EntryPoint;
 import org.eclipse.rap.rwt.engine.RWTServlet;
 import org.eclipse.rap.rwt.internal.protocol.ClientMessageConst;
 import org.eclipse.rap.rwt.internal.service.ContextProvider;
-import org.eclipse.rap.rwt.internal.service.RequestParams;
 import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
@@ -234,19 +238,13 @@ public class RWTLifeCycle2_Test {
   }
 
   @Test
-  public void testGetRequestDoesNotClearUISession() throws Exception {
+  public void testGetRequestShutdownsDummyUISession() throws Exception {
     Class<? extends EntryPoint> entryPoint = TestEntryPoint.class;
     getApplicationContext().getEntryPointManager().register( "/test", entryPoint, null );
-    // initial GET request
-    runRWTServlet( newGetRequest() );
-    // initial POST request starts the UI thread
-    runRWTServlet( newPostRequest( 0 ) );
-    ContextProvider.getUISession().setAttribute( "dummy", Boolean.TRUE );
 
-    // subsequent GET request should not run the lifecycle
     runRWTServlet( newGetRequest() );
 
-    assertEquals( Boolean.TRUE, ContextProvider.getUISession().getAttribute( "dummy" ) );
+    assertNull( ContextProvider.getUISession() );
   }
 
   @Test
@@ -307,6 +305,7 @@ public class RWTLifeCycle2_Test {
         }
         try {
           RWTServlet servlet = new RWTServlet();
+          initServlet( servlet );
           servlet.service( request, response );
         } catch( Exception e ) {
           exception[ 0 ] = e;
@@ -339,9 +338,9 @@ public class RWTLifeCycle2_Test {
     TestRequest result = ( TestRequest )ContextProvider.getRequest();
     result.setServletPath( "/test" );
     result.setSession( session );
-    Fixture.fakeHeadParameter( "requestCounter", String.valueOf( count ) );
+    Fixture.fakeHeadParameter( "requestCounter", count );
     if( count == 0 ) {
-      Fixture.fakeHeadParameter( RequestParams.RWT_INITIALIZE, "true" );
+      Fixture.fakeHeadParameter( ClientMessageConst.RWT_INITIALIZE, true );
     }
     return result;
   }
@@ -357,6 +356,13 @@ public class RWTLifeCycle2_Test {
         }
       }
     } );
+  }
+
+  private static void initServlet( HttpServlet servlet ) throws ServletException {
+    ServletContext servletContext = Fixture.getServletContext();
+    ServletConfig servletConfig = mock( ServletConfig.class );
+    when( servletConfig.getServletContext() ).thenReturn( servletContext );
+    servlet.init( servletConfig );
   }
 
   public static final class ExceptionInReadAndDispatchEntryPoint implements EntryPoint {

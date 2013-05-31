@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2012 Innoopract Informationssysteme GmbH and others.
+ * Copyright (c) 2009, 2013 Innoopract Informationssysteme GmbH and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,13 +19,15 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.graphics.Graphics;
-import org.eclipse.rap.rwt.internal.protocol.ProtocolTestUtil;
 import org.eclipse.rap.rwt.lifecycle.WidgetUtil;
 import org.eclipse.rap.rwt.testfixture.Fixture;
 import org.eclipse.rap.rwt.testfixture.Message;
 import org.eclipse.rap.rwt.testfixture.Message.CreateOperation;
+import org.eclipse.rap.rwt.testfixture.internal.TestUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Color;
@@ -33,19 +35,16 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.internal.graphics.ImageFactory;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 
-@SuppressWarnings("deprecation")
 public class CLabelLCA_Test {
 
   private Display display;
   private Shell shell;
+  private CLabel clabel;
   private CLabelLCA lca;
 
   @Before
@@ -53,6 +52,7 @@ public class CLabelLCA_Test {
     Fixture.setUp();
     display = new Display();
     shell = new Shell( display );
+    clabel = new CLabel( shell, SWT.NONE );
     lca = new CLabelLCA();
     Fixture.fakeNewRequest();
   }
@@ -68,18 +68,15 @@ public class CLabelLCA_Test {
    */
   @Test
   public void testWriteText() throws IOException {
-    CLabel label = new CLabel( shell, SWT.NONE );
-    assertNull( label.getText() ); // assert precondition: text == null
+    assertNull( clabel.getText() ); // assert precondition: text == null
 
-    lca.renderChanges( label );
+    lca.renderChanges( clabel );
     // the purpose of this test is to ensure that the LCA works without throwing
     // an exception - thus there is no assert
   }
 
   @Test
   public void testRenderCreate() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.renderInitialization( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -90,19 +87,18 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderCreateWithMarkupEnabled() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     clabel.setData( RWT.MARKUP_ENABLED, Boolean.TRUE );
 
     lca.renderInitialization( clabel );
 
     Message message = Fixture.getProtocolMessage();
     CreateOperation operation = message.findCreateOperation( clabel );
-    assertEquals( Boolean.TRUE, operation.getProperty( "markupEnabled" ) );
+    assertEquals( JsonValue.TRUE, operation.getProperty( "markupEnabled" ) );
   }
 
   @Test
   public void testRenderCreateWithShadowIn() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.SHADOW_IN );
+    clabel = new CLabel( shell, SWT.SHADOW_IN );
 
     lca.renderInitialization( clabel );
 
@@ -115,18 +111,16 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderCreateWithAlignment() throws Exception {
-    CLabel clabel = new CLabel( shell, SWT.CENTER );
+    clabel = new CLabel( shell, SWT.CENTER );
 
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "center", message.findCreateProperty( clabel, "alignment" ) );
+    assertEquals( "center", message.findCreateProperty( clabel, "alignment" ).asString() );
   }
 
   @Test
   public void testRenderParent() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.renderInitialization( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -136,8 +130,6 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderInitialText() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -147,18 +139,15 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderText() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     clabel.setText( "foo" );
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "foo", message.findSetProperty( clabel, "text" ) );
+    assertEquals( "foo", message.findSetProperty( clabel, "text" ).asString() );
   }
 
   @Test
   public void testRenderTextUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
 
@@ -172,8 +161,6 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderInitialImage() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -182,26 +169,23 @@ public class CLabelLCA_Test {
   }
 
   @Test
-  public void testRenderImage() throws IOException, JSONException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+  public void testRenderImage() throws IOException {
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     clabel.setImage( image );
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
     String imageLocation = ImageFactory.getImagePath( image );
-    String expected = "[\"" + imageLocation + "\", 100, 50 ]";
-    JSONArray actual = ( JSONArray )message.findSetProperty( clabel, "image" );
-    assertTrue( ProtocolTestUtil.jsonEquals( expected, actual ) );
+    JsonArray expected = new JsonArray().add( imageLocation ).add( 100 ).add( 50 );
+    assertEquals( expected, message.findSetProperty( clabel, "image" ) );
   }
 
   @Test
   public void testRenderImageUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
 
     clabel.setImage( image );
     Fixture.preserveWidgets();
@@ -213,10 +197,9 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderImageReset() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
-    Image image = Graphics.getImage( Fixture.IMAGE_100x50 );
+    Image image = TestUtil.createImage( display, Fixture.IMAGE_100x50 );
     clabel.setImage( image );
 
     Fixture.preserveWidgets();
@@ -224,13 +207,11 @@ public class CLabelLCA_Test {
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( JSONObject.NULL, message.findSetProperty( clabel, "image" ) );
+    assertEquals( JsonObject.NULL, message.findSetProperty( clabel, "image" ) );
   }
 
   @Test
   public void testRenderInitialAlignment() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -240,18 +221,15 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderAlignment() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     clabel.setAlignment( SWT.RIGHT );
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( "right", message.findSetProperty( clabel, "alignment" ) );
+    assertEquals( "right", message.findSetProperty( clabel, "alignment" ).asString() );
   }
 
   @Test
   public void testRenderAlignmentUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
 
@@ -265,8 +243,6 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderInitialLeftMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -276,18 +252,15 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderLeftMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     clabel.setLeftMargin( 5 );
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 5 ), message.findSetProperty( clabel, "leftMargin" ) );
+    assertEquals( 5, message.findSetProperty( clabel, "leftMargin" ).asInt() );
   }
 
   @Test
   public void testRenderLeftMarginUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
 
@@ -302,8 +275,6 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderInitialTopMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -313,18 +284,15 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderTopMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     clabel.setTopMargin( 5 );
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 5 ), message.findSetProperty( clabel, "topMargin" ) );
+    assertEquals( 5, message.findSetProperty( clabel, "topMargin" ).asInt() );
   }
 
   @Test
   public void testRenderTopMarginUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
 
@@ -338,8 +306,6 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderInitialRightMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -349,18 +315,15 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderRightMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     clabel.setRightMargin( 5 );
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 5 ), message.findSetProperty( clabel, "rightMargin" ) );
+    assertEquals( 5, message.findSetProperty( clabel, "rightMargin" ).asInt() );
   }
 
   @Test
   public void testRenderRightMarginUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
 
@@ -374,8 +337,6 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderInitialBottomMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -385,18 +346,15 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderBottomMargin() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     clabel.setBottomMargin( 5 );
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    assertEquals( new Integer( 5 ), message.findSetProperty( clabel, "bottomMargin" ) );
+    assertEquals( 5, message.findSetProperty( clabel, "bottomMargin" ).asInt() );
   }
 
   @Test
   public void testRenderBottomMarginUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
 
@@ -410,8 +368,6 @@ public class CLabelLCA_Test {
 
   @Test
   public void testRenderInitialBackgroundGradient() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
     lca.render( clabel );
 
     Message message = Fixture.getProtocolMessage();
@@ -420,9 +376,7 @@ public class CLabelLCA_Test {
   }
 
   @Test
-  public void testRenderBackgroundGradient() throws IOException, JSONException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
-
+  public void testRenderBackgroundGradient() throws IOException {
     Color[] gradientColors = new Color[] {
       display.getSystemColor( SWT.COLOR_RED ),
       display.getSystemColor( SWT.COLOR_GREEN )
@@ -432,19 +386,13 @@ public class CLabelLCA_Test {
     lca.renderChanges( clabel );
 
     Message message = Fixture.getProtocolMessage();
-    JSONArray gradient = ( JSONArray )message.findSetProperty( clabel, "backgroundGradient" );
-    JSONArray colors = ( JSONArray )gradient.get( 0 );
-    JSONArray stops = ( JSONArray )gradient.get( 1 );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[255,0,0,255]", colors.getJSONArray( 0 ) ) );
-    assertTrue( ProtocolTestUtil.jsonEquals( "[0,255,0,255]", colors.getJSONArray( 1 ) ) );
-    assertEquals( new Integer( 0 ), stops.get( 0 ) );
-    assertEquals( new Integer( 50 ), stops.get( 1 ) );
-    assertEquals( Boolean.FALSE, gradient.get( 2 ) );
+    JsonArray expected
+      = JsonArray.readFrom( "[[[255, 0, 0, 255], [0, 255, 0, 255]], [0, 50], false]" );
+    assertEquals( expected, message.findSetProperty( clabel, "backgroundGradient" ) );
   }
 
   @Test
   public void testRenderBackgroundGradientUnchanged() throws IOException {
-    CLabel clabel = new CLabel( shell, SWT.NONE );
     Fixture.markInitialized( display );
     Fixture.markInitialized( clabel );
 
@@ -460,4 +408,5 @@ public class CLabelLCA_Test {
     Message message = Fixture.getProtocolMessage();
     assertNull( message.findSetOperation( clabel, "backgroundGradient" ) );
   }
+
 }

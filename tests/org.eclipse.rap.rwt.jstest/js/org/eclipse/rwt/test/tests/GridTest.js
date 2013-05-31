@@ -47,6 +47,7 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       assertIdentical( shell, widget.getParent() );
       assertTrue( widget.getUserData( "isControl") );
       assertEquals( "tree", widget.getAppearance() );
+      assertEquals( "tree", widget.getRenderConfig().baseAppearance );
       assertFalse( widget.getRenderConfig().fullSelection );
       assertFalse( widget.getRenderConfig().hideSelection );
       assertFalse( widget.getRenderConfig().hasCheckBoxes );
@@ -1336,6 +1337,67 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       tree.destroy();
     },
 
+    testClickOnNotCheckableCellCheckBoxDoesNotToggle : function() {
+      var tree = this._createDefaultTree( false, false );
+      tree.setCellCheck( 0, true );
+      this._fakeCheckBoxAppearance();
+      tree.setItemCount( 1 );
+      var item = this._createItem( tree.getRootItem(), 0 );
+      item.setCellCheckable( [ false ] );
+      rwt.remote.ObjectRegistry.add( "w11", tree, gridHandler );
+      rwt.remote.ObjectRegistry.add( "w2", item, itemHandler );
+      TestUtil.flush();
+      var checkNode = tree.getRowContainer().getChildren()[ 0 ]._getTargetNode().childNodes[ 0 ];
+
+      TestUtil.clickDOM( checkNode );
+
+      assertTrue( item.isCellChecked( 0 ) === undefined );
+      tree.destroy();
+    },
+
+    testClickOnNotCheckableCellCheckBoxDoesNotSendChange : function() {
+      var tree = this._createDefaultTree( false, false );
+      tree.setCellCheck( 0, true );
+      TestUtil.initRequestLog();
+      this._fakeCheckBoxAppearance();
+      tree.setItemCount( 1 );
+      var item = this._createItem( tree.getRootItem(), 0 );
+      item.setCellCheckable( [ false ] );
+      rwt.remote.ObjectRegistry.add( "w11", tree, gridHandler );
+      rwt.remote.ObjectRegistry.add( "w2", item, itemHandler );
+      TestUtil.flush();
+      var checkNode = tree.getRowContainer().getChildren()[ 0 ]._getTargetNode().childNodes[ 0 ];
+
+      TestUtil.clickDOM( checkNode );
+
+      rwt.remote.Server.getInstance().send();
+      var message = TestUtil.getMessageObject();
+      assertNull( message.findSetOperation( "w2", "cellChecked" ) );
+      tree.destroy();
+    },
+
+    testClickOnNotCheckableCellCheckBoxDoesNotSendEvent : function() {
+      var tree = this._createDefaultTree( false, false );
+      tree.setCellCheck( 0, true );
+      TestUtil.initRequestLog();
+      this._fakeCheckBoxAppearance();
+      tree.setItemCount( 1 );
+      tree.setHasSelectionListener( true );
+      var item = this._createItem( tree.getRootItem(), 0 );
+      item.setCellCheckable( [ false ] );
+      rwt.remote.ObjectRegistry.add( "w11", tree, gridHandler );
+      rwt.remote.ObjectRegistry.add( "w2", item, itemHandler );
+      TestUtil.flush();
+      var checkNode = tree.getRowContainer().getChildren()[ 0 ]._getTargetNode().childNodes[ 0 ];
+
+      TestUtil.clickDOM( checkNode );
+      rwt.remote.Server.getInstance().send();
+
+      var message = TestUtil.getMessageObject();
+      assertNull( message.findNotifyOperation( "w11", "Selection" ) );
+      tree.destroy();
+    },
+
     testClickOnCellCheckBoxSendChangeMoreColumns : function() {
       var tree = this._createDefaultTree( false, false );
       tree.setCellCheck( 0, true );
@@ -1369,6 +1431,58 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       TestUtil.clickDOM( node );
       assertFalse( tree.getRootItem().getChild( 0 ).isChecked() );
       assertEquals( 0, TestUtil.getRequestsSend() );
+      tree.destroy();
+    },
+
+    testClickOnRWTHyperlinkWithHref : function() {
+      var tree = this._createDefaultTree( false, false );
+      tree.getRenderConfig().markupEnabled = true;
+      tree.setHasSelectionListener( true );
+      this._fakeCheckBoxAppearance();
+      tree.setItemCount( 1 );
+      var item = this._createItem( tree.getRootItem(), 0 );
+      item.setTexts( [ "<a href=\"foo\" target=\"_rwt\">Test</a>" ] );
+      rwt.remote.ObjectRegistry.add( "w11", tree, gridHandler );
+      rwt.remote.ObjectRegistry.add( "w2", item, itemHandler );
+      TestUtil.flush();
+      TestUtil.initRequestLog();
+      var node = tree._rowContainer._getTargetNode().childNodes[ 0 ].childNodes[ 0 ].childNodes[ 0 ];
+
+      TestUtil.clickDOM( node );
+
+      assertEquals( 1, TestUtil.getRequestsSend() );
+      var message = TestUtil.getMessageObject();
+      assertEquals( "w2", message.findNotifyProperty( "w11", "Selection", "item" ) );
+      assertEquals( "hyperlink", message.findNotifyProperty( "w11", "Selection", "detail" ) );
+      var text = message.findNotifyProperty( "w11", "Selection", "text" );
+      if( text.indexOf( "/" ) !== 0 ) {
+        text = text.slice( text.lastIndexOf( "/" ) + 1 );
+      }
+      assertEquals( "foo", text );
+      tree.destroy();
+    },
+
+    testClickOnRWTHyperlinkWithoutHref : function() {
+      var tree = this._createDefaultTree( false, false );
+      tree.getRenderConfig().markupEnabled = true;
+      tree.setHasSelectionListener( true );
+      this._fakeCheckBoxAppearance();
+      tree.setItemCount( 1 );
+      var item = this._createItem( tree.getRootItem(), 0 );
+      item.setTexts( [ "<a target=\"_rwt\">Test</a>" ] );
+      rwt.remote.ObjectRegistry.add( "w11", tree, gridHandler );
+      rwt.remote.ObjectRegistry.add( "w2", item, itemHandler );
+      TestUtil.flush();
+      TestUtil.initRequestLog();
+      var node = tree._rowContainer._getTargetNode().childNodes[ 0 ].childNodes[ 0 ].childNodes[ 0 ];
+
+      TestUtil.clickDOM( node );
+
+      assertEquals( 1, TestUtil.getRequestsSend() );
+      var message = TestUtil.getMessageObject();
+      assertEquals( "w2", message.findNotifyProperty( "w11", "Selection", "item" ) );
+      assertEquals( "hyperlink", message.findNotifyProperty( "w11", "Selection", "detail" ) );
+      assertEquals( "Test", message.findNotifyProperty( "w11", "Selection", "text" ) );
       tree.destroy();
     },
 
@@ -2128,12 +2242,10 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       TestUtil.fakeAppearance( "tree-row",  {
         style : function( states ) {
           return {
-            itemBackground : states.over ? "red" : "green",
-            itemBackgroundGradient : null,
-            itemBackgroundImage : null,
-            overlayBackground : states.over ? "red" : "green",
-            overlayBackgroundGradient : null,
-            overlayBackgroundImage : null
+            background : states.over ? "red" : "green",
+            backgroundGradient : null,
+            backgroundImage : null,
+            foreground : "undefined"
           };
         }
       } );
@@ -2156,12 +2268,9 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       TestUtil.fakeAppearance( "tree-row",  {
         style : function( states ) {
           return {
-            itemBackground : states.over ? "red" : "green",
-            itemBackgroundGradient : null,
-            itemBackgroundImage : null,
-            overlayBackground : states.over ? "red" : "green",
-            overlayBackgroundGradient : null,
-            overlayBackgroundImage : null
+            background : states.over ? "red" : "green",
+            backgroundGradient : null,
+            backgroundImage : null
           };
         }
       } );
@@ -3132,16 +3241,12 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
         style : function( states ) {
           var result = {};
           if( states.selected ) {
-            result.itemBackground = "blue";
-            result.overlayBackground = "blue";
+            result.background = "blue";
           } else {
-            result.itemBackground = "white";
-            result.overlayBackground = "white";
+            result.background = "white";
           }
-          result.itemBackgroundGradient = null;
-          result.itemBackgroundImage = null;
-          result.overlayBackgroundGradient = null;
-          result.overlayBackgroundImage = null;
+          result.backgroundGradient = null;
+          result.backgroundImage = null;
           return result;
         }
       } );
@@ -4271,20 +4376,16 @@ rwt.qx.Class.define( "org.eclipse.rwt.test.tests.GridTest", {
       var empty = {
         style : function( states ) {
           return {
-            "itemBackground" : "undefined",
-            "itemBackgroundGradient" : "undefined",
-            "itemBackgroundImage" : null,
-            "itemForeground" : "undefined",
-            "overlayBackground" : "undefined",
-            "overlayBackgroundGradient" : "undefined",
-            "overlayBackgroundImage" : null,
-            "overlayForeground" : "undefined",
-            "backgroundImage" : null
+            "background" : "undefined",
+            "backgroundGradient" : null,
+            "backgroundImage" : null,
+            "foreground" : "undefined"
           };
         }
       };
       TestUtil.fakeAppearance( "tree-row-indent", empty );
       TestUtil.fakeAppearance( "tree-row", empty );
+      TestUtil.fakeAppearance( "tree-row-overlay", empty );
     },
 
     _fakeCheckBoxAppearance : function() {

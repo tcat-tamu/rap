@@ -8,7 +8,7 @@
  *
  * Contributors:
  *    1&1 Internet AG and others - original API and implementation
- *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
+ *    EclipseSource - adaptation for the Eclipse Remote Application Platform
  ******************************************************************************/
 
 /**
@@ -228,9 +228,9 @@ rwt.qx.Class.define("rwt.util.Colors",
      */
     rgbToHexString : function(rgb) {
       return(
-        rwt.util.Strings.pad(rgb[0].toString(16).toUpperCase(), 2) +
-        rwt.util.Strings.pad(rgb[1].toString(16).toUpperCase(), 2) +
-        rwt.util.Strings.pad(rgb[2].toString(16).toUpperCase(), 2)
+        rwt.util.Strings.pad(rgb[0].toString(16).toLowerCase(), 2) +
+        rwt.util.Strings.pad(rgb[1].toString(16).toLowerCase(), 2) +
+        rwt.util.Strings.pad(rgb[2].toString(16).toLowerCase(), 2)
       );
     },
 

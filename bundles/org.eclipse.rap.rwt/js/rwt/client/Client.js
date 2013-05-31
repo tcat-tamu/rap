@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright: 2004, 2012 1&1 Internet AG, Germany, http://www.1und1.de,
+ * Copyright: 2004, 2013 1&1 Internet AG, Germany, http://www.1und1.de,
  *                       and EclipseSource
  *
  * This program and the accompanying materials are made available under the
@@ -8,7 +8,7 @@
  *
  * Contributors:
  *    1&1 Internet AG and others - original API and implementation
- *    EclipseSource - adaptation for the Eclipse Rich Ajax Platform
+ *    EclipseSource - adaptation for the Eclipse Remote Application Platform
  ******************************************************************************/
 
 /**
@@ -152,12 +152,19 @@ rwt.qx.Class.define( "rwt.client.Client", {
       return this.getPlatform() === "android" && this.getBrowser() === "android";
     },
 
+    isMobileFirefox : function() {
+      return this.getPlatform() === "android" && this.getBrowser() === "firefox";
+    },
+
     supportsVml : function() {
       return ( this.getEngine() === "mshtml" ) && ( this.getVersion() >= 5.5 );
     },
 
     supportsTouch : function() {
-      return this.isMobileSafari() || this.isAndroidBrowser() || this.isMobileChrome();
+      return    this.isMobileSafari()
+             || this.isAndroidBrowser()
+             || this.isMobileChrome()
+             || this.isMobileFirefox();
     },
 
     supportsSvg : function() {
@@ -179,9 +186,9 @@ rwt.qx.Class.define( "rwt.client.Client", {
     supportsCss3 : function() {
       var engine = rwt.client.Client.getEngine();
       var version = rwt.client.Client.getVersion();
-      var result =    engine === "webkit" && version >= 522 //
-                   || engine === "gecko" && version >= 2; // firefox 4+
-                   // TODO [tb] : ie10+
+      var result =    engine === "webkit" && version >= 522
+                   || engine === "gecko" && version >= 2 // firefox 4+
+                   || engine === "newmshtml" && version >= 10; // IE10 +
       return result;
     },
 

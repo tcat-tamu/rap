@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2012 EclipseSource and others.
+ * Copyright (c) 2011, 2013 EclipseSource and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ rwt.widgets.Display = function( properties ) {
   this._document = rwt.widgets.base.ClientDocument.getInstance();
   this._server = rwt.remote.Server.getInstance();
   this._exitConfirmation = null;
+  this._hasResizeListener = false;
   this._initialized = false;
   if( rwt.widgets.Display._current !== undefined ) {
     throw new Error( "Display can not be created twice" );
@@ -44,6 +45,7 @@ rwt.widgets.Display.prototype = {
 
   init : function() {
     this._server.getMessageWriter().appendHead( "rwt_initialize", true );
+    this._appendQueryString();
     this._appendWindowSize();
     this._appendSystemDPI();
     this._appendColorDepth();
@@ -90,6 +92,10 @@ rwt.widgets.Display.prototype = {
     rwt.remote.Server.getInstance().setGenerateMetrics( generate );
   },
 
+  setMnemonicActivator : function( value ) {
+    rwt.widgets.util.MnemonicHandler.getInstance().setActivator( value );
+  },
+
   setEnableUiTests : function( value ) {
     rwt.widgets.base.Widget._renderHtmlIds = value;
   },
@@ -112,6 +118,10 @@ rwt.widgets.Display.prototype = {
     return result;
   },
 
+  setHasResizeListener : function( value ) {
+    this._hasResizeListener = value;
+  },
+
   ////////////////////////
   // Global Event handling
 
@@ -126,9 +136,8 @@ rwt.widgets.Display.prototype = {
 
   _onResize : function( evt ) {
     this._appendWindowSize();
-    // Fix for bug 315230
-    if( this._server.getRequestCounter() != null ) {
-      this._server.send();
+    if( this._hasResizeListener ) {
+      rwt.remote.Server.getInstance().getRemoteObject( this ).notify( "Resize" );
     }
   },
 
@@ -142,7 +151,7 @@ rwt.widgets.Display.prototype = {
     // TODO [tb] : This will attach the cursorLocation as the last operation, but should be first
     var pageX = rwt.event.MouseEvent.getPageX();
     var pageY = rwt.event.MouseEvent.getPageY();
-    var location = [ pageX, pageY ];
+    var location = [ Math.round( pageX ), Math.round( pageY ) ];
     rwt.remote.Server.getInstance().getRemoteObject( this ).set( "cursorLocation", location );
   },
 
@@ -157,10 +166,17 @@ rwt.widgets.Display.prototype = {
     this._document.removeEventListener( "windowresize", this._onResize, this );
     this._document.removeEventListener( "keypress", this._onKeyPress, this );
     this._server.removeEventListener( "send", this._onSend, this );
+    this._sendShutdown();
   },
 
   ///////////////////
   // client to server
+
+  _sendShutdown : function() {
+    var server = rwt.remote.Server.getInstance();
+    server.getMessageWriter().appendHead( "rwt_shutdown", true );
+    server.sendImmediate( false );
+  },
 
   _appendWindowSize : function() {
     var width = rwt.html.Window.getInnerWidth( window );
@@ -189,15 +205,13 @@ rwt.widgets.Display.prototype = {
   _appendInitialHistoryEvent : function() {
     var state = window.location.hash;
     if( state !== "" ) {
-      var server = rwt.remote.Server.getInstance();
-      var history = rwt.client.BrowserNavigation.getInstance();
-      // TODO: Temporary workaround for 388835
       var type = "rwt.client.BrowserNavigation";
-      rwt.remote.ObjectRegistry.add( type,
-                                       history,
-                                       rwt.remote.HandlerRegistry.getHandler( type ) );
-      server.getRemoteObject( history ).notify( "Navigation", {
-        "state" : state.substr( 1 )
+      var history = rwt.client.BrowserNavigation.getInstance();
+      var handler = rwt.remote.HandlerRegistry.getHandler( type );
+      // TODO: Temporary workaround for 388835
+      rwt.remote.ObjectRegistry.add( type, history, handler );
+      rwt.remote.Server.getInstance().getRemoteObject( history ).notify( "Navigation", {
+        "state" : decodeURIComponent( state.substr( 1 ) )
       } );
     }
   },
@@ -226,6 +240,13 @@ rwt.widgets.Display.prototype = {
     var clientObject = rwt.remote.ObjectRegistry.getObject( "rwt.client.ClientInfo" );
     var remoteObject = rwt.remote.Server.getInstance().getRemoteObject( clientObject );
     remoteObject.set( "timezoneOffset", clientObject.getTimezoneOffset() );
+  },
+
+  _appendQueryString : function() {
+    var queryString = window.location.search;
+    if( queryString !== "" ) {
+      this._server.getMessageWriter().appendHead( "queryString", queryString.substr( 1 ) );
+    }
   }
 
 };
