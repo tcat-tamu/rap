@@ -17,7 +17,6 @@ rwt.client.ServerPush = function() {
   } else {
     rwt.client.ServerPush._instance = this;
   }
-  this._requestCounter = 0;
   this._retryInterval = 0;
   this._active = false;
   this._running = false;
@@ -60,9 +59,7 @@ rwt.client.ServerPush.prototype = {
     var request = new rwt.remote.Request( server.getUrl(), "GET", "application/javascript" );
     request.setSuccessHandler( this._handleSuccess, this );
     request.setErrorHandler( this._handleError, this );
-    // [mbarry] request counter is required to prevent IE from caching the response
-    // HTTP "Cache-Control: no-cache" header would be more correct, but IE ignores it
-    request.setData( "servicehandler=org.eclipse.rap.serverpush&cid=" + server.getConnectionId() + "&id=" + this._requestCounter++ );
+    request.setData( "servicehandler=org.eclipse.rap.serverpush&cid=" + server.getConnectionId() );
     return request;
   },
 
