@@ -41,6 +41,8 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Shell", {
     "image",
     "text",
     "alpha",
+    // Important: Order matters: opened, active, mode [ariddle] - ?
+    "opened",
     "active",
     "mode",
     "hasShellListener",
@@ -71,6 +73,12 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Shell", {
       rwt.remote.HandlerUtil.callWithTarget( value, function( widget ) {
         shell.setActiveControl( widget );
       } );
+    },
+    //[ariddle] - add "opened" to ensure shell gets opened
+    "opened" : function( shell, value ) {
+      if( value ) {
+        shell.open();
+      }
     },
     "mode" : function( shell, value ) {
       var fullscreen = value === "fullscreen";
