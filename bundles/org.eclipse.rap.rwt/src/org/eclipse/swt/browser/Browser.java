@@ -225,7 +225,7 @@ public class Browser extends Composite {
       while( browserScript.executeResult == null ) {
         Display display = getDisplay();
         if( !display.readAndDispatch() ) {
-          System.out.println( "Sleeping in Browser#execute()" );
+          //System.out.println( "Sleeping in Browser#execute()" );
           display.sleep();
         }
       }
