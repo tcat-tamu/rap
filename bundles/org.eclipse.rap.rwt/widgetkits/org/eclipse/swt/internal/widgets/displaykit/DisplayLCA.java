@@ -125,18 +125,7 @@ public class DisplayLCA {
 //      clientObject.set( PROP_GENERATE_METRICS, metricsEnabled );
 //    }
   }
-  
-  //[ariddle] - added to support metrics gathering
-  private static void renderMetricsEnablement( Display display ) {
-//    Boolean metricsEnabled = Boolean.valueOf( RWTRequestVersionControl.getInstance().isGenerateMetrics() );
-//    IWidgetAdapter adapter = DisplayUtil.getAdapter( display );
-//    Object oldMetricsEnabled = adapter.getPreserved( PROP_GENERATE_METRICS );
-//    if( !metricsEnabled.equals( oldMetricsEnabled ) ) {
-//      IClientObject clientObject = ClientObjectFactory.getClientObject( display );
-//      clientObject.set( PROP_GENERATE_METRICS, metricsEnabled );
-//    }
-  }
-  
+
   public void clearPreserved( Display display ) {
     ( ( WidgetRemoteAdapter )getAdapter( display ) ).clearPreserved();
     for( Shell shell : getShells( display ) ) {
@@ -286,7 +275,7 @@ public class DisplayLCA {
   private static void markInitialized( Display display ) {
     ( ( WidgetRemoteAdapter )getAdapter( display ) ).setInitialized( true );
   }
-  
+
   //[ariddle] - added to support metrics gathering
   static void readMetrics( Display display ) {
 //    boolean metricsEnabled = RWTRequestVersionControl.getInstance().isGenerateMetrics();

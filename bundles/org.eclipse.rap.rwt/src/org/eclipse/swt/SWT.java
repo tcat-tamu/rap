@@ -3856,16 +3856,16 @@ public class SWT {
   private static int getVersion( int major, int minor ) {
       return major * 1000 + minor;
   }
-  
+
   //[ariddle] - added constants for single sourcing
   //---------------------------------------------------------------------------
   // The following are added for api compliance by TCAT
   //---------------------------------------------------------------------------
-  
+
   /**
    * Selection constant indicating that a line delimiter should be
    * drawn (value is 1&lt;&lt;17).
-   * 
+   *
    * <p><b>Used By:</b><ul>
    * <li><code>TextLayout</code></li>
    * </ul></p>
@@ -3874,39 +3874,21 @@ public class SWT {
    * @see #LAST_LINE_SELECTION
    */
   public static final int DELIMITER_SELECTION = 1 << 17;
-  
+
   /**
    * Selection constant indicating that the last line is selected
    * to the end and should be drawn using either a line delimiter
    * or full line selection (value is 1&lt;&lt;20).
-   * 
+   *
    * <p><b>Used By:</b><ul>
    * <li><code>TextLayout</code></li>
    * </ul></p>
-   * 
+   *
    * @see #DELIMITER_SELECTION
    * @see #FULL_SELECTION
    */
   public static final int LAST_LINE_SELECTION = 1 << 20;
 
-  /**
-   * Style constant for right to left orientation (value is 1&lt;&lt;26).
-   * <p>
-   * When orientation is not explicitly specified, orientation is
-   * inherited.  This means that children will be assigned the
-   * orientation of their parent.  To override this behavior and
-   * force an orientation for a child, explicitly set the orientation
-   * of the child when that child is created.
-   * <br>Note that this is a <em>HINT</em>.
-   * </p>
-   * <p><b>Used By:</b><ul>
-   * <li><code>Control</code></li>
-   * <li><code>Menu</code></li>
-   * <li><code>GC</code></li>
-   * </ul></p>
-   */
-  public static final int RIGHT_TO_LEFT = 1 << 26;
-  
   /**
    * Traversal event detail field value indicating that the
    * key which designates that focus should be given to the
@@ -3924,7 +3906,7 @@ public class SWT {
    * (value is 1&lt;&lt;6).
    */
   public static final int TRAVERSE_ARROW_NEXT = 1 << 6;
-  
+
   /**
    * Style constant to indicate coordinate mirroring (value is 1&lt;&lt;27).
    * <p><b>Used By:</b><ul>
@@ -3933,7 +3915,7 @@ public class SWT {
    * </ul></p>
    */
   public static final int MIRRORED = 1 << 27;
-  
+
   /**
    * Input Method Editor style constant for native
    * input behavior (value is 1&lt;&lt;3).
@@ -3944,22 +3926,22 @@ public class SWT {
    * Line drawing style for solid lines  (value is 1).
    */
   public static final int LINE_SOLID = 1;
-    
+
   /**
    * Line drawing style for dashed lines (value is 2).
    */
   public static final int LINE_DASH = 2;
-    
+
   /**
    * Line drawing style for dotted lines (value is 3).
    */
   public static final int LINE_DOT = 3;
-    
+
   /**
    * Line drawing style for alternating dash-dot lines (value is 4).
    */
   public static final int LINE_DASHDOT = 4;
-    
+
   /**
    * Line drawing style for dash-dot-dot lines (value is 5).
    */
@@ -3967,12 +3949,12 @@ public class SWT {
 
   /**
    * Line drawing style for custom dashed lines (value is 6).
-   * 
+   *
    * @see org.eclipse.swt.graphics.GC#setLineDash(int[])
    * @see org.eclipse.swt.graphics.GC#getLineDash()
    */
   public static final int LINE_CUSTOM = 6;
-  
+
   /**
    * Style constant to indicate single underline (value is 0).
    * <p><b>Used By:</b><ul>
@@ -3988,7 +3970,7 @@ public class SWT {
    * </ul></p>
    */
   public static final int UNDERLINE_DOUBLE = 1;
-  
+
   /**
    * Style constant to indicate error underline (value is 2).
    * <p><b>Used By:</b><ul>
@@ -3996,7 +3978,7 @@ public class SWT {
    * </ul></p>
    */
   public static final int UNDERLINE_ERROR = 2;
-  
+
   /**
    * Style constant to indicate squiggle underline (value is 3).
    * <p><b>Used By:</b><ul>
@@ -4004,7 +3986,7 @@ public class SWT {
    * </ul></p>
    */
   public static final int UNDERLINE_SQUIGGLE = 3;
-  
+
   /**
    * Style constant to indicate link underline (value is 0).
    * <p>
@@ -4036,7 +4018,7 @@ public class SWT {
    * </ul></p>
    */
   public static final int BORDER_DASH = 2;
-  
+
   /**
    * Style constant to indicate dotted border (value is 4).
    * <p><b>Used By:</b><ul>
@@ -4044,11 +4026,11 @@ public class SWT {
    * </ul></p>
    */
   public static final int BORDER_DOT = 4;
-  
+
   /**
    * The character movement type (value is 1&lt;&lt;0).
    * This constant is used to move a text offset over a character.
-   * 
+   *
    * @see org.eclipse.swt.graphics.TextLayout#getNextOffset(int, int)
    * @see org.eclipse.swt.graphics.TextLayout#getPreviousOffset(int, int)
    */
@@ -4060,7 +4042,7 @@ public class SWT {
    * A cluster groups one or more characters. A cluster is
    * undivisible, this means that a caret offset can not be placed in the
    * middle of a cluster.
-   * 
+   *
    * @see org.eclipse.swt.graphics.TextLayout#getNextOffset(int, int)
    * @see org.eclipse.swt.graphics.TextLayout#getPreviousOffset(int, int)
    */
@@ -4074,7 +4056,7 @@ public class SWT {
    * always at the start of the word. On GTK and Mac the stop is at the end
    * of the word if the direction is next and at the start of the word if the
    * direction is previous.
-   * 
+   *
    * @see org.eclipse.swt.graphics.TextLayout#getNextOffset(int, int)
    * @see org.eclipse.swt.graphics.TextLayout#getPreviousOffset(int, int)
    */
@@ -4084,8 +4066,8 @@ public class SWT {
    * The word end movement type (value is 1&lt;&lt;3).
    * This constant is used to move a text offset to the next or previous
    * word end. The behavior of this constant does not depend on the platform.
-   * 
-   * 
+   *
+   *
    * @see org.eclipse.swt.graphics.TextLayout#getNextOffset(int, int)
    * @see org.eclipse.swt.graphics.TextLayout#getPreviousOffset(int, int)
    */
@@ -4095,7 +4077,7 @@ public class SWT {
    * The word start movement type (value is 1&lt;&lt;4).
    * This constant is used to move a text offset to the next or previous
    * word start. The behavior of this constant does not depend on the platform.
-   * 
+   *
    * @see org.eclipse.swt.graphics.TextLayout#getNextOffset(int, int)
    * @see org.eclipse.swt.graphics.TextLayout#getPreviousOffset(int, int)
    */
@@ -4126,8 +4108,7 @@ public class SWT {
    * </ul></p>
    */
   public static final int SCROLL_PAGE = 2;
-  
-  
+
   /**
   * The measure item event type (value is 41).
   *

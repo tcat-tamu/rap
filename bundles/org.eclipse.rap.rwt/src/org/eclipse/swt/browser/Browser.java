@@ -232,7 +232,7 @@ public class Browser extends Composite {
     }
     return browserScript;
   }
-  
+
   /**
    * Execute the specified script.
    *
@@ -377,13 +377,13 @@ public class Browser extends Composite {
     }
     return browserScript.evaluateResult;
   }
-  
+
   /**
    * Returns the type of native browser being used by this instance.
    * Examples: "ie", "mozilla", "voyager", "webkit"
    *
    * @return the type of the native browser
-   * 
+   *
    * @since 3.5
    */
   // [pb] added to support single-sourcing
@@ -703,6 +703,8 @@ public class Browser extends Composite {
           } else {
             script.callback.evaluationFailed( createException() );
           }
+        }
+      }
     }
 
 //    @Override
